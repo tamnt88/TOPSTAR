@@ -1,0 +1,37 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Topstar</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/fontawesome/css/all.min.css" />
+    <link rel="stylesheet" href="~/lib/flaticon/css/uicons-regular-rounded.css" />
+    <link rel="stylesheet" href="~/lib/swiper/swiper-bundle.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/Topstar.Web.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="topstar-header border-bottom">
+        <div class="container d-flex align-items-center justify-content-between py-2">
+            <a class="d-flex align-items-center text-decoration-none" asp-page="/Index" aria-label="TopStar">
+                <img src="~/images/logo.png" alt="TopStar" class="topstar-logo" />
+            </a>
+            <nav class="d-none d-md-flex align-items-center gap-3">
+                <a class="text-decoration-none text-dark fw-semibold" asp-page="/Index">Trang chủ</a>
+                <a class="text-decoration-none text-dark fw-semibold" asp-page="/Public/Academy">Học viện KOC</a>
+                <a class="text-decoration-none text-dark fw-semibold" asp-page="/Public/BrandPublic">Dành cho Brand</a>
+                <a class="btn btn-sm btn-warning rounded-pill px-3 fw-semibold" asp-page="/Public/RegisterKocStep1">Đăng ký KOC</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="topstar-main">@RenderBody()</main>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/swiper/swiper-bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

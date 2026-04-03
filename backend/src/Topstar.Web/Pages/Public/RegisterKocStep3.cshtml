@@ -1,0 +1,16 @@
+@page
+@{ ViewData["Title"] = "Register KOC - Step 3"; }
+<div class="page-wrap card-list">
+  <h1 class="section-title">Dang ky KOC - Buoc 5/5</h1>
+  <div class="card-x">
+    <div class="kpi-title mb-2">Dieu kien nhan job va xac nhan</div>
+    <div class="row g-3">
+      <div class="col-md-4"><label class="form-label">Ngan sach toi thieu (VND)</label><input class="form-control" placeholder="1500000" /></div>
+      <div class="col-md-4"><label class="form-label">Khu vuc uu tien</label><input class="form-control" placeholder="HCM, Binh Duong" /></div>
+      <div class="col-md-4"><label class="form-label">Lich ranh</label><input class="form-control" placeholder="Sau 18:00, cuoi tuan" /></div>
+      <div class="col-md-12"><label class="form-label">Ghi chu bo sung</label><textarea class="form-control" rows="3" placeholder="Thong tin them neu co"></textarea></div>
+    </div>
+    <div class="alert alert-success mt-3 mb-0">Ho so da san sang de gui duyet.</div>
+    <div class="mt-3 d-flex justify-content-between"><a class="btn btn-light" asp-page="/Public/RegisterKocStep22">Quay lai</a><button class="btn-x btn-orange">Gui duyet ho so</button></div>
+  </div>
+</div>

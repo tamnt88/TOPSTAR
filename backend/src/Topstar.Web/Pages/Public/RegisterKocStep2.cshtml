@@ -1,0 +1,17 @@
+@page
+@{ ViewData["Title"] = "Register KOC - Step 2"; }
+<div class="page-wrap card-list">
+  <h1 class="section-title">Dang ky KOC - Buoc 2/5</h1>
+  <div class="card-x">
+    <div class="kpi-title mb-2">Thong tin ca nhan</div>
+    <div class="row g-3">
+      <div class="col-md-4"><label class="form-label">Gioi tinh</label><select class="form-select"><option>Nu</option><option>Nam</option></select></div>
+      <div class="col-md-4"><label class="form-label">Nam sinh</label><input class="form-control" placeholder="1999" /></div>
+      <div class="col-md-4"><label class="form-label">Khu vuc</label><input class="form-control" placeholder="TP HCM" /></div>
+      <div class="col-md-4"><label class="form-label">Chieu cao (cm)</label><input class="form-control" placeholder="165" /></div>
+      <div class="col-md-4"><label class="form-label">Can nang (kg)</label><input class="form-control" placeholder="50" /></div>
+      <div class="col-md-4"><label class="form-label">Tinh trang hon nhan</label><select class="form-select"><option>Doc than</option><option>Da ket hon</option></select></div>
+    </div>
+    <div class="mt-3 d-flex justify-content-between"><a class="btn btn-light" asp-page="/Public/RegisterKocStep1">Quay lai</a><a class="btn-x btn-orange text-decoration-none" asp-page="/Public/RegisterKocStep21">Tiep tuc</a></div>
+  </div>
+</div>

@@ -1,0 +1,26 @@
+# .NET
+**/bin/
+**/obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio / VS Code
+.vs/
+.vscode/
+
+# Logs
+*.log
+
+# Flutter / Dart
+**/.dart_tool/
+**/.packages
+**/build/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.metadata
+
+# OS
+Thumbs.db
+.DS_Store

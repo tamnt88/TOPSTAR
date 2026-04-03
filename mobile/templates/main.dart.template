@@ -1,0 +1,71 @@
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'env.dart';
+
+void main() {
+  runApp(const TopstarKocApp());
+}
+
+class TopstarKocApp extends StatelessWidget {
+  const TopstarKocApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Topstar KOC',
+      theme: ThemeData(colorSchemeSeed: Colors.blue, useMaterial3: true),
+      home: const HomePage(),
+    );
+  }
+}
+
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  String _status = 'Checking API connection...';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPlatformInfo();
+  }
+
+  Future<void> _loadPlatformInfo() async {
+    final uri = Uri.parse('${AppEnv.apiBaseUrl}/api/v1/system/platform-info');
+    try {
+      final response = await http.get(uri);
+      if (response.statusCode != 200) {
+        setState(() {
+          _status = 'API error ${response.statusCode}: ${response.body}';
+        });
+        return;
+      }
+
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      setState(() {
+        _status = 'Connected to API\\nProject: ${json['projectName']}\\nEnvironment: ${json['environment']}\\nUTC: ${json['utcNow']}';
+      });
+    } catch (e) {
+      setState(() {
+        _status = 'Connection failed: $e';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Topstar KOC')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Text(_status),
+      ),
+    );
+  }
+}

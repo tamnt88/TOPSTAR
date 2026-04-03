@@ -1,0 +1,178 @@
+﻿@page "/"
+@model Topstar.Web.Pages.IndexModel
+@{
+    ViewData["Title"] = "TopStar - Trang chủ";
+}
+
+<div class="landing-home">
+    <section class="landing-hero py-5">
+        <div class="container">
+            <div class="row align-items-center g-4">
+                <div class="col-lg-6">
+                    <span class="landing-pill"><i class="fi-rr-arrow-alt-circle-right"></i> Khởi động sự nghiệp KOC ngay hôm nay</span>
+                    <h1 class="landing-title mt-3">Bệ phóng KOC<br><span>Từ đam mê đến thu nhập chuyên nghiệp</span></h1>
+                    <p class="landing-desc mt-3">Tham gia cộng đồng KOC hàng đầu Việt Nam. Được đào tạo bài bản, kết nối với thương hiệu lớn, và phát triển sự nghiệp bền vững.</p>
+                    <div class="d-flex gap-2 mt-4 flex-wrap">
+                        <a asp-page="/Public/RegisterKocStep1" class="btn landing-btn-primary">Đăng ký trở thành KOC</a>
+                        <a asp-page="/Public/Academy" class="btn landing-btn-outline">Tìm hiểu chương trình</a>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="landing-photo-wrap">
+                        <div class="swiper hero-banner-swiper">
+                            <div class="swiper-wrapper">
+                                <div class="swiper-slide">
+                                    <img src="~/images/banner/banner-1.webp" alt="Banner 1" class="img-fluid landing-photo" />
+                                </div>
+                                <div class="swiper-slide">
+                                    <img src="~/images/banner/2.jpg" alt="Banner 2" class="img-fluid landing-photo" />
+                                </div>
+                                <div class="swiper-slide">
+                                    <img src="~/images/banner/3.jpg" alt="Banner 3" class="img-fluid landing-photo" />
+                                </div>
+                                <div class="swiper-slide">
+                                    <img src="~/images/banner/4.jpg" alt="Banner 4" class="img-fluid landing-photo" />
+                                </div>
+                            </div>
+                            <div class="swiper-pagination hero-banner-pagination"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="landing-section py-5">
+        <div class="container">
+            <h2 class="landing-section-title text-center">Tại sao chọn chúng tôi?</h2>
+            <p class="text-center text-muted mb-4">Đã có hơn 10.000 KOC tin tưởng</p>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="landing-card h-100">
+                        <div class="landing-icon"><i class="fi-rr-briefcase"></i></div>
+                        <h3>Nguồn Job ổn định</h3>
+                        <p>Kết nối trực tiếp với hơn 200+ thương hiệu lớn. Thu nhập bình quân KOC nhận 15-20 triệu đ/tháng.</p>
+                        <ul>
+                            <li>Campaign liên tục từ các brand</li>
+                            <li>Phù hợp với mọi quy mô follower</li>
+                            <li>Thanh toán đúng hạn 100%</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="landing-card h-100">
+                        <div class="landing-icon"><i class="fi-rr-book"></i></div>
+                        <h3>Đào tạo chuyên sâu</h3>
+                        <p>Lộ trình đào tạo từ cơ bản đến nâng cao, trực tiếp bởi top KOC và các chuyên gia 5+ năm trong ngành.</p>
+                        <ul>
+                            <li>Kỹ năng content và storytelling</li>
+                            <li>Xây dựng personal branding</li>
+                            <li>Tối ưu doanh thu và engagement</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="landing-card h-100">
+                        <div class="landing-icon"><i class="fi-rr-shield-check"></i></div>
+                        <h3>Quản lý & Bảo vệ</h3>
+                        <p>Đội ngũ pháp lý và quản lý chuyên nghiệp bảo vệ quyền lợi của bạn, hỗ trợ 24/7 trong suốt hành trình.</p>
+                        <ul>
+                            <li>Hợp đồng rõ ràng, minh bạch</li>
+                            <li>Tư vấn chiến lược phát triển</li>
+                            <li>Hỗ trợ xử lý khủng hoảng nhanh</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="landing-band py-5">
+        <div class="container">
+            <p class="landing-eyebrow text-center">ĐỐI TÁC TIN CẬY</p>
+            <h2 class="landing-section-title text-center">Được tin dùng bởi các thương hiệu hàng đầu</h2>
+            <p class="text-center text-muted mb-4">Hơn 1.000+ thương hiệu đã thành công với KOC Platform</p>
+            <div class="landing-brands d-grid gap-2">
+                <div>Shopee</div><div>Lazada</div><div>Grab</div><div>TikTok</div><div>Samsung</div><div>Apple</div>
+            </div>
+            <div class="text-center mt-3"><a href="#" class="landing-link">Xem danh sách đối tác & case studies <i class="fa-solid fa-arrow-right"></i></a></div>
+            <hr class="my-4" />
+            <div class="row text-center">
+                <div class="col-6 col-md-3"><div class="landing-stat">1,000+</div><small class="text-muted">THƯƠNG HIỆU</small></div>
+                <div class="col-6 col-md-3"><div class="landing-stat">5,000+</div><small class="text-muted">KOCs</small></div>
+                <div class="col-6 col-md-3"><div class="landing-stat">15,000+</div><small class="text-muted">CHIẾN DỊCH</small></div>
+                <div class="col-6 col-md-3"><div class="landing-stat">98%</div><small class="text-muted">HÀI LÒNG</small></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="landing-section py-5">
+        <div class="container">
+            <p class="landing-eyebrow text-center">KOC CỦA THÁNG</p>
+            <h2 class="landing-section-title text-center">Gương mặt tiêu biểu</h2>
+            <p class="text-center text-muted mb-4">Những câu chuyện thành công truyền cảm hứng</p>
+
+            <div class="swiper creator-swiper">
+                <div class="swiper-wrapper">
+                    <div class="swiper-slide">
+                        <article class="creator-card">
+                            <div class="creator-media"></div>
+                            <div class="p-3">
+                                <h3>Minh Anh</h3>
+                                <p class="mb-1 text-muted"><i class="fa-regular fa-user"></i> 125K followers</p>
+                                <p class="mb-0 text-success">+ 12.500.000 đ (VNĐ)</p>
+                            </div>
+                        </article>
+                    </div>
+                    <div class="swiper-slide">
+                        <article class="creator-card">
+                            <div class="creator-media creator-media-2"></div>
+                            <div class="p-3">
+                                <h3>Bảo Trâm</h3>
+                                <p class="mb-1 text-muted"><i class="fa-regular fa-user"></i> 210K followers</p>
+                                <p class="mb-0 text-success">+ 18.000.000 đ (VNĐ)</p>
+                            </div>
+                        </article>
+                    </div>
+                    <div class="swiper-slide">
+                        <article class="creator-card">
+                            <div class="creator-media creator-media-3"></div>
+                            <div class="p-3">
+                                <h3>Quang Huy</h3>
+                                <p class="mb-1 text-muted"><i class="fa-regular fa-user"></i> 156K followers</p>
+                                <p class="mb-0 text-success">+ 15.800.000 đ (VNĐ)</p>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+                <div class="swiper-pagination mt-3"></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="landing-cta py-5">
+        <div class="container text-center text-white">
+            <h2 class="landing-cta-title">Sẵn sàng bắt đầu hành trình KOC chuyên nghiệp?</h2>
+            <p class="mb-4">Tham gia cùng hơn 10.000 KOC đang xây dựng sự nghiệp bền vững</p>
+            <div class="d-flex justify-content-center gap-2 flex-wrap">
+                <a asp-page="/Public/RegisterKocStep1" class="btn landing-btn-light">Đăng ký ngay</a>
+                <a asp-page="/Public/Academy" class="btn landing-btn-dark">Xem chương trình đào tạo</a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="landing-footer py-4">
+        <div class="container">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <h5 class="mb-2">TopStar</h5>
+                    <p class="mb-0">Nền tảng quản lý và phát triển KOC chuyên nghiệp hàng đầu Việt Nam.</p>
+                </div>
+                <div class="col-md-2"><h6>Sản phẩm</h6><ul class="list-unstyled mb-0"><li>Học viện KOC</li><li>Tìm việc KOC</li><li>Công cụ phân tích</li></ul></div>
+                <div class="col-md-2"><h6>Công ty</h6><ul class="list-unstyled mb-0"><li>Về chúng tôi</li><li>Đối tác</li><li>Liên hệ</li></ul></div>
+                <div class="col-md-2"><h6>Pháp lý</h6><ul class="list-unstyled mb-0"><li>Điều khoản sử dụng</li><li>Chính sách bảo mật</li><li>Hợp đồng KOC</li></ul></div>
+            </div>
+            <div class="text-center mt-3 pt-3 border-top border-secondary-subtle">© 2024 Bệ phóng KOC. All rights reserved.</div>
+        </div>
+    </footer>
+</div>

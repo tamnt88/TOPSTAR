@@ -1,0 +1,88 @@
+﻿@page
+@{ ViewData["Title"] = "Homepage"; }
+<div class="home-page">
+  <section class="home-hero">
+    <div class="page-wrap home-hero-grid">
+      <div>
+        <span class="home-chip">Khoi dong su nghiep KOC ngay hom nay</span>
+        <h1 class="home-title">Be phong KOC<br /><span>Tu dam me den thu nhap chuyen nghiep</span></h1>
+        <p class="home-subtitle">Tham gia cong dong KOC hang dau Viet Nam. Duoc dao tao bai ban, ket noi voi thuong hieu lon va phat trien su nghiep ben vung.</p>
+        <div class="d-flex gap-2 flex-wrap">
+          <a class="btn-x btn-orange text-decoration-none" asp-page="/Public/RegisterKocStep1">Dang ky tro thanh KOC</a>
+          <a class="btn-x home-btn-light text-decoration-none" asp-page="/Public/Academy">Tim hieu chuong trinh</a>
+        </div>
+      </div>
+      <div class="home-hero-media">
+        <div class="home-photo-wrap">
+          <img class="home-photo-main" src="~/layout/public/homepage.png" alt="KOC creator" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="page-wrap home-section">
+    <h2 class="home-heading text-center">Tai sao chon chung toi?</h2>
+    <p class="text-center text-muted mb-4">Boi vi da co hon 10,000 KOC tin tuong</p>
+    <div class="home-card-grid">
+      <article class="home-feature-card">
+        <h3>Nguon Job on dinh</h3>
+        <p>Ket noi truc tiep voi hon 200+ thuong hieu lon. Trung binh moi KOC nhan 15-20 job/thang.</p>
+      </article>
+      <article class="home-feature-card">
+        <h3>Dao tao chuyen sau</h3>
+        <p>Lo trinh dao tao tu co ban den nang cao. Tu tiep boi Top KOCs va kinh nghiem 5+ nam trong nganh.</p>
+      </article>
+      <article class="home-feature-card">
+        <h3>Quan ly va Bao ve</h3>
+        <p>Doi ngu phap ly va quan ly chuyen nghiep bao ve quyen loi cua ban, ho tro 24/7.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="home-band">
+    <div class="page-wrap">
+      <h2 class="home-heading text-center">Duoc tin dung boi cac thuong hieu hang dau</h2>
+      <div class="home-brand-row">
+        <span>Shopee</span><span>Lazada</span><span>Grab</span><span>TikTok</span><span>Samsung</span><span>Apple</span>
+      </div>
+      <div class="home-stats">
+        <div><strong>1,000+</strong><small>Thuong hieu</small></div>
+        <div><strong>5,000+</strong><small>KOCs</small></div>
+        <div><strong>15,000+</strong><small>Chien dich</small></div>
+        <div><strong>98%</strong><small>Hai long</small></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="page-wrap home-section">
+    <h2 class="home-heading text-center">Guong mat tieu bieu</h2>
+    <div class="home-creator-grid">
+      <article class="home-creator-card"><h3>Minh Anh</h3><p>125K followers</p></article>
+      <article class="home-creator-card"><h3>Bao Tram</h3><p>210K followers</p></article>
+      <article class="home-creator-card"><h3>Quang Huy</h3><p>156K followers</p></article>
+    </div>
+  </section>
+
+  <section class="home-cta">
+    <div class="page-wrap text-center">
+      <h2>San sang bat dau hanh trinh KOC chuyen nghiep?</h2>
+      <p>Tham gia cung hon 10,000 KOC dang xay dung su nghiep ben vung.</p>
+      <div class="d-flex justify-content-center gap-2 flex-wrap">
+        <a class="btn-x home-btn-light text-decoration-none" asp-page="/Public/RegisterKocStep1">Dang ky ngay</a>
+        <a class="btn-x btn-orange text-decoration-none" asp-page="/Public/Academy">Xem chuong trinh dao tao</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="home-footer">
+    <div class="page-wrap home-footer-grid">
+      <div>
+        <strong>TopStar</strong>
+        <p class="mb-0">Nen tang quan ly va phat trien KOC chuyen nghiep hang dau Viet Nam.</p>
+      </div>
+      <div><strong>San pham</strong><p>Hoc vien KOC<br />Tim viec KOC<br />Cong cu phan tich</p></div>
+      <div><strong>Cong ty</strong><p>Ve chung toi<br />Doi tac<br />Lien he</p></div>
+      <div><strong>Phap ly</strong><p>Dieu khoan su dung<br />Chinh sach bao mat<br />Hop dong KOC</p></div>
+    </div>
+  </footer>
+</div>

@@ -1,0 +1,19 @@
+@page
+@{ ViewData["Title"] = "Admin Academy"; }
+<div class="page-wrap card-list">
+  <div class="d-flex justify-content-between align-items-end"><div><h1 class="section-title mb-0">Quan ly Hoc vien KOC</h1><div class="kpi-title">Quan ly khoa hoc, hoc vien va thong ke</div></div><div class="top-nav"><a asp-page="/Admin/Dashboard">Tong quan</a><a asp-page="/Admin/Brands">Brand</a><a class="active" asp-page="/Admin/Academy">Hoc vien</a></div></div>
+  <div class="kpi-grid">
+    <div class="kpi-box"><div class="kpi-title">Tong khoa hoc</div><div class="kpi-value">6</div></div>
+    <div class="kpi-box"><div class="kpi-title">Hoc vien</div><div class="kpi-value">3</div></div>
+    <div class="kpi-box"><div class="kpi-title">Ty le hoan thanh TB</div><div class="kpi-value">73%</div></div>
+    <div class="kpi-box"><div class="kpi-title">Danh gia TB</div><div class="kpi-value">4.8</div></div>
+  </div>
+  <div class="card-x">
+    <div class="grid-2">
+      <div class="list-row"><div><b>Khoi dau voi KOC Marketing</b><div class="kpi-title">145 hoc vien • 78%</div></div><button class="btn-x btn-orange">Xem</button></div>
+      <div class="list-row"><div><b>Social Media Analytics</b><div class="kpi-title">76 hoc vien • 82%</div></div><button class="btn-x btn-orange">Xem</button></div>
+      <div class="list-row"><div><b>Brand Collaboration Mastery</b><div class="kpi-title">52 hoc vien • 71%</div></div><button class="btn-x btn-orange">Xem</button></div>
+      <div class="list-row"><div><b>Video Production cho KOC</b><div class="kpi-title">123 hoc vien • 88%</div></div><button class="btn-x btn-orange">Xem</button></div>
+    </div>
+  </div>
+</div>

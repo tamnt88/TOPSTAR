@@ -1,0 +1,6 @@
+@Topstar.Api_HostAddress = http://localhost:5015
+
+GET {{Topstar.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
