@@ -1,16 +1,80 @@
-@page
-@{ ViewData["Title"] = "Register KOC - Step 3"; }
-<div class="page-wrap card-list">
-  <h1 class="section-title">Dang ky KOC - Buoc 5/5</h1>
-  <div class="card-x">
-    <div class="kpi-title mb-2">Dieu kien nhan job va xac nhan</div>
-    <div class="row g-3">
-      <div class="col-md-4"><label class="form-label">Ngan sach toi thieu (VND)</label><input class="form-control" placeholder="1500000" /></div>
-      <div class="col-md-4"><label class="form-label">Khu vuc uu tien</label><input class="form-control" placeholder="HCM, Binh Duong" /></div>
-      <div class="col-md-4"><label class="form-label">Lich ranh</label><input class="form-control" placeholder="Sau 18:00, cuoi tuan" /></div>
-      <div class="col-md-12"><label class="form-label">Ghi chu bo sung</label><textarea class="form-control" rows="3" placeholder="Thong tin them neu co"></textarea></div>
+@page "/dang-ky-koc/buoc-3"
+@{
+    ViewData["Title"] = "Đăng ký KOC - Bước 3";
+}
+
+<section class="koc-register-page py-4 py-md-5">
+    <div class="container">
+        <a asp-page="/Public/RegisterKocStep2" class="koc-back-link"><i class="fa-solid fa-arrow-left"></i>Quay lại</a>
+
+        <div class="koc-register-card mt-3 mt-md-2">
+            <div class="koc-register-head text-center">
+                <span class="koc-register-avatar"><i class="fa-regular fa-user"></i></span>
+                <h1>Đăng ký KOC</h1>
+                <p>Tạo tài khoản và bắt đầu sự nghiệp KOC</p>
+            </div>
+
+            <div class="koc-stepper mb-4">
+                <div class="koc-step done">
+                    <span><i class="fa-solid fa-check"></i></span>
+                    <small>Thông tin cơ bản</small>
+                </div>
+                <div class="koc-step-line active"></div>
+                <div class="koc-step done">
+                    <span><i class="fa-solid fa-check"></i></span>
+                    <small>Mạng xã hội</small>
+                </div>
+                <div class="koc-step-line active"></div>
+                <div class="koc-step active">
+                    <span>3</span>
+                    <small>Thông tin cá nhân</small>
+                </div>
+            </div>
+
+            <h2 class="koc-form-title">Thông tin cá nhân</h2>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Cân nặng (kg)</label>
+                    <input class="form-control" placeholder="VD: 50" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Chiều cao (cm)</label>
+                    <input class="form-control" placeholder="VD: 160" />
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Số đo 3 vòng (cm)</label>
+                    <input class="form-control" placeholder="VD: 80-60-85" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Tình trạng hôn nhân</label>
+                    <select class="form-select">
+                        <option selected>Chọn tình trạng</option>
+                        <option>Độc thân</option>
+                        <option>Đã kết hôn</option>
+                        <option>Khác</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Có con chưa?</label>
+                    <select class="form-select">
+                        <option selected>Chọn</option>
+                        <option>Chưa</option>
+                        <option>Đã có</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Bảng giá dịch vụ (VNĐ/post)</label>
+                    <input class="form-control" placeholder="VD: 500,000" />
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mt-4">
+                <a asp-page="/Public/RegisterKocStep2" class="btn koc-btn-outline"><i class="fa-solid fa-arrow-left"></i>Quay lại</a>
+                <button class="btn koc-btn-primary flex-grow-1">Hoàn tất đăng ký</button>
+            </div>
+
+            <p class="koc-login-hint">Đã có tài khoản? <a asp-page="/Public/Login">Đăng nhập ngay</a></p>
+        </div>
     </div>
-    <div class="alert alert-success mt-3 mb-0">Ho so da san sang de gui duyet.</div>
-    <div class="mt-3 d-flex justify-content-between"><a class="btn btn-light" asp-page="/Public/RegisterKocStep22">Quay lai</a><button class="btn-x btn-orange">Gui duyet ho so</button></div>
-  </div>
-</div>
+</section>

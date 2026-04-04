@@ -1860,6 +1860,202 @@ h1, h2, h3, h4, h5, h6 {
   .login-main-content { padding: 24px 20px; }
 }
 
+/* ===== KOC Register Steps ===== */
+.koc-register-page {
+  margin: -16px;
+  min-height: calc(100vh - 130px);
+  background:
+    radial-gradient(circle at 7% 20%, rgba(255, 190, 80, .30), transparent 8%),
+    radial-gradient(circle at 80% 45%, rgba(255, 160, 40, .26), transparent 9%),
+    radial-gradient(circle at 25% 70%, rgba(255, 206, 132, .24), transparent 8%),
+    linear-gradient(180deg, #fffdf8 0%, #fcf5e7 100%);
+}
+
+.koc-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: #5b4a3d;
+  font-weight: 600;
+  background: rgba(255, 255, 255, .75);
+  border: 1px solid #efd8ba;
+  border-radius: 999px;
+  padding: 10px 16px;
+}
+
+.koc-register-card {
+  max-width: 950px;
+  margin: 0 auto;
+  border: 1px solid #ead4b6;
+  border-radius: 26px;
+  background: linear-gradient(180deg, #fffdfa 0%, #fff8ed 100%);
+  box-shadow: 0 24px 48px rgba(120, 79, 39, .16);
+  padding: 24px;
+}
+
+.koc-register-head .koc-register-avatar {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 10px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #f7aa26 0%, #de7d03 100%);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  box-shadow: 0 12px 24px rgba(218, 129, 16, .3);
+}
+
+.koc-register-head h1 {
+  font-size: clamp(2rem, 3.5vw, 3rem);
+  margin-bottom: 6px;
+}
+
+.koc-register-head p {
+  color: #6d5a4a;
+  margin-bottom: 18px;
+}
+
+.koc-stepper {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 10px;
+}
+
+.koc-step {
+  width: 160px;
+  text-align: center;
+}
+
+.koc-step span {
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  background: #e7ebf0;
+  color: #67717d;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.koc-step small {
+  display: block;
+  margin-top: 8px;
+  color: #667182;
+  font-size: .88rem;
+}
+
+.koc-step.active span,
+.koc-step.done span {
+  background: linear-gradient(180deg, #f7a722 0%, #de7a00 100%);
+  color: #fff;
+}
+
+.koc-step.active small,
+.koc-step.done small {
+  color: #4d5663;
+}
+
+.koc-step-line {
+  width: 120px;
+  height: 4px;
+  margin-top: 20px;
+  border-radius: 999px;
+  background: #e3e7eb;
+}
+
+.koc-step-line.active {
+  background: linear-gradient(90deg, #ff7f00 0%, #f2aa17 100%);
+}
+
+.koc-form-title {
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.koc-register-card .form-label {
+  font-weight: 600;
+  color: #514338;
+}
+
+.koc-register-card .form-control,
+.koc-register-card .form-select {
+  border: 1px solid #dfc5a1;
+  border-radius: 14px;
+  min-height: 48px;
+  background: #fff;
+}
+
+.koc-register-card .form-control:focus,
+.koc-register-card .form-select:focus {
+  border-color: #d58b33;
+  box-shadow: 0 0 0 .2rem rgba(213, 139, 51, .12);
+}
+
+.koc-social-box {
+  background: #f7f0ff;
+  border: 1px solid #e7d6ff;
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.koc-social-box:nth-of-type(2) {
+  background: #edf4ff;
+  border-color: #d8e7ff;
+}
+
+.koc-social-box:nth-of-type(3) {
+  background: #fff2f7;
+  border-color: #ffd7e6;
+}
+
+.koc-social-box h3 {
+  font-size: 1.4rem;
+  margin-bottom: 8px;
+}
+
+.koc-btn-primary {
+  border: 0;
+  border-radius: 14px;
+  min-height: 48px;
+  color: #fff;
+  font-weight: 700;
+  background: linear-gradient(90deg, #ff6b00 0%, #f5b300 100%);
+}
+
+.koc-btn-outline {
+  border: 1px solid #e17f1a;
+  border-radius: 14px;
+  min-height: 48px;
+  color: #e16f00;
+  font-weight: 700;
+  background: #fff;
+}
+
+.koc-login-hint {
+  text-align: center;
+  margin: 16px 0 4px;
+  color: #765946;
+}
+
+.koc-login-hint a {
+  color: #eb6f00;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+@media (max-width: 991.98px) {
+  .koc-register-page { margin: -10px; }
+  .koc-register-card { padding: 18px; border-radius: 18px; }
+  .koc-step { width: 95px; }
+  .koc-step small { font-size: .75rem; }
+  .koc-step-line { width: 34px; }
+}
+
 /* ===== Register Page ===== */
 .register-shell {
   background:
