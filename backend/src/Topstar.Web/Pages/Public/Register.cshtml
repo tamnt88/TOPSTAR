@@ -1,0 +1,45 @@
+﻿@page "/dang-ky"
+@model Topstar.Web.Pages.Public.RegisterModel
+@{
+    ViewData["Title"] = "Chọn loại tài khoản";
+    ViewData["Description"] = "Chọn hướng đăng ký phù hợp: KOC hoặc Brand.";
+    ViewData["Keywords"] = "đăng ký KOC, đăng ký Brand, TopStar";
+}
+
+<section class="login-page py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-9 col-xl-8">
+                <div class="login-shell register-shell p-4 p-md-5">
+                    <h1 class="mb-2" style="font-family:'Saira Stencil',sans-serif;">Chọn kiểu tài khoản</h1>
+                    <p class="text-muted mb-4">Mỗi nhóm có hành trình đăng ký khác nhau để phù hợp mục tiêu sử dụng.</p>
+
+                    <div class="row g-3 register-choice-grid">
+                        <div class="col-md-6">
+                            <a asp-page="/Public/RegisterKocStep1" class="register-choice-card register-choice-link">
+                                <span class="register-choice-icon"><i class="fa-solid fa-user-check"></i></span>
+                                <span class="register-choice-text">
+                                    <strong>Tôi là KOC/KOL</strong>
+                                    <small>Tạo hồ sơ cá nhân, social, kỹ năng và nhận job từ brand.</small>
+                                </span>
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a asp-page="/Public/RegisterBrand" class="register-choice-card register-choice-link">
+                                <span class="register-choice-icon"><i class="fa-solid fa-building"></i></span>
+                                <span class="register-choice-text">
+                                    <strong>Tôi là Brand/Doanh nghiệp</strong>
+                                    <small>Tạo tài khoản doanh nghiệp để triển khai chiến dịch KOC.</small>
+                                </span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        Đã có tài khoản? <a asp-page="/Public/Login" class="login-link">Đăng nhập ngay</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

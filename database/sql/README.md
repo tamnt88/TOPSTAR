@@ -1,8 +1,10 @@
-# Topstar SQL Scripts
+﻿# Topstar SQL Scripts
 
 Run order:
 1. `00_create_topstar_v1.sql`
 2. `01_seed_topstar_v1.sql`
+3. `02_create_topstar_v2_auth_rbac.sql`
+4. `03_seed_topstar_v2_auth_rbac.sql`
 
 Target:
 - SQL Server 2022
@@ -10,20 +12,25 @@ Target:
 
 Notes:
 - `00_create_topstar_v1.sql` includes `CREATE DATABASE TopstarDb` (if missing).
-- Scripts create tables, constraints, indexes, and sample data.
-- This is v1 baseline for Website-first development (Admin + Brand + KOC core flow).
-- Wallet/Billing tables are intentionally deferred to next phase.
-- All tables include common columns: `CreatedAtUtc`, `UpdatedAtUtc`.
+- v1 creates campaign/profile core tables for Admin + Brand + KOC.
+- v2 extends account/auth/permission/menu/dashboard capabilities.
+
+v2 highlights:
+- Keep single `Users` table for all roles (`ADMIN`, `BRAND`, `KOC`).
+- Add RBAC + override permissions:
+  - `Permissions`, `RolePermissions`, `UserPermissions`.
+- Add role/user-based menu and dashboard configs:
+  - `Menus`, `RoleMenus`, `UserMenus`
+  - `DashboardWidgets`, `RoleDashboardConfigs`, `UserDashboardConfigs`
+- Add admin profile table:
+  - `AdminProfiles`
+- Add full auth flow support for KOC/Brand/Admin:
+  - `AuthSessions` (session + refresh token)
+  - `PasswordResetTokens` (forgot/reset password)
+  - `AuthEvents` (register/login/forgot/reset audit)
+  - `UserDevices` (device fingerprint + user agent + IP + geo)
+
+General conventions:
+- All tables use `CreatedAtUtc`, `UpdatedAtUtc`.
 - `ViewCount` and `IsVisible` are applied to content-facing tables only.
-- KOC profile is extended for onboarding/layout coverage:
-  - `KocBodyProfiles`, `KocChildren`
-  - `KocSocialAccounts`
-  - `KocCategories`, `KocProfileCategories`
-  - `KocExperiences`
-  - `KocProductionCapabilities`
-  - `KocJobPreferences`
-  - `KocPortfolios`
-- Social performance tracking tables:
-  - `SubmissionPosts`: links submitted by KOC (1 submission can have many links).
-  - `PostMetricSnapshots`: time-series metrics per link (views/likes/comments/shares/...).
-  - `CampaignKocDailyMetrics`: daily aggregate KPI per campaign x KOC for dashboard/report.
+- Script v2 is additive and safe to run after v1.

@@ -1,0 +1,78 @@
+﻿@page "/dang-ky-brand"
+@model Topstar.Web.Pages.Public.RegisterBrandModel
+@{
+    ViewData["Title"] = "Đăng ký Brand";
+    ViewData["Description"] = "Tạo tài khoản doanh nghiệp để triển khai chiến dịch KOC trên TopStar.";
+    ViewData["Keywords"] = "đăng ký brand, tài khoản doanh nghiệp, topstar";
+}
+
+<section class="login-page py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-xl-7">
+                <div class="login-shell register-shell p-4 p-md-5">
+                    <h1 class="mb-2" style="font-family:'Saira Stencil',sans-serif;">Đăng ký tài khoản Brand</h1>
+                    <p class="text-muted mb-4">Tạo tài khoản doanh nghiệp để bắt đầu chiến dịch KOC chuyên nghiệp.</p>
+
+                    <form method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+                        @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+                        {
+                            <div class="alert alert-danger py-2">@Model.ErrorMessage</div>
+                        }
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="Input.FullName" class="form-label">Họ và tên người đại diện</label>
+                                <input asp-for="Input.FullName" class="form-control" placeholder="Nguyễn Văn A" />
+                                <span asp-validation-for="Input.FullName" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Input.CompanyName" class="form-label">Tên công ty</label>
+                                <input asp-for="Input.CompanyName" class="form-control" placeholder="TopStar Media" />
+                                <span asp-validation-for="Input.CompanyName" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Input.Email" class="form-label">Email</label>
+                                <input asp-for="Input.Email" class="form-control" placeholder="brand@email.com" />
+                                <span asp-validation-for="Input.Email" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Input.Phone" class="form-label">Số điện thoại tài khoản</label>
+                                <input asp-for="Input.Phone" class="form-control" placeholder="09xxxxxxxx" />
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Input.ContactPhone" class="form-label">SĐT liên hệ làm việc</label>
+                                <input asp-for="Input.ContactPhone" class="form-control" placeholder="09xxxxxxxx" />
+                                <span asp-validation-for="Input.ContactPhone" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Input.Password" class="form-label">Mật khẩu</label>
+                                <input asp-for="Input.Password" type="password" class="form-control" placeholder="Tối thiểu 8 ký tự" />
+                                <span asp-validation-for="Input.Password" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Input.ConfirmPassword" class="form-label">Xác nhận mật khẩu</label>
+                                <input asp-for="Input.ConfirmPassword" type="password" class="form-control" placeholder="Nhập lại mật khẩu" />
+                                <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn login-submit-btn w-100 mt-4">Đăng ký Brand ngay</button>
+
+                        <div class="text-center mt-3">
+                            Cần luồng KOC? <a asp-page="/Public/RegisterKocStep1" class="login-link">Đăng ký KOC</a>
+                        </div>
+                        <div class="text-center mt-2">
+                            Đã có tài khoản? <a asp-page="/Public/Login" class="login-link">Đăng nhập</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

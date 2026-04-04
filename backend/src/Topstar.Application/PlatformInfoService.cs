@@ -1,4 +1,4 @@
-namespace Topstar.Application;
+﻿namespace Topstar.Application;
 
 public interface IPlatformInfoService
 {
@@ -9,8 +9,5 @@ public sealed record PlatformInfo(string ProjectName, string Environment, DateTi
 
 public sealed class PlatformInfoService : IPlatformInfoService
 {
-    public PlatformInfo GetInfo()
-    {
-        return new PlatformInfo("Topstar", "SharedBusinessLogic", DateTime.UtcNow);
-    }
+    public PlatformInfo GetInfo() => new("Topstar", "SharedBusinessLogic", DateTime.UtcNow);
 }

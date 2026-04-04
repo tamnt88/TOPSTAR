@@ -1,39 +1,107 @@
-@page
-@{ ViewData["Title"] = "Brand Public"; }
-<div class="page-wrap card-list">
-  <section class="public-light">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <span class="badge-x badge-blue">Dang tin cay boi 500+ thuong hieu</span>
-      <div class="d-flex gap-2">
-        <a class="btn btn-sm btn-outline-primary" asp-page="/Public/RegisterKocStep1">Dang ky KOC</a>
-        <button class="btn btn-sm btn-primary">Xem goi KOC</button>
-      </div>
-    </div>
-    <h1 class="section-title">Ket noi voi hang ngan KOC trong vai phut</h1>
-    <p class="text-muted">Nen tang quan ly chien dich KOC Marketing toan dien cho doanh nghiep.</p>
-    <div class="d-flex gap-2 mt-2">
-      <button class="btn-x btn-blue">Mua goi KOC ngay</button>
-      <button class="btn-x" style="background:#fff;border:1px solid #d1d5db">Dang ky mien phi</button>
-    </div>
-  </section>
+﻿@page "/danh-cho-brand"
+@{
+    ViewData["Title"] = "Dành cho Brand";
+    ViewData["Description"] = "Nền tảng kết nối Brand với hàng ngàn KOC, triển khai chiến dịch nhanh chóng và theo dõi hiệu quả realtime.";
+    ViewData["Keywords"] = "brand, KOC, chiến dịch KOC, marketing, TopStar";
+}
 
-  <section class="card-x public-block">
-    <h2 class="section-title">Tai sao chon chung toi?</h2>
-    <div class="kpi-grid">
-      <div class="kpi-box"><div class="fw-bold">Hang ngan KOC chat luong</div><div class="kpi-title">Data phan khuc theo nganh</div></div>
-      <div class="kpi-box"><div class="fw-bold">Trien khai nhanh</div><div class="kpi-title">Tao campaign trong vai phut</div></div>
-      <div class="kpi-box"><div class="fw-bold">Targeting chinh xac</div><div class="kpi-title">Goi y KOC phu hop muc tieu</div></div>
-      <div class="kpi-box"><div class="fw-bold">Bao cao chi tiet</div><div class="kpi-title">Theo doi metrics theo bai dang</div></div>
-    </div>
-  </section>
+<div class="brand-page">
+    <section class="brand-hero section-flow reveal-up py-5">
+        <div class="container">
+            <div class="brand-hero-content text-center mt-3 flow-item">
+                <p class="brand-eyebrow"><i class="fa-solid fa-shield-heart"></i> Đáng tin cậy bởi 500+ thương hiệu</p>
+                <h1>Kết nối với hàng ngàn KOC<br><span>trong vài phút</span></h1>
+                <p class="mx-auto">Nền tảng quản lý chiến dịch KOC Marketing toàn diện. Từ chọn gói, tạo chiến dịch đến theo dõi hiệu quả - tất cả trong một hệ thống.</p>
+                <div class="d-flex justify-content-center gap-2 flex-wrap mt-4">
+                    <a asp-page="/Public/BrandPackages" class="brand-btn-primary">Mua gói KOC ngay <i class="fa-solid fa-arrow-right"></i></a>
+                    <a asp-page="/Public/RegisterKocStep1" class="brand-btn-secondary">Đăng ký miễn phí</a>
+                </div>
+            </div>
+        </div>
+    </section>
 
-  <section class="card-x public-block">
-    <h2 class="section-title">Quy trinh lam viec don gian</h2>
-    <div class="kpi-grid">
-      <div class="kpi-box"><span class="badge-x badge-blue">1</span><div class="fw-bold mt-2">Chon goi KOC</div></div>
-      <div class="kpi-box"><span class="badge-x badge-blue">2</span><div class="fw-bold mt-2">Tao chien dich</div></div>
-      <div class="kpi-box"><span class="badge-x badge-blue">3</span><div class="fw-bold mt-2">Phan bo KOC</div></div>
-      <div class="kpi-box"><span class="badge-x badge-blue">4</span><div class="fw-bold mt-2">Theo doi va hoan thanh</div></div>
-    </div>
-  </section>
+    <section class="brand-section section-flow reveal-up py-5">
+        <div class="container">
+            <h2 class="brand-section-title text-center flow-item">Tại sao chọn chúng tôi?</h2>
+            <p class="brand-section-sub text-center flow-item">Giải pháp KOC Marketing toàn diện cho doanh nghiệp</p>
+            <div class="row g-4 mt-2">
+                <div class="col-md-6 col-xl-3">
+                    <article class="brand-feature-card flow-item">
+                        <span class="feature-icon"><i class="fa-solid fa-users"></i></span>
+                        <h3>Hàng ngàn KOC chất lượng</h3>
+                        <p>Tiếp cận mạng lưới KOC đa dạng với đầy đủ phân khúc và ngành hàng.</p>
+                    </article>
+                </div>
+                <div class="col-md-6 col-xl-3">
+                    <article class="brand-feature-card flow-item">
+                        <span class="feature-icon"><i class="fa-solid fa-bolt"></i></span>
+                        <h3>Triển khai nhanh chóng</h3>
+                        <p>Từ mua gói đến launching chiến dịch chỉ trong vài phút.</p>
+                    </article>
+                </div>
+                <div class="col-md-6 col-xl-3">
+                    <article class="brand-feature-card flow-item">
+                        <span class="feature-icon"><i class="fa-solid fa-bullseye"></i></span>
+                        <h3>Targeting chính xác</h3>
+                        <p>AI gợi ý KOC phù hợp với mục tiêu và ngành hàng của Brand.</p>
+                    </article>
+                </div>
+                <div class="col-md-6 col-xl-3">
+                    <article class="brand-feature-card flow-item">
+                        <span class="feature-icon"><i class="fa-solid fa-chart-line"></i></span>
+                        <h3>Báo cáo chi tiết</h3>
+                        <p>Theo dõi hiệu quả realtime với dashboard chuyên nghiệp.</p>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="brand-section brand-process section-flow reveal-up py-5">
+        <div class="container">
+            <h2 class="brand-section-title text-center flow-item">Quy trình làm việc đơn giản</h2>
+            <p class="brand-section-sub text-center flow-item">4 bước để hoàn thành chiến dịch KOC Marketing</p>
+            <div class="row g-4 mt-3 align-items-start">
+                <div class="col-md-6 col-xl-3">
+                    <article class="brand-step-card flow-item">
+                        <span class="step-no blue">1</span>
+                        <h3>Chọn gói KOC</h3>
+                        <p>Xem và chọn gói phù hợp với ngân sách và mục tiêu của bạn.</p>
+                    </article>
+                </div>
+                <div class="col-md-6 col-xl-3">
+                    <article class="brand-step-card flow-item">
+                        <span class="step-no purple">2</span>
+                        <h3>Tạo chiến dịch</h3>
+                        <p>Khai báo mục tiêu, timeline và yêu cầu nội dung.</p>
+                    </article>
+                </div>
+                <div class="col-md-6 col-xl-3">
+                    <article class="brand-step-card flow-item">
+                        <span class="step-no green">3</span>
+                        <h3>Phân bổ KOC</h3>
+                        <p>Hệ thống tự động gán hoặc Brand tự chọn KOC từ danh sách đề xuất.</p>
+                    </article>
+                </div>
+                <div class="col-md-6 col-xl-3">
+                    <article class="brand-step-card flow-item">
+                        <span class="step-no red">4</span>
+                        <h3>Theo dõi & hoàn thành</h3>
+                        <p>Tracking tiến độ, duyệt nội dung và nhận báo cáo hiệu quả.</p>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="brand-cta section-flow reveal-up py-5">
+        <div class="container text-center text-white">
+            <h2 class="flow-item">Sẵn sàng bắt đầu?</h2>
+            <p class="flow-item">Tạo chiến dịch KOC Marketing đầu tiên của bạn ngay hôm nay</p>
+            <div class="d-flex justify-content-center gap-2 flex-wrap flow-item">
+                <a asp-page="/Public/BrandPackages" class="brand-btn-white">Xem các gói KOC</a>
+                <a asp-page="/Public/RegisterKocStep1" class="brand-btn-transparent">Đăng ký ngay</a>
+            </div>
+        </div>
+    </section>
 </div>

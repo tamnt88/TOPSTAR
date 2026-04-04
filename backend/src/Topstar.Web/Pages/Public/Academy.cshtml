@@ -1,33 +1,225 @@
-@page
-@{ ViewData["Title"] = "Hoc vien KOC"; }
-<div class="page-wrap card-list">
-  <div class="d-flex justify-content-between align-items-end">
-    <div>
-      <h1 class="section-title mb-0">Hoc vien KOC</h1>
-      <div class="kpi-title">Hoc, Thuc hanh, Nhan viec</div>
-    </div>
-    <a class="btn-x btn-orange text-decoration-none" asp-page="/Public/RegisterKocStep1">Dang ky hoc vien</a>
-  </div>
+﻿@page "/hoc-vien-koc"
+@{
+    ViewData["Title"] = "Học viện KOC";
+    ViewData["Description"] = "Học viện KOC TopStar - lộ trình đào tạo từ Zero đến Hero dành cho KOC chuyên nghiệp tại Việt Nam.";
+    ViewData["Keywords"] = "học viện KOC, khóa học KOC, đào tạo KOC, TopStar";
+}
 
-  <div class="kpi-grid">
-    <div class="kpi-box"><div class="kpi-title">Trinh do hien tai</div><div class="kpi-value">Beginner</div></div>
-    <div class="kpi-box"><div class="kpi-title">Bai hoc hoan thanh</div><div class="kpi-value">8/18</div></div>
-    <div class="kpi-box"><div class="kpi-title">Chung chi</div><div class="kpi-value">0</div></div>
-    <div class="kpi-box"><div class="kpi-title">Diem tich luy</div><div class="kpi-value">120</div></div>
-  </div>
+<div class="academy-page">
+    <section class="academy-hero section-flow reveal-up py-5">
+        <div class="container">
+            <div class="academy-hero-content text-center mt-2 flow-item">
+                <p class="academy-eyebrow mb-2"><i class="fa-solid fa-star"></i> Lộ trình đào tạo bài bản</p>
+                <h1 class="academy-title">Học viện KOC<br><span>Từ Zero đến Hero</span></h1>
+                <p class="academy-subtitle mx-auto">Được đào tạo trực tiếp bởi top KOC/KOL hơn 5 năm kinh nghiệm. Hơn 5.000 học viên đã thành công với lộ trình của chúng tôi.</p>
+            </div>
 
-  <div class="card-x">
-    <h2 class="h5">Khoa hoc dang tham gia</h2>
-    <div class="list-row"><div><b>Content Creation Fundamentals</b><div class="kpi-title">Bai 7: Editing & Post-Production</div></div><div style="width:240px"><div class="progress-x"><span style="width:75%"></span></div></div></div>
-    <div class="list-row"><div><b>Social Media Strategy & Growth</b><div class="kpi-title">Bai 5: Hashtag Strategy & Trends</div></div><div style="width:240px"><div class="progress-x"><span style="width:40%"></span></div></div></div>
-  </div>
+            <div class="row g-3 justify-content-center mt-2">
+                <div class="col-6 col-md-4 col-lg-3">
+                    <div class="academy-stat flow-item">
+                        <div class="academy-stat-value counter-value" data-target="5000" data-suffix="+">0</div>
+                        <div class="academy-stat-label">Học viên thành công</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-4 col-lg-3">
+                    <div class="academy-stat flow-item">
+                        <div class="academy-stat-value counter-value" data-target="95" data-suffix="%">0</div>
+                        <div class="academy-stat-label">Tỷ lệ hoàn thành</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-4 col-lg-3">
+                    <div class="academy-stat flow-item">
+                        <div class="academy-stat-value">4.9/5</div>
+                        <div class="academy-stat-label">Đánh giá trung bình</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-  <div class="card-x">
-    <h2 class="h5">Khoa hoc co ban</h2>
-    <div class="kpi-grid">
-      <div class="kpi-box"><div class="fw-bold">Foundation Hieu ve KOC</div><div class="kpi-title">2 gio � 7 bai</div></div>
-      <div class="kpi-box"><div class="fw-bold">Lam noi dung co ban</div><div class="kpi-title">2 gio � 8 bai</div></div>
-      <div class="kpi-box"><div class="fw-bold">Quy trinh nhan job</div><div class="kpi-title">1 gio � 6 bai</div></div>
-    </div>
-  </div>
+    <section class="academy-section academy-courses section-flow reveal-up py-5">
+        <div class="container">
+            <h2 class="academy-section-title text-center flow-item">Các khóa học chuyên sâu</h2>
+            <p class="academy-section-subtitle text-center flow-item">Chương trình đào tạo toàn diện cho mọi cấp độ</p>
+
+            <div class="row g-4 mt-1">
+                <div class="col-lg-6">
+                    <article class="academy-course-card flow-item">
+                        <div class="academy-course-head">
+                            <span class="academy-course-icon blue"><i class="fa-solid fa-video"></i></span>
+                            <div>
+                                <h3>Kỹ năng Edit Video</h3>
+                                <p><span class="badge-level">Cơ bản</span><span class="badge-time">4 tuần</span></p>
+                            </div>
+                        </div>
+                        <ul>
+                            <li>CapCut Pro</li>
+                            <li>Chuyển cảnh mượt mà</li>
+                            <li>Hiệu ứng trending</li>
+                            <li>Chỉnh màu chuyên nghiệp</li>
+                        </ul>
+                    </article>
+                </div>
+
+                <div class="col-lg-6">
+                    <article class="academy-course-card flow-item">
+                        <div class="academy-course-head">
+                            <span class="academy-course-icon orange"><i class="fa-solid fa-arrow-trend-up"></i></span>
+                            <div>
+                                <h3>Livestream Bán Hàng</h3>
+                                <p><span class="badge-level">Thực chiến</span><span class="badge-time">3 tuần</span></p>
+                            </div>
+                        </div>
+                        <ul>
+                            <li>Kịch bản livestream</li>
+                            <li>Xử lý tình huống</li>
+                            <li>Kỹ năng bán hàng</li>
+                            <li>Tăng tỷ lệ chốt giá</li>
+                        </ul>
+                    </article>
+                </div>
+
+                <div class="col-lg-6">
+                    <article class="academy-course-card flow-item">
+                        <div class="academy-course-head">
+                            <span class="academy-course-icon red"><i class="fa-solid fa-user-astronaut"></i></span>
+                            <div>
+                                <h3>Personal Branding</h3>
+                                <p><span class="badge-level">Nâng cao</span><span class="badge-time">6 tuần</span></p>
+                            </div>
+                        </div>
+                        <ul>
+                            <li>Xây dựng định vị</li>
+                            <li>Phong cách riêng</li>
+                            <li>Storytelling</li>
+                            <li>Quản trị hình ảnh</li>
+                        </ul>
+                    </article>
+                </div>
+
+                <div class="col-lg-6">
+                    <article class="academy-course-card flow-item">
+                        <div class="academy-course-head">
+                            <span class="academy-course-icon green"><i class="fa-solid fa-lightbulb"></i></span>
+                            <div>
+                                <h3>Content Strategy</h3>
+                                <p><span class="badge-level">Chuyên sâu</span><span class="badge-time">5 tuần</span></p>
+                            </div>
+                        </div>
+                        <ul>
+                            <li>Nghiên cứu xu hướng</li>
+                            <li>Lên kế hoạch content</li>
+                            <li>A/B Testing</li>
+                            <li>Phân tích metrics</li>
+                        </ul>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="academy-section academy-roadmap section-flow reveal-up py-5">
+        <div class="container">
+            <h2 class="academy-section-title text-center flow-item">Lộ trình phát triển</h2>
+            <p class="academy-section-subtitle text-center flow-item">Con đường rõ ràng từ người mới đến KOC chuyên nghiệp</p>
+
+            <div class="academy-timeline flow-item mt-4">
+                <div class="academy-step step-left">
+                    <article>
+                        <p class="step-stage">Giai đoạn 1</p>
+                        <h3>Khởi đầu (0-50K followers)</h3>
+                        <ul>
+                            <li>Lộ trình về content creation</li>
+                            <li>Hiểu thuật toán nền tảng</li>
+                            <li>Tương tác cộng đồng</li>
+                        </ul>
+                    </article>
+                </div>
+
+                <div class="academy-step step-right">
+                    <article>
+                        <p class="step-stage">Giai đoạn 2</p>
+                        <h3>Tăng tốc (50-100K followers)</h3>
+                        <ul>
+                            <li>Content chuyên nghiệp</li>
+                            <li>Collaborations</li>
+                            <li>Brand partnerships</li>
+                        </ul>
+                    </article>
+                </div>
+
+                <div class="academy-step step-left">
+                    <article>
+                        <p class="step-stage">Giai đoạn 3</p>
+                        <h3>Chuyên nghiệp (100K+ followers)</h3>
+                        <ul>
+                            <li>Personal brand strategy</li>
+                            <li>Quản lý team</li>
+                            <li>Đa dạng nguồn thu nhập</li>
+                        </ul>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="academy-section academy-case section-flow reveal-up py-5">
+        <div class="container">
+            <p class="academy-case-pill text-center flow-item"><i class="fa-regular fa-thumbs-up"></i> Câu chuyện thành công</p>
+            <h2 class="academy-section-title text-center flow-item">Case Studies</h2>
+            <p class="academy-section-subtitle text-center flow-item">Những học viên đã bứt phá sau khi hoàn thành Học viện KOC</p>
+
+            <div class="row g-4 mt-1">
+                <div class="col-lg-6">
+                    <article class="academy-case-card flow-item">
+                        <h3>Case Study: Minh Anh</h3>
+                        <div class="academy-case-metrics">
+                            <div><small>Trước khóa học</small><b>15K followers</b></div>
+                            <div><small>Sau khóa học</small><b class="text-success">125K followers</b></div>
+                        </div>
+                        <p><i class="fa-solid fa-arrow-trend-up"></i> Tăng 320% followers sau khi hoàn thành khóa Personal Branding</p>
+                        <p><i class="fa-solid fa-sack-dollar"></i> + 40% thu nhập</p>
+                        <div class="academy-case-time">Trong 6 tháng</div>
+                    </article>
+                </div>
+
+                <div class="col-lg-6">
+                    <article class="academy-case-card flow-item">
+                        <h3>Case Study: Hoàng Nam</h3>
+                        <div class="academy-case-metrics">
+                            <div><small>Trước khóa học</small><b>8K followers</b></div>
+                            <div><small>Sau khóa học</small><b class="text-success">89K followers</b></div>
+                        </div>
+                        <p><i class="fa-solid fa-arrow-trend-up"></i> Chuyển từ part-time sang full-time KOC sau 6 tháng</p>
+                        <p><i class="fa-solid fa-sack-dollar"></i> + 600% thu nhập</p>
+                        <div class="academy-case-time">Trong gần 10 tháng</div>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="academy-resource section-flow reveal-up py-5">
+        <div class="container text-center">
+            <div class="academy-resource-icon flow-item"><i class="fa-solid fa-book-open"></i></div>
+            <h2 class="academy-resource-title flow-item">Thư viện tài liệu độc quyền</h2>
+            <p class="academy-resource-sub flow-item">Truy cập miễn phí vào kho tài liệu với hơn 100+ ebooks, templates, case studies chỉ dành cho thành viên</p>
+
+            <div class="row g-3 justify-content-center mt-3">
+                <div class="col-6 col-md-3"><div class="academy-resource-kpi flow-item"><b class="counter-value" data-target="100" data-suffix="+">0</b><span>eBooks & Guides</span></div></div>
+                <div class="col-6 col-md-3"><div class="academy-resource-kpi flow-item"><b class="counter-value" data-target="50" data-suffix="+">0</b><span>Templates</span></div></div>
+                <div class="col-6 col-md-3"><div class="academy-resource-kpi flow-item"><b class="counter-value" data-target="200" data-suffix="+">0</b><span>Video tutorials</span></div></div>
+            </div>
+
+            <a href="#" class="academy-resource-btn flow-item">Truy cập ngay <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+        </div>
+    </section>
+
+    <section class="academy-final-cta section-flow reveal-up py-5">
+        <div class="container text-center flow-item">
+            <h2>Bắt đầu hành trình học tập của bạn</h2>
+            <p>Tham gia cùng hàng nghìn KOC đang xây dựng sự nghiệp chuyên nghiệp</p>
+            <a asp-page="/Public/RegisterKocStep1" class="academy-register-link">Đăng ký ngay</a>
+        </div>
+    </section>
 </div>

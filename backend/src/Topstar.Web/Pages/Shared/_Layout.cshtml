@@ -1,9 +1,45 @@
 ﻿<!DOCTYPE html>
 <html lang="vi">
 <head>
+    @{
+        var seoTitle = (ViewData["Title"] as string) ?? "TopStar";
+        var seoDescription = (ViewData["Description"] as string) ?? "TopStar - Nền tảng kết nối KOC, KOL và thương hiệu tại Việt Nam.";
+        var seoKeywords = (ViewData["Keywords"] as string) ?? "TopStar, KOC, KOL, influencer marketing, brand, chiến dịch, Việt Nam";
+        var request = Context?.Request;
+        var baseUrl = request is null ? "" : $"{request.Scheme}://{request.Host}{request.PathBase}";
+        var currentPath = request?.Path.Value ?? "/";
+        var canonicalUrl = string.IsNullOrWhiteSpace(baseUrl) ? currentPath : $"{baseUrl}{currentPath}";
+        var shareImagePath = (ViewData["ShareImage"] as string) ?? "/images/logo.png";
+        var shareImageUrl = shareImagePath.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+            ? shareImagePath
+            : $"{baseUrl}{shareImagePath}";
+    }
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Topstar</title>
+    <title>@seoTitle - TopStar</title>
+    <meta name="description" content="@seoDescription" />
+    <meta name="keywords" content="@seoKeywords" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <link rel="canonical" href="@canonicalUrl" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="vi_VN" />
+    <meta property="og:site_name" content="TopStar" />
+    <meta property="og:title" content="@seoTitle" />
+    <meta property="og:description" content="@seoDescription" />
+    <meta property="og:url" content="@canonicalUrl" />
+    <meta property="og:image" content="@shareImageUrl" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="@seoTitle" />
+    <meta name="twitter:description" content="@seoDescription" />
+    <meta name="twitter:image" content="@shareImageUrl" />
+    <link rel="icon" type="image/png" href="~/images/logo.png" />
+    <link rel="apple-touch-icon" href="~/images/logo.png" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Arimo:ital,wght@0,400..700;1,400..700&family=Saira+Stencil:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/lib/fontawesome/css/all.min.css" />
     <link rel="stylesheet" href="~/lib/flaticon/css/uicons-regular-rounded.css" />
@@ -12,21 +48,97 @@
     <link rel="stylesheet" href="~/Topstar.Web.styles.css" asp-append-version="true" />
 </head>
 <body>
+    @{
+        var rawPath = Context?.Request?.Path.Value ?? "/";
+        var normalizedPath = string.IsNullOrWhiteSpace(rawPath) ? "/" : rawPath.TrimEnd('/');
+        if (string.IsNullOrWhiteSpace(normalizedPath))
+        {
+            normalizedPath = "/";
+        }
+
+        var isHome = normalizedPath.Equals("/", StringComparison.OrdinalIgnoreCase) ||
+                     normalizedPath.Equals("/index", StringComparison.OrdinalIgnoreCase);
+        var isAcademy = normalizedPath.Equals("/hoc-vien-koc", StringComparison.OrdinalIgnoreCase) ||
+                        normalizedPath.Equals("/public/academy", StringComparison.OrdinalIgnoreCase);
+        var isBrand = normalizedPath.Equals("/public/brandpublic", StringComparison.OrdinalIgnoreCase) ||
+                      normalizedPath.Equals("/danh-cho-brand", StringComparison.OrdinalIgnoreCase) ||
+                      normalizedPath.Equals("/goi-koc", StringComparison.OrdinalIgnoreCase) ||
+                      normalizedPath.Equals("/public/brandpackages", StringComparison.OrdinalIgnoreCase);
+
+        var isAuthenticated = User?.Identity?.IsAuthenticated == true;
+        var role = User?.Claims?.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
+        var dashboardUrl = role switch
+        {
+            "Admin" => "/Admin/Dashboard",
+            "Brand" => "/Brand/Dashboard",
+            "Koc" => "/Koc/Dashboard",
+            _ => "/"
+        };
+    }
     <header class="topstar-header border-bottom">
         <div class="container d-flex align-items-center justify-content-between py-2">
             <a class="d-flex align-items-center text-decoration-none" asp-page="/Index" aria-label="TopStar">
                 <img src="~/images/logo.png" alt="TopStar" class="topstar-logo" />
             </a>
+            <button class="navbar-toggler d-md-none top-mobile-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#topstarMobileMenu" aria-controls="topstarMobileMenu" aria-expanded="false" aria-label="Mở menu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
             <nav class="d-none d-md-flex align-items-center gap-3">
-                <a class="text-decoration-none text-dark fw-semibold" asp-page="/Index">Trang chủ</a>
-                <a class="text-decoration-none text-dark fw-semibold" asp-page="/Public/Academy">Học viện KOC</a>
-                <a class="text-decoration-none text-dark fw-semibold" asp-page="/Public/BrandPublic">Dành cho Brand</a>
-                <a class="btn btn-sm btn-warning rounded-pill px-3 fw-semibold" asp-page="/Public/RegisterKocStep1">Đăng ký KOC</a>
+                <a class="top-nav-link @(isHome ? "active" : "")" asp-page="/Index"><i class="fa-solid fa-house"></i><span>Trang chủ</span></a>
+                <a class="top-nav-link @(isAcademy ? "active" : "")" asp-page="/Public/Academy"><i class="fa-solid fa-graduation-cap"></i><span>Học viện KOC</span></a>
+                <a class="top-nav-link @(isBrand ? "active" : "")" asp-page="/Public/BrandPublic"><i class="fa-solid fa-handshake-angle"></i><span>Dành cho Brand</span></a>
+
+                @if (isAuthenticated)
+                {
+                    <a class="btn btn-sm btn-outline-warning rounded-pill px-3 top-auth-btn top-dashboard-btn d-inline-flex align-items-center gap-2" href="@dashboardUrl">
+                        <i class="fa-solid fa-gauge-high"></i> Dashboard
+                    </a>
+                    <a class="btn btn-sm btn-warning rounded-pill px-3 top-auth-btn top-login-btn d-inline-flex align-items-center gap-2" asp-page="/Public/Logout">
+                        <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
+                    </a>
+                }
+                else
+                {
+                    <a class="btn btn-sm btn-outline-warning rounded-pill px-3 top-auth-btn d-inline-flex align-items-center gap-2" asp-page="/Public/Register">
+                        <i class="fa-solid fa-user-plus"></i> Đăng ký
+                    </a>
+                    <a class="btn btn-sm btn-warning rounded-pill px-3 top-auth-btn top-login-btn d-inline-flex align-items-center gap-2" asp-page="/Public/Login">
+                        <i class="fa-solid fa-right-to-bracket"></i> Đăng nhập
+                    </a>
+                }
             </nav>
+        </div>
+        <div class="collapse d-md-none top-mobile-menu" id="topstarMobileMenu">
+            <div class="container py-2">
+                <a class="top-nav-link @(isHome ? "active" : "") d-flex mb-1" asp-page="/Index"><i class="fa-solid fa-house"></i><span>Trang chủ</span></a>
+                <a class="top-nav-link @(isAcademy ? "active" : "") d-flex mb-1" asp-page="/Public/Academy"><i class="fa-solid fa-graduation-cap"></i><span>Học viện KOC</span></a>
+                <a class="top-nav-link @(isBrand ? "active" : "") d-flex mb-2" asp-page="/Public/BrandPublic"><i class="fa-solid fa-handshake-angle"></i><span>Dành cho Brand</span></a>
+                <div class="d-flex gap-2 pb-2">
+                    @if (isAuthenticated)
+                    {
+                        <a class="btn btn-sm btn-outline-warning rounded-pill px-3 top-auth-btn top-dashboard-btn d-inline-flex align-items-center gap-2" href="@dashboardUrl">
+                            <i class="fa-solid fa-gauge-high"></i> Dashboard
+                        </a>
+                        <a class="btn btn-sm btn-warning rounded-pill px-3 top-auth-btn top-login-btn d-inline-flex align-items-center gap-2" asp-page="/Public/Logout">
+                            <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
+                        </a>
+                    }
+                    else
+                    {
+                        <a class="btn btn-sm btn-outline-warning rounded-pill px-3 top-auth-btn d-inline-flex align-items-center gap-2" asp-page="/Public/Register">
+                            <i class="fa-solid fa-user-plus"></i> Đăng ký
+                        </a>
+                        <a class="btn btn-sm btn-warning rounded-pill px-3 top-auth-btn top-login-btn d-inline-flex align-items-center gap-2" asp-page="/Public/Login">
+                            <i class="fa-solid fa-right-to-bracket"></i> Đăng nhập
+                        </a>
+                    }
+                </div>
+            </div>
         </div>
     </header>
 
     <main class="topstar-main">@RenderBody()</main>
+    <partial name="_Footer" />
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
