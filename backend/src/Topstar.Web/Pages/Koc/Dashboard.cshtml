@@ -1,10 +1,14 @@
-@page
+﻿@page
 @model Topstar.Web.Pages.Koc.DashboardModel
 @{
   ViewData["Title"] = "KOC Overview";
 }
 <div class="page-wrap card-list">
-  <div class="d-flex justify-content-between align-items-end"><div><h1 class="section-title mb-0">KOC Dashboard</h1><div class="kpi-title">@Model.Data.DisplayName</div></div><div class="top-nav"><a class="active" asp-page="/Koc/Dashboard">Tong quan</a><a asp-page="/Koc/Academy">Hoc vien</a><a asp-page="/Koc/Jobs">Jobs</a><a asp-page="/Koc/Wallet">Thu nhap</a><a asp-page="/Koc/Profile">Ho so</a></div></div>
+  <div><h1 class="section-title mb-0">KOC Dashboard</h1><div class="kpi-title">@Model.Data.DisplayName</div></div>
+  @if (Model.Data.NeedsProfileCompletion || (Request.Query["completeProfile"] == "1"))
+  {
+    <div class="alert alert-warning mb-0">Tài khoản đã tạo nhanh. Vui lòng cập nhật đầy đủ hồ sơ KOC để nhận job và được xét duyệt.</div>
+  }
   <div class="kpi-grid">
     <div class="kpi-box"><div class="kpi-title">Job cho xac nhan</div><div class="kpi-value">@Model.Data.PendingConfirmJobs</div></div>
     <div class="kpi-box"><div class="kpi-title">Job dang thuc hien</div><div class="kpi-value">@Model.Data.ActiveJobs</div></div>
@@ -21,7 +25,7 @@
     {
       foreach (var row in Model.Data.TodoJobs)
       {
-        <div class="list-row"><div><b>@row.CampaignTitle</b><div class="kpi-title">@row.Budget.ToString("N0") VND � @row.Status</div></div></div>
+        <div class="list-row"><div><b>@row.CampaignTitle</b><div class="kpi-title">@row.Budget.ToString("N0") VND • @row.Status</div></div></div>
       }
     }
   </div>

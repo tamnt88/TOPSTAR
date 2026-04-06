@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Topstar.Application;
+using Topstar.Application.Dashboard;
 
 namespace Topstar.Web.Pages.Public;
 
@@ -12,7 +13,8 @@ namespace Topstar.Web.Pages.Public;
 public sealed class LoginModel(
     IAuthService authService,
     IAuthRepository authRepository,
-    IAuthenticationSchemeProvider schemeProvider) : AuthPageBase
+    IAuthenticationSchemeProvider schemeProvider,
+    IDashboardDataService dashboardDataService) : AuthPageBase
 {
     [TempData]
     public string? FlashMessage { get; set; }
@@ -24,12 +26,12 @@ public sealed class LoginModel(
 
     public sealed class InputModel
     {
-        [Display(Name = "Email hoac so dien thoai")]
-        [Required(ErrorMessage = "Vui long nhap email hoac so dien thoai")]
+        [Display(Name = "Email hoặc số điện thoại")]
+        [Required(ErrorMessage = "Vui lòng nhập email hoặc số điện thoại")]
         public string EmailOrPhone { get; set; } = string.Empty;
 
-        [Display(Name = "Mat khau")]
-        [Required(ErrorMessage = "Vui long nhap mat khau")]
+        [Display(Name = "Mật khẩu")]
+        [Required(ErrorMessage = "Vui lòng nhập mật khẩu")]
         public string Password { get; set; } = string.Empty;
 
         public bool RememberMe { get; set; }
@@ -61,25 +63,20 @@ public sealed class LoginModel(
         }
 
         await SignInUserAsync(result.Data, Input.RememberMe);
-        return Redirect(result.Data.Role switch
-        {
-            UserRoleType.Admin => "/Admin/Dashboard",
-            UserRoleType.Brand => "/Brand/Dashboard",
-            _ => "/Koc/Dashboard"
-        });
+        return Redirect(await ResolvePostLoginRedirectAsync(result.Data, cancellationToken));
     }
 
     public async Task<IActionResult> OnPostExternalAsync(string provider, string mode = "login", string role = "Koc", string? returnUrl = null)
     {
         if (!IsProviderSupported(provider))
         {
-            ErrorMessage = "Nha cung cap dang nhap khong hop le.";
+            ErrorMessage = "Nhà cung cấp đăng nhập không hợp lệ.";
             return Page();
         }
 
         if (await schemeProvider.GetSchemeAsync(provider) is null)
         {
-            ErrorMessage = $"Dang nhap bang {provider} chua duoc cau hinh. Vui long lien he quan tri vien.";
+            ErrorMessage = $"Đăng nhập bằng {provider} chưa được cấu hình. Vui lòng liên hệ quản trị viên.";
             return Page();
         }
 
@@ -98,7 +95,7 @@ public sealed class LoginModel(
         var externalResult = await HttpContext.AuthenticateAsync("External");
         if (!externalResult.Succeeded || externalResult.Principal is null)
         {
-            FlashMessage = "Khong the xac thuc tu mang xa hoi. Vui long thu lai.";
+            FlashMessage = "Không thể xác thực từ mạng xã hội. Vui lòng thử lại.";
             return RedirectToPage("/Public/Login");
         }
 
@@ -106,12 +103,12 @@ public sealed class LoginModel(
             ?? externalResult.Principal.FindFirstValue("email");
         var name = externalResult.Principal.FindFirstValue(ClaimTypes.Name)
             ?? externalResult.Principal.Identity?.Name
-            ?? "Nguoi dung";
+            ?? "Người dùng";
 
         if (string.IsNullOrWhiteSpace(email))
         {
             await HttpContext.SignOutAsync("External");
-            FlashMessage = "Khong lay duoc email tu nha cung cap. Vui long dung cach dang ky thu cong.";
+            FlashMessage = "Không lấy được email từ nhà cung cấp. Vui lòng dùng cách đăng ký thủ công.";
             return RedirectToPage("/Public/Login");
         }
 
@@ -123,14 +120,14 @@ public sealed class LoginModel(
             if (!existing.Status.Equals("Active", StringComparison.OrdinalIgnoreCase))
             {
                 await HttpContext.SignOutAsync("External");
-                FlashMessage = "Tai khoan dang bi khoa hoac vo hieu hoa.";
+                FlashMessage = "Tài khoản đang bị khóa hoặc vô hiệu hóa.";
                 return RedirectToPage("/Public/Login");
             }
 
             if (existing.LockoutEndAtUtc.HasValue && existing.LockoutEndAtUtc.Value > DateTime.UtcNow)
             {
                 await HttpContext.SignOutAsync("External");
-                FlashMessage = "Tai khoan tam thoi bi khoa. Vui long thu lai sau.";
+                FlashMessage = "Tài khoản tạm thời bị khóa. Vui lòng thử lại sau.";
                 return RedirectToPage("/Public/Login");
             }
 
@@ -139,7 +136,7 @@ public sealed class LoginModel(
         else if (!string.Equals(mode, "register", StringComparison.OrdinalIgnoreCase))
         {
             await HttpContext.SignOutAsync("External");
-            FlashMessage = "Email nay chua co tai khoan. Vui long dang ky nhanh bang Google/Facebook o trang dang ky.";
+            FlashMessage = "Email này chưa có tài khoản. Vui lòng đăng ký nhanh bằng Google/Facebook ở trang đăng ký.";
             return RedirectToPage("/Public/Login");
         }
         else
@@ -177,12 +174,7 @@ public sealed class LoginModel(
             return LocalRedirect(returnUrl);
         }
 
-        return Redirect(user.Role switch
-        {
-            UserRoleType.Admin => "/Admin/Dashboard",
-            UserRoleType.Brand => "/Brand/Dashboard",
-            _ => "/Koc/Dashboard"
-        });
+        return Redirect(await ResolvePostLoginRedirectAsync(user, cancellationToken));
     }
 
     private async Task SignInUserAsync(AuthenticatedUser user, bool isPersistent)
@@ -230,5 +222,30 @@ public sealed class LoginModel(
         };
 
         return new AuthenticatedUser(row.UserId, row.Email, row.Phone, role, row.DisplayName);
+    }
+
+    private async Task<string> ResolvePostLoginRedirectAsync(AuthenticatedUser user, CancellationToken cancellationToken)
+    {
+        if (user.Role == UserRoleType.Brand)
+        {
+            var brandData = await dashboardDataService.GetBrandDashboardAsync(user.UserId, cancellationToken);
+            return brandData.NeedsProfileCompletion
+                ? "/Brand/EditProfile?forceComplete=1"
+                : "/Brand/Dashboard";
+        }
+
+        if (user.Role != UserRoleType.Koc)
+        {
+            return user.Role switch
+            {
+                UserRoleType.Admin => "/Admin/Dashboard",
+                _ => "/Koc/Dashboard"
+            };
+        }
+
+        var kocData = await dashboardDataService.GetKocDashboardAsync(user.UserId, cancellationToken);
+        return kocData.NeedsProfileCompletion
+            ? "/Koc/Profile?forceComplete=1"
+            : "/Koc/Dashboard";
     }
 }

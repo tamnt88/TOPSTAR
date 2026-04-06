@@ -1,25 +1,26 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc;
 using Topstar.Application.Dashboard;
 
 namespace Topstar.Web.Pages.Koc;
 
 [Authorize(Roles = "Koc")]
-public sealed class DashboardModel(IDashboardDataService dashboardDataService) : PageModel
+public sealed class DashboardModel(IDashboardDataService dashboardDataService) : KocGuardedPageModel(dashboardDataService)
 {
-    public KocDashboardData Data { get; private set; } = new("KOC", 0, 0, 0m, 0m, []);
+    public KocDashboardData Data { get; private set; } = new("KOC", true, 0, 0, 0m, 0m, []);
 
-    public async Task OnGetAsync()
+    public async Task<IActionResult> OnGetAsync()
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!Guid.TryParse(userId, out var parsedUserId))
+        var redirect = await RedirectIfProfileIncompleteAsync(allowProfilePage: false);
+        if (redirect is not null)
         {
-            Data = new KocDashboardData("KOC", 0, 0, 0m, 0m, []);
-            return;
+            return redirect;
         }
 
-        Data = await dashboardDataService.GetKocDashboardAsync(parsedUserId, HttpContext.RequestAborted);
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        Guid.TryParse(userId, out var parsedUserId);
+        Data = await DashboardDataService.GetKocDashboardAsync(parsedUserId, HttpContext.RequestAborted);
+        return Page();
     }
 }
-

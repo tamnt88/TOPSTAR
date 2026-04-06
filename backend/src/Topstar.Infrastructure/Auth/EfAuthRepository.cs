@@ -89,6 +89,9 @@ internal sealed class EfAuthRepository(TopstarDbContext dbContext) : IAuthReposi
                 CompanyName = request.CompanyName ?? request.FullName,
                 ContactName = request.FullName,
                 ContactPhone = request.ContactPhone ?? request.Phone ?? string.Empty,
+                StreetAddress = request.StreetAddress,
+                ProvinceId = request.ProvinceId,
+                WardId = request.WardId,
                 Status = "Draft",
                 CreatedAtUtc = DateTime.UtcNow
             });
@@ -103,6 +106,9 @@ internal sealed class EfAuthRepository(TopstarDbContext dbContext) : IAuthReposi
                 UserId = user.Id,
                 DisplayName = request.FullName,
                 Gender = request.Gender,
+                StreetAddress = request.StreetAddress,
+                ProvinceId = request.ProvinceId,
+                WardId = request.WardId,
                 Status = "Draft",
                 CreatedAtUtc = DateTime.UtcNow
             });

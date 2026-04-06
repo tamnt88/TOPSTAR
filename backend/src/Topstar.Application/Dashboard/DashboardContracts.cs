@@ -20,6 +20,7 @@ public sealed record AdminDashboardData(
 
 public sealed record BrandDashboardData(
     string BrandName,
+    bool NeedsProfileCompletion,
     int TotalCampaigns,
     int TotalKocsInCampaigns,
     long TotalImpressions,
@@ -28,6 +29,7 @@ public sealed record BrandDashboardData(
 
 public sealed record KocDashboardData(
     string DisplayName,
+    bool NeedsProfileCompletion,
     int PendingConfirmJobs,
     int ActiveJobs,
     decimal EstimatedIncome,
@@ -38,4 +40,3 @@ public sealed record CampaignStatusItem(string Label, int Count);
 public sealed record ActivityItem(string Title, DateTime CreatedAtUtc);
 public sealed record BrandCampaignItem(string Title, string Status, int KocCount, long Impressions, decimal Budget);
 public sealed record KocJobItem(string CampaignTitle, decimal Budget, string Status);
-

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Topstar.Application.Dashboard;
+using Topstar.Infrastructure.Entities;
 using Topstar.Infrastructure.Persistence;
 
 namespace Topstar.Infrastructure.Dashboard;
@@ -24,12 +25,20 @@ public sealed class DashboardDataService(TopstarDbContext db) : IDashboardDataSe
         var openShipmentIssues = await db.Shipments.AsNoTracking()
             .CountAsync(x => x.IssueNote != null && x.Status != "Resolved", cancellationToken);
 
-        var campaignStatuses = await db.Campaigns.AsNoTracking()
+        var campaignStatusRows = await db.Campaigns.AsNoTracking()
             .GroupBy(x => x.Status)
-            .Select(g => new CampaignStatusItem(g.Key, g.Count()))
+            .Select(g => new
+            {
+                Label = g.Key,
+                Count = g.Count()
+            })
             .OrderByDescending(x => x.Count)
             .Take(5)
             .ToListAsync(cancellationToken);
+
+        var campaignStatuses = campaignStatusRows
+            .Select(x => new CampaignStatusItem(x.Label, x.Count))
+            .ToList();
 
         var recentActivities = await db.AuthEvents.AsNoTracking()
             .OrderByDescending(x => x.CreatedAtUtc)
@@ -53,12 +62,14 @@ public sealed class DashboardDataService(TopstarDbContext db) : IDashboardDataSe
 
     public async Task<BrandDashboardData> GetBrandDashboardAsync(Guid userId, CancellationToken cancellationToken = default)
     {
+        var user = await db.Users.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
         var brand = await db.BrandProfiles.AsNoTracking()
             .FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
 
-        if (brand is null)
+        if (brand is null || user is null)
         {
-            return new BrandDashboardData("Brand", 0, 0, 0, 0m, []);
+            return new BrandDashboardData("Brand", true, 0, 0, 0, 0m, []);
         }
 
         var campaigns = db.Campaigns.AsNoTracking().Where(x => x.BrandProfileId == brand.Id);
@@ -86,6 +97,7 @@ public sealed class DashboardDataService(TopstarDbContext db) : IDashboardDataSe
 
         return new BrandDashboardData(
             brand.CompanyName,
+            IsIncompleteBrandProfile(user, brand),
             totalCampaigns,
             totalKocs,
             totalImpressions,
@@ -95,13 +107,22 @@ public sealed class DashboardDataService(TopstarDbContext db) : IDashboardDataSe
 
     public async Task<KocDashboardData> GetKocDashboardAsync(Guid userId, CancellationToken cancellationToken = default)
     {
+        var user = await db.Users.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
         var koc = await db.KocProfiles.AsNoTracking()
             .FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
 
-        if (koc is null)
+        if (koc is null || user is null)
         {
-            return new KocDashboardData("KOC", 0, 0, 0m, 0m, []);
+            return new KocDashboardData("KOC", true, 0, 0, 0m, 0m, []);
         }
+
+        var body = await db.KocBodyProfiles.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.KocProfileId == koc.Id, cancellationToken);
+        var hasAnySocial = await db.KocSocialAccounts.AsNoTracking()
+            .AnyAsync(x => x.KocProfileId == koc.Id && x.ChannelUrl != null && x.ChannelUrl != "", cancellationToken);
+        var categoryCount = await db.KocProfileCategories.AsNoTracking()
+            .CountAsync(x => x.KocProfileId == koc.Id, cancellationToken);
 
         var participations = db.Participations.AsNoTracking().Where(x => x.KocProfileId == koc.Id);
         var pendingConfirmJobs = await participations.CountAsync(x => x.Status == "Shortlisted" || x.Status == "Applied", cancellationToken);
@@ -126,11 +147,50 @@ public sealed class DashboardDataService(TopstarDbContext db) : IDashboardDataSe
 
         return new KocDashboardData(
             string.IsNullOrWhiteSpace(koc.DisplayName) ? "KOC" : koc.DisplayName,
+            IsIncompleteKocProfile(user, koc, body, hasAnySocial, categoryCount),
             pendingConfirmJobs,
             activeJobs,
             estimatedIncome,
             averageRating,
             todoJobs);
     }
-}
 
+    private static bool IsIncompleteBrandProfile(UserEntity user, BrandProfileEntity brand)
+        => string.Equals(brand.Status, "Draft", StringComparison.OrdinalIgnoreCase)
+           || string.Equals(brand.Status, "NeedUpdate", StringComparison.OrdinalIgnoreCase)
+           || string.IsNullOrWhiteSpace(user.Email)
+           || string.IsNullOrWhiteSpace(user.Phone)
+           || string.IsNullOrWhiteSpace(brand.CompanyName)
+           || string.IsNullOrWhiteSpace(brand.ContactName)
+           || string.IsNullOrWhiteSpace(brand.ContactPhone)
+           || string.IsNullOrWhiteSpace(brand.StreetAddress)
+           || !brand.ProvinceId.HasValue
+           || !brand.WardId.HasValue
+           || string.IsNullOrWhiteSpace(brand.TaxCode)
+           || string.IsNullOrWhiteSpace(brand.TaxCompanyName)
+           || string.IsNullOrWhiteSpace(brand.TaxInvoiceAddress)
+           || string.IsNullOrWhiteSpace(brand.BusinessLicenseFileUrl);
+
+    private static bool IsIncompleteKocProfile(
+        UserEntity user,
+        KocProfileEntity koc,
+        KocBodyProfileEntity? body,
+        bool hasAnySocial,
+        int categoryCount)
+        => string.Equals(koc.Status, "Draft", StringComparison.OrdinalIgnoreCase)
+           || string.Equals(koc.Status, "NeedUpdate", StringComparison.OrdinalIgnoreCase)
+           || string.IsNullOrWhiteSpace(user.Email)
+           || string.IsNullOrWhiteSpace(user.Phone)
+           || string.IsNullOrWhiteSpace(user.Gender)
+           || string.IsNullOrWhiteSpace(koc.DisplayName)
+           || string.IsNullOrWhiteSpace(koc.StreetAddress)
+           || !koc.ProvinceId.HasValue
+           || !koc.WardId.HasValue
+           || body is null
+           || !body.WeightKg.HasValue
+           || !body.HeightCm.HasValue
+           || string.IsNullOrWhiteSpace(body.MaritalStatus)
+           || !hasAnySocial
+           || categoryCount < 3;
+
+}

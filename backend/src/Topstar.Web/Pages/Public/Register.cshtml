@@ -1,89 +1,236 @@
 ﻿@page "/dang-ky"
 @model Topstar.Web.Pages.Public.RegisterModel
 @{
-    ViewData["Title"] = "Chọn loại tài khoản";
-    ViewData["Description"] = "Chọn hướng đăng ký phù hợp: KOC hoặc Brand.";
+    ViewData["Title"] = "Đăng ký tài khoản";
+    ViewData["Description"] = "Đăng ký tài khoản KOC hoặc Brand và hoàn thiện hồ sơ trong dashboard.";
     ViewData["Keywords"] = "đăng ký KOC, đăng ký Brand, TopStar";
+    var isKoc = Model.ActiveTab == "koc";
+    var isBrand = Model.ActiveTab == "brand";
 }
 
-<section class="login-page py-5">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-9 col-xl-8">
-                <div class="login-shell register-shell p-4 p-md-5">
-                    <h1 class="mb-2" style="font-family:'Saira Stencil',sans-serif;">Chọn kiểu tài khoản</h1>
-                    <p class="text-muted mb-4">Mỗi nhóm có hành trình đăng ký khác nhau để phù hợp mục tiêu sử dụng.</p>
+<div class="login-page">
+    <section class="login-section section-flow reveal-up py-5">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-10 col-xl-9">
+                    <div class="login-shell flow-item">
+                        <div class="row g-0">
+                            <div class="col-lg-5 login-aside">
+                                <div class="login-aside-content">
+                                    <p class="login-eyebrow"><i class="fa-solid fa-star"></i> TopStar Platform</p>
+                                    <h1>Đăng ký<br><span>tài khoản</span></h1>
+                                    <p>Tạo tài khoản để vào dashboard ngay. Hệ thống sẽ nhắc hoàn thiện hồ sơ đầy đủ sau khi đăng nhập.</p>
+                                    <ul>
+                                        <li><i class="fa-solid fa-circle-check"></i> Đăng ký dành cho KOC và Brand</li>
+                                        <li><i class="fa-solid fa-circle-check"></i> Hỗ trợ đăng ký bằng Google/Facebook</li>
+                                        <li><i class="fa-solid fa-circle-check"></i> Bổ sung hồ sơ chi tiết trong dashboard</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="col-lg-7 login-main">
+                                <div class="login-main-content">
+                                    <h2>Tạo tài khoản TopStar</h2>
+                                    <p class="text-muted mb-4">Chọn tab phù hợp để đăng ký.</p>
 
-                    <div class="row g-3 register-choice-grid">
-                        <div class="col-md-6">
-                            <a asp-page="/Public/RegisterKocStep1" class="register-choice-card register-choice-link">
-                                <span class="register-choice-icon"><i class="fa-solid fa-user-check"></i></span>
-                                <span class="register-choice-text">
-                                    <strong>Tôi là KOC/KOL</strong>
-                                    <small>Tạo hồ sơ cá nhân, social, kỹ năng và nhận job từ brand.</small>
-                                </span>
-                            </a>
-                        </div>
-                        <div class="col-md-6">
-                            <a asp-page="/Public/RegisterBrand" class="register-choice-card register-choice-link">
-                                <span class="register-choice-icon"><i class="fa-solid fa-building"></i></span>
-                                <span class="register-choice-text">
-                                    <strong>Tôi là Brand/Doanh nghiệp</strong>
-                                    <small>Tạo tài khoản doanh nghiệp để triển khai chiến dịch KOC.</small>
-                                </span>
-                            </a>
-                        </div>
-                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+                                    {
+                                        <div class="alert alert-danger py-2">@Model.ErrorMessage</div>
+                                    }
 
-                    <div class="text-center mt-4">
-                        Đã có tài khoản? <a asp-page="/Public/Login" class="login-link">Đăng nhập ngay</a>
-                    </div>
+                                    <div class="register-tab-head mb-3">
+                                        <a class="register-tab-btn @(isKoc ? "active" : "")" asp-page="/Public/Register" asp-route-tab="koc">KOC/KOL</a>
+                                        <a class="register-tab-btn @(isBrand ? "active" : "")" asp-page="/Public/Register" asp-route-tab="brand">Brand/Doanh nghiệp</a>
+                                    </div>
 
-                    <div class="social-auth-block mt-4">
-                        <p class="social-auth-title">Đăng ký nhanh</p>
-                        <div class="quick-role-picker mb-2">
-                            <label><input type="radio" name="quickRole" value="Koc" checked /> Tôi là KOC/KOL</label>
-                            <label><input type="radio" name="quickRole" value="Brand" /> Tôi là Brand</label>
-                        </div>
-                        <div class="social-auth-grid">
-                            <form method="post" asp-page="/Public/Login" asp-page-handler="External" class="m-0">
-                                <input type="hidden" name="provider" value="Facebook" />
-                                <input type="hidden" name="mode" value="register" />
-                                <input type="hidden" name="role" value="Koc" class="quick-role-input" />
-                                <button type="submit" class="social-auth-btn social-auth-btn-inline w-100" aria-label="Đăng ký nhanh với Facebook">
-                                    <img src="~/images/icon/facebook.png" alt="Facebook" />
-                                    <span>Facebook</span>
-                                </button>
-                            </form>
-                            <form method="post" asp-page="/Public/Login" asp-page-handler="External" class="m-0">
-                                <input type="hidden" name="provider" value="Google" />
-                                <input type="hidden" name="mode" value="register" />
-                                <input type="hidden" name="role" value="Koc" class="quick-role-input" />
-                                <button type="submit" class="social-auth-btn social-auth-btn-inline w-100" aria-label="Đăng ký nhanh với Google">
-                                    <img src="~/images/icon/google.png" alt="Google" />
-                                    <span>Google</span>
-                                </button>
-                            </form>
+                                    @if (isKoc)
+                                    {
+                                        <form method="post" asp-page-handler="QuickKoc" class="register-quick-form">
+                                            <div class="mb-3">
+                                                <label asp-for="KocInput.FullName" class="form-label"></label>
+                                                <input asp-for="KocInput.FullName" class="form-control" placeholder="Nguyễn Văn A" />
+                                                <span asp-validation-for="KocInput.FullName" class="text-danger"></span>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label asp-for="KocInput.Email" class="form-label"></label>
+                                                <input asp-for="KocInput.Email" class="form-control" placeholder="email@domain.com" />
+                                                <span asp-validation-for="KocInput.Email" class="text-danger"></span>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label asp-for="KocInput.Phone" class="form-label"></label>
+                                                <input asp-for="KocInput.Phone" class="form-control" placeholder="09xxxxxxxx" />
+                                                <span asp-validation-for="KocInput.Phone" class="text-danger"></span>
+                                            </div>
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label asp-for="KocInput.Gender" class="form-label"></label>
+                                                    <select asp-for="KocInput.Gender" class="form-select">
+                                                        <option value="">-- Chọn giới tính --</option>
+                                                        <option value="Male">Nam</option>
+                                                        <option value="Female">Nữ</option>
+                                                        <option value="Other">Khác</option>
+                                                    </select>
+                                                    <span asp-validation-for="KocInput.Gender" class="text-danger"></span>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label asp-for="KocInput.BirthDate" class="form-label"></label>
+                                                    <input asp-for="KocInput.BirthDate" type="date" class="form-control" />
+                                                    <span asp-validation-for="KocInput.BirthDate" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3 mt-3">
+                                                <label asp-for="KocInput.Password" class="form-label"></label>
+                                                <input asp-for="KocInput.Password" type="password" class="form-control" placeholder="Tối thiểu 8 ký tự" />
+                                                <span asp-validation-for="KocInput.Password" class="text-danger"></span>
+                                            </div>
+                                            <button type="submit" class="btn login-submit-btn w-100"><i class="fa-solid fa-user-plus me-2"></i>Đăng ký KOC</button>
+                                        </form>
+
+                                        <div class="social-auth-block mt-3">
+                                            <p class="social-auth-title">Hoặc đăng ký với</p>
+                                            <div class="social-auth-grid">
+                                                <form method="post" asp-page="/Public/Login" asp-page-handler="External" class="m-0">
+                                                    <input type="hidden" name="provider" value="Facebook" />
+                                                    <input type="hidden" name="mode" value="register" />
+                                                    <input type="hidden" name="role" value="Koc" />
+                                                    <button type="submit" class="social-auth-btn social-auth-btn-inline w-100">
+                                                        <img src="~/images/icon/facebook.png" alt="Facebook" />
+                                                        <span>Facebook</span>
+                                                    </button>
+                                                </form>
+                                                <form method="post" asp-page="/Public/Login" asp-page-handler="External" class="m-0">
+                                                    <input type="hidden" name="provider" value="Google" />
+                                                    <input type="hidden" name="mode" value="register" />
+                                                    <input type="hidden" name="role" value="Koc" />
+                                                    <button type="submit" class="social-auth-btn social-auth-btn-inline w-100">
+                                                        <img src="~/images/icon/google.png" alt="Google" />
+                                                        <span>Google</span>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <form method="post" asp-page-handler="QuickBrand" class="register-quick-form">
+                                            <div class="mb-3">
+                                                <label asp-for="BrandInput.FullName" class="form-label"></label>
+                                                <input asp-for="BrandInput.FullName" class="form-control" placeholder="Người đại diện" />
+                                                <span asp-validation-for="BrandInput.FullName" class="text-danger"></span>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label asp-for="BrandInput.CompanyName" class="form-label"></label>
+                                                <input asp-for="BrandInput.CompanyName" class="form-control" placeholder="Tên doanh nghiệp/brand" />
+                                                <span asp-validation-for="BrandInput.CompanyName" class="text-danger"></span>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label asp-for="BrandInput.Email" class="form-label"></label>
+                                                <input asp-for="BrandInput.Email" class="form-control" placeholder="email@domain.com" />
+                                                <span asp-validation-for="BrandInput.Email" class="text-danger"></span>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label asp-for="BrandInput.Phone" class="form-label"></label>
+                                                <input asp-for="BrandInput.Phone" class="form-control" placeholder="Số điện thoại liên hệ" />
+                                                <span asp-validation-for="BrandInput.Phone" class="text-danger"></span>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label asp-for="BrandInput.StreetAddress" class="form-label"></label>
+                                                <input asp-for="BrandInput.StreetAddress" class="form-control" placeholder="Số nhà + tên đường" />
+                                                <span asp-validation-for="BrandInput.StreetAddress" class="text-danger"></span>
+                                            </div>
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label asp-for="BrandInput.ProvinceId" class="form-label"></label>
+                                                    <select asp-for="BrandInput.ProvinceId" asp-items="Model.ProvinceOptions" class="form-select" id="brand-province">
+                                                        <option value="">Chọn Tỉnh/Thành phố</option>
+                                                    </select>
+                                                    <span asp-validation-for="BrandInput.ProvinceId" class="text-danger"></span>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label asp-for="BrandInput.WardId" class="form-label"></label>
+                                                    <select asp-for="BrandInput.WardId" asp-items="Model.WardOptions" class="form-select" id="brand-ward">
+                                                        <option value="">Chọn Phường/Xã</option>
+                                                    </select>
+                                                    <span asp-validation-for="BrandInput.WardId" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3 mt-3">
+                                                <label asp-for="BrandInput.Password" class="form-label"></label>
+                                                <input asp-for="BrandInput.Password" type="password" class="form-control" placeholder="Tối thiểu 8 ký tự" />
+                                                <span asp-validation-for="BrandInput.Password" class="text-danger"></span>
+                                            </div>
+                                            <button type="submit" class="btn login-submit-btn w-100"><i class="fa-solid fa-building-circle-check me-2"></i>Đăng ký Brand</button>
+                                        </form>
+
+                                        <div class="social-auth-block mt-3">
+                                            <p class="social-auth-title">Hoặc đăng ký với</p>
+                                            <div class="social-auth-grid">
+                                                <form method="post" asp-page="/Public/Login" asp-page-handler="External" class="m-0">
+                                                    <input type="hidden" name="provider" value="Facebook" />
+                                                    <input type="hidden" name="mode" value="register" />
+                                                    <input type="hidden" name="role" value="Brand" />
+                                                    <button type="submit" class="social-auth-btn social-auth-btn-inline w-100">
+                                                        <img src="~/images/icon/facebook.png" alt="Facebook" />
+                                                        <span>Facebook</span>
+                                                    </button>
+                                                </form>
+                                                <form method="post" asp-page="/Public/Login" asp-page-handler="External" class="m-0">
+                                                    <input type="hidden" name="provider" value="Google" />
+                                                    <input type="hidden" name="mode" value="register" />
+                                                    <input type="hidden" name="role" value="Brand" />
+                                                    <button type="submit" class="social-auth-btn social-auth-btn-inline w-100">
+                                                        <img src="~/images/icon/google.png" alt="Google" />
+                                                        <span>Google</span>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    }
+
+                                    <div class="text-center mt-4">
+                                        Đã có tài khoản? <a asp-page="/Public/Login" class="login-link">Đăng nhập ngay</a>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-</section>
+    </section>
+</div>
 
 @section Scripts {
+    <partial name="_ValidationScriptsPartial" />
     <script>
-        (() => {
-            const roleRadios = document.querySelectorAll('input[name="quickRole"]');
-            const roleInputs = document.querySelectorAll('.quick-role-input');
-            const syncRole = () => {
-                const selected = document.querySelector('input[name="quickRole"]:checked');
-                const value = selected ? selected.value : 'Koc';
-                roleInputs.forEach(x => x.value = value);
-            };
-            roleRadios.forEach(r => r.addEventListener('change', syncRole));
-            syncRole();
+        (function () {
+            var $province = $("#brand-province");
+            var $ward = $("#brand-ward");
+            if (!$province.length || !$ward.length) return;
+
+            function reloadWardOptions(items) {
+                var current = $ward.val();
+                $ward.empty().append($("<option/>", { value: "", text: "Chọn Phường/Xã" }));
+                $.each(items || [], function (_, ward) {
+                    $ward.append($("<option/>", { value: ward.id, text: ward.name }));
+                });
+
+                if (current && $ward.find('option[value="' + current + '"]').length > 0) {
+                    $ward.val(current);
+                } else {
+                    $ward.val("");
+                }
+            }
+
+            $province.on("change", function () {
+                var provinceId = ($province.val() || "").trim();
+                reloadWardOptions([]);
+                if (!provinceId) return;
+
+                $.get(window.location.pathname + "?handler=WardsByProvince", { provinceId: provinceId })
+                    .done(function (res) {
+                        reloadWardOptions((res && res.data) ? res.data : []);
+                    });
+            });
         })();
     </script>
 }

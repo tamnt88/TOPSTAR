@@ -32,7 +32,10 @@ public sealed record RegisterRequest(
     string FullName,
     string? CompanyName,
     string? ContactPhone,
-    DeviceContext Device
+    DeviceContext Device,
+    string? StreetAddress = null,
+    Guid? ProvinceId = null,
+    Guid? WardId = null
 );
 
 public sealed record ForgotPasswordRequest(string EmailOrPhone, DeviceContext Device);

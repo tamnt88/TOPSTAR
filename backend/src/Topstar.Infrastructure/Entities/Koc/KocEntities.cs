@@ -12,6 +12,10 @@ public sealed class BrandProfileEntity
     public string? StreetAddress { get; set; }
     public Guid? WardId { get; set; }
     public Guid? ProvinceId { get; set; }
+    public string? TaxCompanyName { get; set; }
+    public string? TaxCode { get; set; }
+    public string? TaxInvoiceAddress { get; set; }
+    public string? BusinessLicenseFileUrl { get; set; }
     public string? AddressV2 { get; set; }
     public string? WardCodeV2 { get; set; }
     public bool IsNewAddress { get; set; }

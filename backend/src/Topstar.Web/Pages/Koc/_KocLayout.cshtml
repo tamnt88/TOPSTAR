@@ -1,0 +1,201 @@
+﻿@using System.Security.Claims
+@using Topstar.Application.Dashboard
+@using Topstar.Application.Navigation
+@using Topstar.Application.Website
+@inject IDashboardDataService DashboardDataService
+@inject INavigationService NavigationService
+@inject IWebsiteContentService WebsiteContentService
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    @{
+        var website = await WebsiteContentService.GetWebsiteContentAsync(Context?.RequestAborted ?? default);
+        var websiteName = website?.WebsiteName ?? "TopStar";
+        var logoPath = string.IsNullOrWhiteSpace(website?.LogoUrl) ? "/images/logo.png" : website!.LogoUrl!;
+        var faviconPath = string.IsNullOrWhiteSpace(website?.FaviconUrl) ? logoPath : website!.FaviconUrl!;
+        var title = (ViewData["Title"] as string) ?? "KOC Dashboard";
+    }
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@title - @websiteName</title>
+    <link rel="icon" type="image/png" href="@faviconPath" />
+    <link rel="apple-touch-icon" href="@faviconPath" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Arimo:ital,wght@0,400..700;1,400..700&family=Saira+Stencil:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/fontawesome/css/all.min.css" />
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+</head>
+<body class="dashboard-body dashboard-body-koc">
+    @{
+        var websiteBody = await WebsiteContentService.GetWebsiteContentAsync(Context?.RequestAborted ?? default);
+        var websiteNameBody = websiteBody?.WebsiteName ?? "TopStar";
+        var logoPathBody = string.IsNullOrWhiteSpace(websiteBody?.LogoUrl) ? "/images/logo.png" : websiteBody!.LogoUrl!;
+        var path = (Context?.Request?.Path.Value ?? string.Empty).ToLowerInvariant();
+        var roleCode = User?.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value?.ToUpperInvariant() ?? "KOC";
+        var displayName = User?.Identity?.Name
+            ?? User?.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value
+            ?? "KOC";
+
+        var parts = displayName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var initials = parts.Length switch
+        {
+            0 => "KC",
+            1 => parts[0][..1].ToUpperInvariant(),
+            _ => string.Concat(parts[0][..1], parts[^1][..1]).ToUpperInvariant()
+        };
+
+        var menus = await NavigationService.GetMenusByRoleAsync(roleCode, Context?.RequestAborted ?? default);
+        var parents = menus.Where(x => x.ParentId == null).OrderBy(x => x.OrderNo).ThenBy(x => x.Title).ToList();
+
+        var isProfileLocked = false;
+        var kocUserIdRaw = User?.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+        if (Guid.TryParse(kocUserIdRaw, out var kocUserId))
+        {
+            var kocData = await DashboardDataService.GetKocDashboardAsync(kocUserId, Context?.RequestAborted ?? default);
+            isProfileLocked = kocData.NeedsProfileCompletion;
+        }
+    }
+
+    <header class="dashboard-topbar">
+        <div class="dashboard-topbar-inner container">
+            <a class="dashboard-brand dashboard-brand-stack" asp-page="/Koc/Dashboard">
+                <img src="@logoPathBody" alt="@websiteNameBody" />
+                <small>KOC Dashboard</small>
+            </a>
+            <div class="dashboard-user-actions">
+                <div class="admin-user-chip"><span>@initials</span> @displayName</div>
+                <a asp-page="/Public/Logout" class="dashboard-logout"><i class="fa-solid fa-right-from-bracket"></i> Đăng xuất</a>
+            </div>
+        </div>
+    </header>
+
+    <nav class="dashboard-subnav">
+        <div class="container dashboard-subnav-inner admin-dashboard-tabs admin-tabs-dynamic">
+            @foreach (var parent in parents)
+            {
+                var children = menus.Where(x => x.ParentId == parent.Id).OrderBy(x => x.OrderNo).ThenBy(x => x.Title).ToList();
+                var parentPath = parent.Path?.ToLowerInvariant() ?? string.Empty;
+                var parentIsProfile = parentPath.StartsWith("/koc/profile", StringComparison.OrdinalIgnoreCase)
+                    || parentPath.StartsWith("/koc/editprofile", StringComparison.OrdinalIgnoreCase);
+                var parentDisabled = isProfileLocked && !parentIsProfile;
+
+                var isParentActive = !string.IsNullOrWhiteSpace(parent.Path) &&
+                                     path.StartsWith(parent.Path.ToLowerInvariant(), StringComparison.OrdinalIgnoreCase);
+                var isChildActive = children.Any(c => !string.IsNullOrWhiteSpace(c.Path) &&
+                                                      path.StartsWith(c.Path!.ToLowerInvariant(), StringComparison.OrdinalIgnoreCase));
+                var isActive = isParentActive || isChildActive;
+
+                if (children.Count == 0)
+                {
+                    if (string.IsNullOrWhiteSpace(parent.Path) || parentDisabled)
+                    {
+                        <span class="admin-tab-link @(isActive ? "active" : string.Empty) @(parentDisabled ? "disabled" : string.Empty)">
+                            @if (!string.IsNullOrWhiteSpace(parent.Icon))
+                            {
+                                <i class="@parent.Icon"></i>
+                            }
+                            @parent.Title
+                        </span>
+                    }
+                    else
+                    {
+                        <a class="admin-tab-link @(isActive ? "active" : string.Empty)" href="@parent.Path">
+                            @if (!string.IsNullOrWhiteSpace(parent.Icon))
+                            {
+                                <i class="@parent.Icon"></i>
+                            }
+                            @parent.Title
+                        </a>
+                    }
+                }
+                else
+                {
+                    <div class="admin-tab-dropdown">
+                        <button type="button"
+                                class="admin-tab-link admin-tab-toggle @(isActive ? "active" : string.Empty) @(parentDisabled ? "disabled" : string.Empty)"
+                                aria-expanded="false"
+                                disabled="@parentDisabled">
+                            @if (!string.IsNullOrWhiteSpace(parent.Icon))
+                            {
+                                <i class="@parent.Icon"></i>
+                            }
+                            @parent.Title
+                            <i class="fa-solid fa-chevron-down admin-tab-caret"></i>
+                        </button>
+                        <ul class="admin-tab-menu">
+                            @foreach (var child in children)
+                            {
+                                if (string.IsNullOrWhiteSpace(child.Path))
+                                {
+                                    <li>
+                                        <span class="admin-tab-item">
+                                            @if (!string.IsNullOrWhiteSpace(child.Icon))
+                                            {
+                                                <i class="@child.Icon"></i>
+                                            }
+                                            @child.Title
+                                        </span>
+                                    </li>
+                                }
+                                else
+                                {
+                                    var childPath = child.Path!.ToLowerInvariant();
+                                    var childIsProfile = childPath.StartsWith("/koc/profile", StringComparison.OrdinalIgnoreCase)
+                                        || childPath.StartsWith("/koc/editprofile", StringComparison.OrdinalIgnoreCase);
+                                    var childDisabled = isProfileLocked && !childIsProfile;
+                                    var childActive = path.StartsWith(child.Path.ToLowerInvariant(), StringComparison.OrdinalIgnoreCase);
+                                    <li>
+                                        @if (childDisabled)
+                                        {
+                                            <span class="admin-tab-item disabled @(childActive ? "active" : string.Empty)">
+                                                @if (!string.IsNullOrWhiteSpace(child.Icon))
+                                                {
+                                                    <i class="@child.Icon"></i>
+                                                }
+                                                @child.Title
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <a class="admin-tab-item @(childActive ? "active" : string.Empty)" href="@child.Path">
+                                                @if (!string.IsNullOrWhiteSpace(child.Icon))
+                                                {
+                                                    <i class="@child.Icon"></i>
+                                                }
+                                                @child.Title
+                                            </a>
+                                        }
+                                    </li>
+                                }
+                            }
+                        </ul>
+                    </div>
+                }
+            }
+        </div>
+    </nav>
+
+    @if (isProfileLocked)
+    {
+        <div class="container mt-3">
+            <div class="alert alert-warning mb-0">
+                Hồ sơ KOC chưa đầy đủ. Vui lòng cập nhật hồ sơ trước khi sử dụng các chức năng khác.
+            </div>
+        </div>
+    }
+
+    <main class="dashboard-main">
+        <div class="container py-4">
+            @RenderBody()
+        </div>
+    </main>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/dashboard.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
