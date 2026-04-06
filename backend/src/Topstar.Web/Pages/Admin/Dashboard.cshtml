@@ -1,9 +1,8 @@
 @page
+@model Topstar.Web.Pages.Admin.DashboardModel
 @{
     ViewData["Title"] = "Admin Dashboard";
     ViewData["Description"] = "Dashboard quản trị hệ thống TopStar cho admin.";
-    ViewData["AdminHeaderTitle"] = "Admin Dashboard";
-    ViewData["AdminHeaderSubtitle"] = "Quản trị hệ thống";
 }
 
 <section class="admin-dashboard-page">
@@ -12,22 +11,22 @@
             <article class="admin-kpi-card">
                 <span class="kpi-icon kpi-blue"><i class="fa-regular fa-building"></i></span>
                 <p>Brand hoạt động</p>
-                <h3>24 <small>+3</small></h3>
+                <h3>@Model.Data.ActiveBrands</h3>
             </article>
             <article class="admin-kpi-card">
                 <span class="kpi-icon kpi-green"><i class="fa-solid fa-user-group"></i></span>
                 <p>KOC Active</p>
-                <h3>156 <small>+12</small></h3>
+                <h3>@Model.Data.ActiveKocs</h3>
             </article>
             <article class="admin-kpi-card">
                 <span class="kpi-icon kpi-purple"><i class="fa-regular fa-circle-dot"></i></span>
                 <p>Chiến dịch đang chạy</p>
-                <h3>18 <small>+5</small></h3>
+                <h3>@Model.Data.RunningCampaigns</h3>
             </article>
             <article class="admin-kpi-card">
                 <span class="kpi-icon kpi-orange"><i class="fa-solid fa-dollar-sign"></i></span>
-                <p>Doanh thu tháng</p>
-                <h3>420tr <small>+24%</small></h3>
+                <p>Tổng budget chiến dịch chạy</p>
+                <h3>@Model.Data.TotalBudgetRunningCampaigns.ToString("N0")</h3>
             </article>
         </div>
 
@@ -35,16 +34,16 @@
             <h2><i class="fa-regular fa-circle-exclamation text-danger"></i> Cảnh báo cần xử lý</h2>
             <div class="admin-alert-grid">
                 <div class="admin-alert-card alert-yellow">
-                    <b>3</b>
-                    <span>3 chiến dịch sắp trễ deadline</span>
+                    <b>@Model.Data.PendingCampaigns</b>
+                    <span>Campaign chờ duyệt/chỉnh sửa</span>
                 </div>
                 <div class="admin-alert-card alert-red">
-                    <b>2</b>
-                    <span>2 KOC không phản hồi</span>
+                    <b>@Model.Data.NeedReviewSubmissions</b>
+                    <span>Submission chờ duyệt</span>
                 </div>
                 <div class="admin-alert-card alert-blue">
-                    <b>5</b>
-                    <span>5 Brand cần hỗ trợ</span>
+                    <b>@Model.Data.OpenShipmentIssues</b>
+                    <span>Vấn đề giao nhận đang mở</span>
                 </div>
             </div>
         </div>
@@ -52,56 +51,27 @@
         <div class="admin-block">
             <h2>Trạng thái chiến dịch</h2>
             <div class="admin-status-list">
-                <div class="admin-status-row">
-                    <div class="status-main">
-                        <span class="status-icon wait"><i class="fa-regular fa-clock"></i></span>
-                        <div><b>Chờ triển khai</b><p>5 chiến dịch</p></div>
+                @foreach (var item in Model.Data.CampaignStatuses)
+                {
+                    <div class="admin-status-row">
+                        <div class="status-main">
+                            <span class="status-icon run"><i class="fa-regular fa-circle-dot"></i></span>
+                            <div><b>@item.Label</b><p>@item.Count chiến dịch</p></div>
+                        </div>
                     </div>
-                    <button class="admin-btn-detail">Xem chi tiết</button>
-                </div>
-                <div class="admin-status-row">
-                    <div class="status-main">
-                        <span class="status-icon run"><i class="fa-regular fa-circle-dot"></i></span>
-                        <div><b>Đang chạy</b><p>18 chiến dịch</p></div>
-                    </div>
-                    <button class="admin-btn-detail">Xem chi tiết</button>
-                </div>
-                <div class="admin-status-row">
-                    <div class="status-main">
-                        <span class="status-icon done"><i class="fa-solid fa-check"></i></span>
-                        <div><b>Đã hoàn thành</b><p>142 chiến dịch</p></div>
-                    </div>
-                    <button class="admin-btn-detail">Xem chi tiết</button>
-                </div>
+                }
             </div>
         </div>
 
         <div class="admin-block">
             <h2>Hoạt động gần đây</h2>
             <ul class="admin-activity-list">
-                <li><b>Brand “Shopee” đã tạo chiến dịch mới</b><span>2 phút trước</span></li>
-                <li><b>KOC “Minh Anh” đã hoàn thành job #1234</b><span>15 phút trước</span></li>
-                <li><b>Gói “Growth Pack” đã được mua bởi “Vinamilk”</b><span>1 giờ trước</span></li>
-                <li><b>Admin “John” đã duyệt nội dung chiến dịch #5678</b><span>2 giờ trước</span></li>
+                @foreach (var row in Model.Data.RecentActivities)
+                {
+                    <li><b>@row.Title</b><span>@row.CreatedAtUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span></li>
+                }
             </ul>
-        </div>
-
-        <div class="admin-quick-grid">
-            <a href="#" class="quick-card quick-1">
-                <i class="fa-regular fa-cube"></i>
-                <h3>Quản lý gói</h3>
-                <p>Tạo và cấu hình gói KOC</p>
-            </a>
-            <a href="#" class="quick-card quick-2">
-                <i class="fa-solid fa-users"></i>
-                <h3>KOC Pool</h3>
-                <p>Quản lý database KOC</p>
-            </a>
-            <a href="#" class="quick-card quick-3">
-                <i class="fa-regular fa-circle-dot"></i>
-                <h3>Chiến dịch</h3>
-                <p>Quản lý và giám sát</p>
-            </a>
         </div>
     </div>
 </section>
+

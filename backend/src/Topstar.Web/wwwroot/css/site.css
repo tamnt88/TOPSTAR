@@ -2063,6 +2063,75 @@ body:has(.brand-package-page) {
   font-size: .85rem;
 }
 
+.social-auth-block {
+  margin-top: 14px;
+}
+
+.social-auth-title {
+  margin: 0 0 10px;
+  font-size: .9rem;
+  color: #7b6652;
+  font-weight: 600;
+}
+
+.social-auth-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.social-auth-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #e5d3bb;
+  border-radius: 12px;
+  background: #fffaf1;
+  color: #5a4534;
+  text-decoration: none;
+  padding: 10px 12px;
+  font-weight: 600;
+  transition: all .2s ease;
+}
+
+.social-auth-btn-inline {
+  justify-content: center;
+}
+
+.social-auth-btn img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.social-auth-btn:hover {
+  transform: translateY(-1px);
+  border-color: #d79b5a;
+  box-shadow: 0 8px 18px rgba(152, 97, 43, .12);
+  color: #4b3627;
+}
+
+.quick-role-picker {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.quick-role-picker label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #7b6652;
+  font-weight: 600;
+  font-size: .9rem;
+}
+
+@media (max-width: 767.98px) {
+  .social-auth-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .login-secondary-btn,
 .login-back-btn {
   border-radius: 12px;

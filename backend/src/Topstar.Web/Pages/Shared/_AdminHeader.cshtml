@@ -1,9 +1,27 @@
-﻿@using Topstar.Application.Navigation
+@using System.Security.Claims
+@using Topstar.Application.Navigation
+@using Topstar.Application.Website
 @inject INavigationService NavigationService
+@inject IWebsiteContentService WebsiteContentService
 @{
     var path = Context?.Request?.Path.Value ?? string.Empty;
     var lowerPath = path.ToLowerInvariant();
-    var roleCode = User?.Claims?.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value?.ToUpperInvariant() ?? "ADMIN";
+    var roleCode = User?.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value?.ToUpperInvariant() ?? "ADMIN";
+
+    var website = await WebsiteContentService.GetWebsiteContentAsync(Context?.RequestAborted ?? default);
+    var websiteName = website?.WebsiteName ?? "TopStar";
+    var logoPath = string.IsNullOrWhiteSpace(website?.LogoUrl) ? "/images/logo.png" : website!.LogoUrl!;
+
+    var userDisplay = User?.Identity?.Name
+        ?? User?.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value
+        ?? "Admin";
+    var parts = userDisplay.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+    var initials = parts.Length switch
+    {
+        0 => "AD",
+        1 => parts[0][..1].ToUpperInvariant(),
+        _ => string.Concat(parts[0][..1], parts[^1][..1]).ToUpperInvariant()
+    };
 
     var menus = await NavigationService.GetMenusByRoleAsync(roleCode, Context?.RequestAborted ?? default);
     var parents = menus.Where(x => x.ParentId == null).ToList();
@@ -11,11 +29,11 @@
 
 <header class="admin-layout-header">
     <div class="container admin-layout-top">
-        <a class="admin-header-logo" asp-page="/Index" aria-label="TopStar">
-            <img src="~/images/logo.png" alt="TopStar" />
+        <a class="admin-header-logo" asp-page="/Index" aria-label="@websiteName">
+            <img src="@logoPath" alt="@websiteName" />
         </a>
         <div class="admin-dashboard-userbar">
-            <div class="admin-user-chip"><span>AD</span> Admin</div>
+            <div class="admin-user-chip"><span>@initials</span> @userDisplay</div>
             <a class="admin-logout-link" asp-page="/Public/Logout"><i class="fa-solid fa-right-from-bracket"></i> Đăng xuất</a>
         </div>
     </div>
@@ -103,3 +121,4 @@
         </nav>
     </div>
 </header>
+

@@ -1,7 +1,14 @@
-﻿<!DOCTYPE html>
+@using Topstar.Application.Website
+@inject IWebsiteContentService WebsiteContentService
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     @{
+        var website = await WebsiteContentService.GetWebsiteContentAsync(Context?.RequestAborted ?? default);
+        var websiteName = website?.WebsiteName ?? "TopStar";
+        var logoPath = string.IsNullOrWhiteSpace(website?.LogoUrl) ? "/images/logo.png" : website!.LogoUrl!;
+        var faviconPath = string.IsNullOrWhiteSpace(website?.FaviconUrl) ? logoPath : website!.FaviconUrl!;
+
         var seoTitle = (ViewData["Title"] as string) ?? "TopStar";
         var seoDescription = (ViewData["Description"] as string) ?? "TopStar - Nền tảng kết nối KOC, KOL và thương hiệu tại Việt Nam.";
         var seoKeywords = (ViewData["Keywords"] as string) ?? "TopStar, KOC, KOL, influencer marketing, brand, chiến dịch, Việt Nam";
@@ -9,14 +16,14 @@
         var baseUrl = request is null ? "" : $"{request.Scheme}://{request.Host}{request.PathBase}";
         var currentPath = request?.Path.Value ?? "/";
         var canonicalUrl = string.IsNullOrWhiteSpace(baseUrl) ? currentPath : $"{baseUrl}{currentPath}";
-        var shareImagePath = (ViewData["ShareImage"] as string) ?? "/images/logo.png";
+        var shareImagePath = (ViewData["ShareImage"] as string) ?? (website?.DefaultShareImageUrl ?? logoPath);
         var shareImageUrl = shareImagePath.StartsWith("http", StringComparison.OrdinalIgnoreCase)
             ? shareImagePath
             : $"{baseUrl}{shareImagePath}";
     }
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@seoTitle - TopStar</title>
+    <title>@seoTitle - @websiteName</title>
     <meta name="description" content="@seoDescription" />
     <meta name="keywords" content="@seoKeywords" />
     <meta name="robots" content="index, follow, max-image-preview:large" />
@@ -24,7 +31,7 @@
 
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="vi_VN" />
-    <meta property="og:site_name" content="TopStar" />
+    <meta property="og:site_name" content="@websiteName" />
     <meta property="og:title" content="@seoTitle" />
     <meta property="og:description" content="@seoDescription" />
     <meta property="og:url" content="@canonicalUrl" />
@@ -34,8 +41,8 @@
     <meta name="twitter:title" content="@seoTitle" />
     <meta name="twitter:description" content="@seoDescription" />
     <meta name="twitter:image" content="@shareImageUrl" />
-    <link rel="icon" type="image/png" href="~/images/logo.png" />
-    <link rel="apple-touch-icon" href="~/images/logo.png" />
+    <link rel="icon" type="image/png" href="@faviconPath" />
+    <link rel="apple-touch-icon" href="@faviconPath" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -49,6 +56,9 @@
 </head>
 <body>
     @{
+        var websiteBody = await WebsiteContentService.GetWebsiteContentAsync(Context?.RequestAborted ?? default);
+        var websiteNameBody = websiteBody?.WebsiteName ?? "TopStar";
+        var logoPathBody = string.IsNullOrWhiteSpace(websiteBody?.LogoUrl) ? "/images/logo.png" : websiteBody!.LogoUrl!;
         var rawPath = Context?.Request?.Path.Value ?? "/";
         var normalizedPath = string.IsNullOrWhiteSpace(rawPath) ? "/" : rawPath.TrimEnd('/');
         if (string.IsNullOrWhiteSpace(normalizedPath))
@@ -77,8 +87,8 @@
     }
     <header class="topstar-header border-bottom">
         <div class="container d-flex align-items-center justify-content-between py-2">
-            <a class="d-flex align-items-center text-decoration-none" asp-page="/Index" aria-label="TopStar">
-                <img src="~/images/logo.png" alt="TopStar" class="topstar-logo" />
+            <a class="d-flex align-items-center text-decoration-none" asp-page="/Index" aria-label="@websiteNameBody">
+                <img src="@logoPathBody" alt="@websiteNameBody" class="topstar-logo" />
             </a>
             <button class="navbar-toggler d-md-none top-mobile-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#topstarMobileMenu" aria-controls="topstarMobileMenu" aria-expanded="false" aria-label="Mở menu">
                 <span class="navbar-toggler-icon"></span>
@@ -147,3 +157,4 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+

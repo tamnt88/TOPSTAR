@@ -1,7 +1,15 @@
+@using Topstar.Application.Website
+@inject IWebsiteContentService WebsiteContentService
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     @{
+        var website = await WebsiteContentService.GetWebsiteContentAsync(Context?.RequestAborted ?? default);
+        var websiteName = website?.WebsiteName ?? "TopStar";
+        var faviconPath = string.IsNullOrWhiteSpace(website?.FaviconUrl)
+            ? (string.IsNullOrWhiteSpace(website?.LogoUrl) ? "/images/logo.png" : website!.LogoUrl!)
+            : website!.FaviconUrl!;
+
         var seoTitle = (ViewData["Title"] as string) ?? "Admin";
         var seoDescription = (ViewData["Description"] as string) ?? "Khu vực quản trị TopStar.";
         var request = Context?.Request;
@@ -11,11 +19,11 @@
     }
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@seoTitle - TopStar Admin</title>
+    <title>@seoTitle - @websiteName Admin</title>
     <meta name="description" content="@seoDescription" />
     <meta name="robots" content="noindex, nofollow" />
     <link rel="canonical" href="@canonicalUrl" />
-    <link rel="icon" type="image/png" href="~/images/logo.png" />
+    <link rel="icon" type="image/png" href="@faviconPath" />
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/lib/fontawesome/css/all.min.css" />
@@ -42,3 +50,4 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+

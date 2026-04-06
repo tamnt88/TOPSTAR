@@ -5,13 +5,17 @@ using Topstar.Application;
 using Topstar.Application.Menus;
 using Topstar.Application.Navigation;
 using Topstar.Application.KocRegistration;
+using Topstar.Application.Dashboard;
 using Topstar.Application.SystemSettings;
+using Topstar.Application.Website;
 using Topstar.Infrastructure.Auth;
+using Topstar.Infrastructure.Dashboard;
 using Topstar.Infrastructure.Koc;
 using Topstar.Infrastructure.Menus;
 using Topstar.Infrastructure.Navigation;
 using Topstar.Infrastructure.Persistence;
 using Topstar.Infrastructure.SystemSettings;
+using Topstar.Infrastructure.Website;
 
 namespace Topstar.Infrastructure;
 
@@ -29,6 +33,8 @@ public static class InfrastructureDependencyInjection
         services.AddScoped<INavigationService, NavigationService>();
         services.AddScoped<IMenuAdminService, MenuAdminService>();
         services.AddScoped<ISystemSettingsAdminService, SystemSettingsAdminService>();
+        services.AddScoped<IWebsiteContentService, WebsiteContentService>();
+        services.AddScoped<IDashboardDataService, DashboardDataService>();
 
         return services;
     }

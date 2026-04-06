@@ -59,11 +59,32 @@
                                         <button type="submit" class="btn login-submit-btn w-100">Đăng nhập</button>
                                     </form>
 
+                                    <div class="social-auth-block">
+                                        <p class="social-auth-title">Đăng nhập nhanh</p>
+                                        <div class="social-auth-grid">
+                                            <form method="post" asp-page-handler="External" class="m-0">
+                                                <input type="hidden" name="provider" value="Facebook" />
+                                                <input type="hidden" name="mode" value="login" />
+                                                <button type="submit" class="social-auth-btn social-auth-btn-inline w-100" aria-label="Đăng nhập với Facebook">
+                                                    <img src="~/images/icon/facebook.png" alt="Facebook" />
+                                                    <span>Facebook</span>
+                                                </button>
+                                            </form>
+                                            <form method="post" asp-page-handler="External" class="m-0">
+                                                <input type="hidden" name="provider" value="Google" />
+                                                <input type="hidden" name="mode" value="login" />
+                                                <button type="submit" class="social-auth-btn social-auth-btn-inline w-100" aria-label="Đăng nhập với Google">
+                                                    <img src="~/images/icon/google.png" alt="Google" />
+                                                    <span>Google</span>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+
                                     <div class="login-divider"><span>hoặc</span></div>
 
                                     <div class="d-grid gap-2">
-                                        <a asp-page="/Public/Register" class="btn login-secondary-btn">Tạo tài khoản mới</a>
-                                        <a asp-page="/Index" class="btn login-back-btn">Về trang chủ</a>
+                                        <a asp-page="/Public/Register" class="btn login-secondary-btn"><i class="fa-solid fa-user-plus me-2"></i>Tạo tài khoản mới</a>
                                     </div>
                                 </div>
                             </div>

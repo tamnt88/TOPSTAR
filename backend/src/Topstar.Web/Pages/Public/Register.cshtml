@@ -38,8 +38,52 @@
                     <div class="text-center mt-4">
                         Đã có tài khoản? <a asp-page="/Public/Login" class="login-link">Đăng nhập ngay</a>
                     </div>
+
+                    <div class="social-auth-block mt-4">
+                        <p class="social-auth-title">Đăng ký nhanh</p>
+                        <div class="quick-role-picker mb-2">
+                            <label><input type="radio" name="quickRole" value="Koc" checked /> Tôi là KOC/KOL</label>
+                            <label><input type="radio" name="quickRole" value="Brand" /> Tôi là Brand</label>
+                        </div>
+                        <div class="social-auth-grid">
+                            <form method="post" asp-page="/Public/Login" asp-page-handler="External" class="m-0">
+                                <input type="hidden" name="provider" value="Facebook" />
+                                <input type="hidden" name="mode" value="register" />
+                                <input type="hidden" name="role" value="Koc" class="quick-role-input" />
+                                <button type="submit" class="social-auth-btn social-auth-btn-inline w-100" aria-label="Đăng ký nhanh với Facebook">
+                                    <img src="~/images/icon/facebook.png" alt="Facebook" />
+                                    <span>Facebook</span>
+                                </button>
+                            </form>
+                            <form method="post" asp-page="/Public/Login" asp-page-handler="External" class="m-0">
+                                <input type="hidden" name="provider" value="Google" />
+                                <input type="hidden" name="mode" value="register" />
+                                <input type="hidden" name="role" value="Koc" class="quick-role-input" />
+                                <button type="submit" class="social-auth-btn social-auth-btn-inline w-100" aria-label="Đăng ký nhanh với Google">
+                                    <img src="~/images/icon/google.png" alt="Google" />
+                                    <span>Google</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </section>
+
+@section Scripts {
+    <script>
+        (() => {
+            const roleRadios = document.querySelectorAll('input[name="quickRole"]');
+            const roleInputs = document.querySelectorAll('.quick-role-input');
+            const syncRole = () => {
+                const selected = document.querySelector('input[name="quickRole"]:checked');
+                const value = selected ? selected.value : 'Koc';
+                roleInputs.forEach(x => x.value = value);
+            };
+            roleRadios.forEach(r => r.addEventListener('change', syncRole));
+            syncRole();
+        })();
+    </script>
+}

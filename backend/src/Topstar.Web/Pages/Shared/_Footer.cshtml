@@ -1,9 +1,23 @@
-﻿<footer class="site-footer">
+@using Topstar.Application.Website
+@inject IWebsiteContentService WebsiteContentService
+@{
+    var website = await WebsiteContentService.GetWebsiteContentAsync(Context?.RequestAborted ?? default);
+    var websiteName = website?.WebsiteName ?? "TopStar";
+    var logoPath = string.IsNullOrWhiteSpace(website?.LogoUrl) ? "/images/logo.png" : website!.LogoUrl!;
+    var contactEmail = string.IsNullOrWhiteSpace(website?.ContactEmail) ? "hello@topstar.vn" : website!.ContactEmail!;
+    var hotline = string.IsNullOrWhiteSpace(website?.Hotline) ? "+84 (0) 28 1234 5678" : website!.Hotline!;
+    var address = string.IsNullOrWhiteSpace(website?.Address) ? "TP. Hồ Chí Minh, Việt Nam" : website!.Address!;
+    var domain = string.IsNullOrWhiteSpace(website?.Domain) ? "#" : website!.Domain!;
+    var copyrightText = string.IsNullOrWhiteSpace(website?.CopyrightText)
+        ? $"© {DateTime.UtcNow.Year} {websiteName}. Tất cả quyền được bảo lưu."
+        : website!.CopyrightText!;
+}
+<footer class="site-footer">
     <div class="container py-5">
         <div class="row g-4 align-items-start">
             <div class="col-lg-3 col-md-6">
                 <a asp-page="/Index" class="site-footer-brand text-decoration-none">
-                    <img src="~/images/logo.png" alt="TopStar" class="site-footer-logo" />
+                    <img src="@logoPath" alt="@websiteName" class="site-footer-logo" />
                 </a>
                 <p class="site-footer-desc">
                     Nền tảng kết nối KOC, KOL và thương hiệu lớn. Chúng tôi giúp triển khai chiến dịch
@@ -40,10 +54,10 @@
             <div class="col-lg-3 col-md-6">
                 <h6 class="site-footer-title">Liên hệ</h6>
                 <ul class="list-unstyled site-footer-list mb-0">
-                    <li>hello@topstar.vn</li>
-                    <li>+84 (0) 28 1234 5678</li>
-                    <li>123 Nguyễn Huệ, Quận 1</li>
-                    <li>TP. Hồ Chí Minh, Việt Nam</li>
+                    <li>@contactEmail</li>
+                    <li>@hotline</li>
+                    <li>@address</li>
+                    <li>@domain</li>
                 </ul>
             </div>
         </div>
@@ -51,7 +65,8 @@
 
     <div class="site-footer-bottom">
         <div class="container text-center py-3">
-            © 2026 TopStar. Tất cả quyền được bảo lưu.
+            @copyrightText
         </div>
     </div>
 </footer>
+
