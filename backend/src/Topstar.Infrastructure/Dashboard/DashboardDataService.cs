@@ -182,6 +182,7 @@ public sealed class DashboardDataService(TopstarDbContext db) : IDashboardDataSe
            || string.IsNullOrWhiteSpace(user.Email)
            || string.IsNullOrWhiteSpace(user.Phone)
            || string.IsNullOrWhiteSpace(user.Gender)
+           || !user.DateOfBirth.HasValue
            || string.IsNullOrWhiteSpace(koc.DisplayName)
            || string.IsNullOrWhiteSpace(koc.StreetAddress)
            || !koc.ProvinceId.HasValue

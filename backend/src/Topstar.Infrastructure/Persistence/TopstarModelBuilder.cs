@@ -18,6 +18,7 @@ internal static class TopstarModelBuilder
             e.ToTable("Users");
             e.HasKey(x => x.Id);
             e.HasIndex(x => x.Email).IsUnique();
+            e.HasIndex(x => x.Phone).IsUnique().HasFilter("[Phone] IS NOT NULL AND [Phone] <> ''");
             e.Property(x => x.Gender).HasMaxLength(20);
         });
         modelBuilder.Entity<RoleEntity>(e => { e.ToTable("Roles"); e.HasKey(x => x.Id); e.HasIndex(x => x.Code).IsUnique(); });

@@ -8,7 +8,6 @@
     <h1 class="section-title mb-0">Chỉnh sửa hồ sơ Brand</h1>
     <div class="card-x">
         <form method="post" enctype="multipart/form-data" novalidate>
-            <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
             @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
             {
                 <div class="alert alert-danger py-2">@Model.ErrorMessage</div>
@@ -18,39 +17,47 @@
                 <div class="col-md-6">
                     <label asp-for="Input.CompanyName" class="form-label">Tên công ty/Brand</label>
                     <input asp-for="Input.CompanyName" class="form-control" />
+                    <span asp-validation-for="Input.CompanyName" class="text-danger small"></span>
                 </div>
                 <div class="col-md-6">
                     <label asp-for="Input.ContactName" class="form-label">Tên người đại diện</label>
                     <input asp-for="Input.ContactName" class="form-control" />
+                    <span asp-validation-for="Input.ContactName" class="text-danger small"></span>
                 </div>
                 <div class="col-md-6">
                     <label asp-for="Input.Email" class="form-label">Email liên hệ</label>
                     <input asp-for="Input.Email" class="form-control" />
+                    <span asp-validation-for="Input.Email" class="text-danger small"></span>
                 </div>
                 <div class="col-md-6">
                     <label asp-for="Input.Phone" class="form-label">Số điện thoại user</label>
                     <input asp-for="Input.Phone" class="form-control" />
+                    <span asp-validation-for="Input.Phone" class="text-danger small"></span>
                 </div>
                 <div class="col-md-6">
                     <label asp-for="Input.ContactPhone" class="form-label">Số điện thoại người liên hệ</label>
                     <input asp-for="Input.ContactPhone" class="form-control" />
+                    <span asp-validation-for="Input.ContactPhone" class="text-danger small"></span>
                 </div>
 
                 <div class="col-12">
                     <label asp-for="Input.StreetAddress" class="form-label">Số nhà + tên đường</label>
                     <input asp-for="Input.StreetAddress" class="form-control" />
+                    <span asp-validation-for="Input.StreetAddress" class="text-danger small"></span>
                 </div>
                 <div class="col-md-6">
                     <label asp-for="Input.ProvinceId" class="form-label">Tỉnh/Thành phố</label>
                     <select asp-for="Input.ProvinceId" asp-items="Model.ProvinceOptions" class="form-select" id="brand-edit-province">
                         <option value="">Chọn Tỉnh/Thành phố</option>
                     </select>
+                    <span asp-validation-for="Input.ProvinceId" class="text-danger small"></span>
                 </div>
                 <div class="col-md-6">
                     <label asp-for="Input.WardId" class="form-label">Phường/Xã</label>
                     <select asp-for="Input.WardId" asp-items="Model.WardOptions" class="form-select" id="brand-edit-ward">
                         <option value="">Chọn Phường/Xã</option>
                     </select>
+                    <span asp-validation-for="Input.WardId" class="text-danger small"></span>
                 </div>
             </div>
 
@@ -60,14 +67,17 @@
                 <div class="col-md-4">
                     <label asp-for="Input.TaxCode" class="form-label">Mã số thuế</label>
                     <input asp-for="Input.TaxCode" class="form-control" />
+                    <span asp-validation-for="Input.TaxCode" class="text-danger small"></span>
                 </div>
                 <div class="col-md-8">
                     <label asp-for="Input.TaxCompanyName" class="form-label">Tên pháp lý trên MST</label>
                     <input asp-for="Input.TaxCompanyName" class="form-control" />
+                    <span asp-validation-for="Input.TaxCompanyName" class="text-danger small"></span>
                 </div>
                 <div class="col-12">
                     <label asp-for="Input.TaxInvoiceAddress" class="form-label">Địa chỉ xuất hóa đơn</label>
                     <input asp-for="Input.TaxInvoiceAddress" class="form-control" />
+                    <span asp-validation-for="Input.TaxInvoiceAddress" class="text-danger small"></span>
                 </div>
                 <div class="col-12">
                     <label class="form-label">Giấy phép kinh doanh</label>

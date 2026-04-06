@@ -6,10 +6,13 @@
 
 <div class="page-wrap card-list">
     <h1 class="section-title mb-0">Chỉnh sửa hồ sơ KOC</h1>
+    @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+    {
+        <div class="alert alert-success py-2 mt-2">@Model.SuccessMessage</div>
+    }
 
     <div class="card-x">
         <form method="post" novalidate>
-            <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
             @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
             {
                 <div class="alert alert-danger py-2">@Model.ErrorMessage</div>
@@ -17,30 +20,33 @@
 
             <ul class="nav nav-tabs mb-4" id="kocEditTabs" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="tab-basic" data-bs-toggle="tab" data-bs-target="#pane-basic" type="button" role="tab" aria-controls="pane-basic" aria-selected="true">Thông tin cơ bản</button>
+                    <button class="nav-link @(Model.ActiveTab == "basic" ? "active" : "")" id="tab-basic" data-bs-toggle="tab" data-bs-target="#pane-basic" type="button" role="tab" aria-controls="pane-basic" aria-selected="@(Model.ActiveTab == "basic")">Thông tin cơ bản</button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="tab-social" data-bs-toggle="tab" data-bs-target="#pane-social" type="button" role="tab" aria-controls="pane-social" aria-selected="false">Mạng xã hội</button>
+                    <button class="nav-link @(Model.ActiveTab == "social" ? "active" : "")" id="tab-social" data-bs-toggle="tab" data-bs-target="#pane-social" type="button" role="tab" aria-controls="pane-social" aria-selected="@(Model.ActiveTab == "social")">Mạng xã hội</button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="tab-personal" data-bs-toggle="tab" data-bs-target="#pane-personal" type="button" role="tab" aria-controls="pane-personal" aria-selected="false">Thông tin cá nhân</button>
+                    <button class="nav-link @(Model.ActiveTab == "personal" ? "active" : "")" id="tab-personal" data-bs-toggle="tab" data-bs-target="#pane-personal" type="button" role="tab" aria-controls="pane-personal" aria-selected="@(Model.ActiveTab == "personal")">Thông tin cá nhân</button>
                 </li>
             </ul>
 
             <div class="tab-content" id="kocEditTabsContent">
-                <div class="tab-pane fade show active" id="pane-basic" role="tabpanel" aria-labelledby="tab-basic" tabindex="0">
+                <div class="tab-pane fade @(Model.ActiveTab == "basic" ? "show active" : "")" id="pane-basic" role="tabpanel" aria-labelledby="tab-basic" tabindex="0">
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label asp-for="Input.FullName" class="form-label">Họ và tên</label>
                             <input asp-for="Input.FullName" class="form-control" />
+                            <span asp-validation-for="Input.FullName" class="text-danger small"></span>
                         </div>
                         <div class="col-md-6">
                             <label asp-for="Input.Email" class="form-label">Email</label>
                             <input asp-for="Input.Email" class="form-control" />
+                            <span asp-validation-for="Input.Email" class="text-danger small"></span>
                         </div>
                         <div class="col-md-4">
                             <label asp-for="Input.Phone" class="form-label">Số điện thoại</label>
                             <input asp-for="Input.Phone" class="form-control" />
+                            <span asp-validation-for="Input.Phone" class="text-danger small"></span>
                         </div>
                         <div class="col-md-4">
                             <label asp-for="Input.Gender" class="form-label">Giới tính</label>
@@ -50,32 +56,41 @@
                                 <option value="Female">Nữ</option>
                                 <option value="Other">Khác</option>
                             </select>
+                            <span asp-validation-for="Input.Gender" class="text-danger small"></span>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Ngày sinh</label>
-                            <input type="date" class="form-control" disabled />
-                            <small class="text-muted">Ngày sinh sẽ được bổ sung ở phiên bản tiếp theo.</small>
+                            <label asp-for="Input.DateOfBirth" class="form-label">Ngày sinh</label>
+                            <input asp-for="Input.DateOfBirth" type="date" class="form-control" />
+                            <span asp-validation-for="Input.DateOfBirth" class="text-danger small"></span>
                         </div>
                         <div class="col-12">
                             <label asp-for="Input.StreetAddress" class="form-label">Số nhà + tên đường</label>
                             <input asp-for="Input.StreetAddress" class="form-control" />
+                            <span asp-validation-for="Input.StreetAddress" class="text-danger small"></span>
                         </div>
                         <div class="col-md-6">
                             <label asp-for="Input.ProvinceId" class="form-label">Tỉnh/Thành phố</label>
                             <select asp-for="Input.ProvinceId" asp-items="Model.ProvinceOptions" class="form-select" id="koc-edit-province">
                                 <option value="">Chọn Tỉnh/Thành phố</option>
                             </select>
+                            <span asp-validation-for="Input.ProvinceId" class="text-danger small"></span>
                         </div>
                         <div class="col-md-6">
                             <label asp-for="Input.WardId" class="form-label">Phường/Xã</label>
                             <select asp-for="Input.WardId" asp-items="Model.WardOptions" class="form-select" id="koc-edit-ward">
                                 <option value="">Chọn Phường/Xã</option>
                             </select>
+                            <span asp-validation-for="Input.WardId" class="text-danger small"></span>
                         </div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a asp-page="/Koc/Profile" class="btn btn-outline-secondary">Hủy</a>
+                        <button type="submit" name="saveSection" value="basic" class="btn btn-warning">Lưu thông tin cơ bản</button>
                     </div>
                 </div>
 
-                <div class="tab-pane fade" id="pane-social" role="tabpanel" aria-labelledby="tab-social" tabindex="0">
+                <div class="tab-pane fade @(Model.ActiveTab == "social" ? "show active" : "")" id="pane-social" role="tabpanel" aria-labelledby="tab-social" tabindex="0">
+                    <span asp-validation-for="Input.Platforms" class="text-danger small d-block mb-2"></span>
                     @for (var i = 0; i < Model.Platforms.Count; i++)
                     {
                         var platform = Model.Platforms[i];
@@ -86,10 +101,12 @@
                                 <div class="col-md-6">
                                     <label class="form-label">Link kênh</label>
                                     <input asp-for="Input.Platforms[i].ChannelUrl" class="form-control" />
+                                    <span asp-validation-for="Input.Platforms[i].ChannelUrl" class="text-danger small"></span>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Followers</label>
                                     <input asp-for="Input.Platforms[i].Followers" type="number" min="0" class="form-control" />
+                                    <span asp-validation-for="Input.Platforms[i].Followers" class="text-danger small"></span>
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label">Ngành hàng</label>
@@ -106,13 +123,18 @@
                                             </label>
                                         }
                                     </div>
+                                    <span asp-validation-for="Input.Platforms[i].SelectedCategoryCodes" class="text-danger small d-block mt-1"></span>
                                 </div>
                             </div>
                         </div>
                     }
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a asp-page="/Koc/Profile" class="btn btn-outline-secondary">Hủy</a>
+                        <button type="submit" name="saveSection" value="social" class="btn btn-warning">Lưu mạng xã hội</button>
+                    </div>
                 </div>
 
-                <div class="tab-pane fade" id="pane-personal" role="tabpanel" aria-labelledby="tab-personal" tabindex="0">
+                <div class="tab-pane fade @(Model.ActiveTab == "personal" ? "show active" : "")" id="pane-personal" role="tabpanel" aria-labelledby="tab-personal" tabindex="0">
                     <div class="row g-3">
                         <div class="col-md-4">
                             <label asp-for="Input.WeightKg" class="form-label">Cân nặng (kg)</label>
@@ -179,12 +201,11 @@
                             }
                         </div>
                     </div>
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a asp-page="/Koc/Profile" class="btn btn-outline-secondary">Hủy</a>
+                        <button type="submit" name="saveSection" value="personal" class="btn btn-warning">Lưu thông tin cá nhân</button>
+                    </div>
                 </div>
-            </div>
-
-            <div class="d-flex justify-content-end gap-2 mt-4">
-                <a asp-page="/Koc/Profile" class="btn btn-outline-secondary">Hủy</a>
-                <button type="submit" class="btn btn-warning">Lưu hồ sơ</button>
             </div>
         </form>
     </div>
@@ -247,6 +268,21 @@
                             $ward.append($('<option/>', { value: ward.id, text: ward.name }));
                         });
                     });
+            });
+
+            function syncCategoryChipStyle($checkbox) {
+                var $label = $checkbox.closest('label');
+                if (!$label.length) return;
+                $label.toggleClass('btn-warning', $checkbox.is(':checked'));
+                $label.toggleClass('btn-outline-secondary', !$checkbox.is(':checked'));
+            }
+
+            $('input[type="checkbox"][name*="SelectedCategoryCodes"]').each(function () {
+                syncCategoryChipStyle($(this));
+            });
+
+            $(document).on('change', 'input[type="checkbox"][name*="SelectedCategoryCodes"]', function () {
+                syncCategoryChipStyle($(this));
             });
         })();
     </script>

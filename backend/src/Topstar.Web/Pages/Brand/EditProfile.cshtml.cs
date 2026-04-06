@@ -3,6 +3,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Topstar.Application.Dashboard;
 using Topstar.Application.KocRegistration;
@@ -61,12 +62,12 @@ public sealed class EditProfileModel(
 
             if (Input.ProvinceId.HasValue && !await kocRegistrationService.IsValidProvinceAsync(Input.ProvinceId.Value, cancellationToken))
             {
-                ModelState.AddModelError(nameof(Input.ProvinceId), "Tỉnh/Thành phố không hợp lệ.");
+                ModelState.AddModelError("Input.ProvinceId", "Tỉnh/Thành phố không hợp lệ.");
             }
 
             if (Input.WardId.HasValue && !await kocRegistrationService.IsValidWardAsync(Input.WardId.Value, Input.ProvinceId, cancellationToken))
             {
-                ModelState.AddModelError(nameof(Input.WardId), "Phường/Xã không hợp lệ.");
+                ModelState.AddModelError("Input.WardId", "Phường/Xã không hợp lệ.");
             }
 
             await LoadLookupAsync(cancellationToken);
@@ -80,6 +81,12 @@ public sealed class EditProfileModel(
             if (user is null || brand is null)
             {
                 ErrorMessage = "Không tìm thấy hồ sơ Brand.";
+                return Page();
+            }
+
+            await ValidateUniqueLoginFieldsAsync(parsedUserId, cancellationToken);
+            if (!ModelState.IsValid)
+            {
                 return Page();
             }
 
@@ -117,11 +124,16 @@ public sealed class EditProfileModel(
             brand.StreetAddress = Input.StreetAddress;
             brand.ProvinceId = Input.ProvinceId;
             brand.WardId = Input.WardId;
-            brand.Status = "Submitted";
+            brand.Status = "PendingReview";
             brand.UpdatedAtUtc = DateTime.UtcNow;
 
             await dbContext.SaveChangesAsync(cancellationToken);
             return RedirectToPage("/Brand/Dashboard");
+        }
+        catch (DbUpdateException dbEx) when (TryMapUniqueViolationToModelState(dbEx))
+        {
+            await LoadLookupAsync(cancellationToken);
+            return Page();
         }
         catch (Exception ex)
         {
@@ -205,39 +217,87 @@ public sealed class EditProfileModel(
         Input.TaxInvoiceAddress = (Input.TaxInvoiceAddress ?? string.Empty).Trim();
     }
 
+    private async Task ValidateUniqueLoginFieldsAsync(Guid currentUserId, CancellationToken cancellationToken)
+    {
+        var email = (Input.Email ?? string.Empty).Trim();
+        var phone = (Input.Phone ?? string.Empty).Trim();
+
+        if (!string.IsNullOrWhiteSpace(email))
+        {
+            var emailExists = await dbContext.Users.AsNoTracking()
+                .AnyAsync(x => x.Id != currentUserId && x.Email == email, cancellationToken);
+            if (emailExists)
+            {
+                ModelState.AddModelError("Input.Email", "Email đã được sử dụng bởi tài khoản khác.");
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(phone))
+        {
+            var phoneExists = await dbContext.Users.AsNoTracking()
+                .AnyAsync(x => x.Id != currentUserId && x.Phone == phone, cancellationToken);
+            if (phoneExists)
+            {
+                ModelState.AddModelError("Input.Phone", "Số điện thoại đã được sử dụng bởi tài khoản khác.");
+            }
+        }
+    }
+
+    private bool TryMapUniqueViolationToModelState(DbUpdateException ex)
+    {
+        var rootMessage = ex.GetBaseException().Message;
+        if (ex.InnerException is SqlException sqlEx && (sqlEx.Number == 2601 || sqlEx.Number == 2627))
+        {
+            if (rootMessage.Contains("Email", StringComparison.OrdinalIgnoreCase))
+            {
+                ModelState.AddModelError("Input.Email", "Email đã được sử dụng bởi tài khoản khác.");
+                return true;
+            }
+
+            if (rootMessage.Contains("Phone", StringComparison.OrdinalIgnoreCase))
+            {
+                ModelState.AddModelError("Input.Phone", "Số điện thoại đã được sử dụng bởi tài khoản khác.");
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public sealed class InputModel
     {
-        [Required]
+        [Required(ErrorMessage = "Vui lòng nhập tên công ty/Brand.")]
         public string CompanyName { get; set; } = string.Empty;
 
-        [Required]
+        [Required(ErrorMessage = "Vui lòng nhập tên người đại diện.")]
         public string ContactName { get; set; } = string.Empty;
 
-        [Required]
+        [Required(ErrorMessage = "Vui lòng nhập số điện thoại người liên hệ.")]
         public string ContactPhone { get; set; } = string.Empty;
 
-        [Required, EmailAddress]
+        [Required(ErrorMessage = "Vui lòng nhập email liên hệ.")]
+        [EmailAddress(ErrorMessage = "Email không đúng định dạng.")]
         public string Email { get; set; } = string.Empty;
 
-        [Required]
+        [Required(ErrorMessage = "Vui lòng nhập số điện thoại user.")]
         public string Phone { get; set; } = string.Empty;
 
-        [Required]
+        [Required(ErrorMessage = "Vui lòng nhập số nhà và tên đường.")]
         public string StreetAddress { get; set; } = string.Empty;
 
-        [Required]
+        [Required(ErrorMessage = "Vui lòng chọn Tỉnh/Thành phố.")]
         public Guid? ProvinceId { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Vui lòng chọn Phường/Xã.")]
         public Guid? WardId { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Vui lòng nhập mã số thuế.")]
         public string TaxCode { get; set; } = string.Empty;
 
-        [Required]
+        [Required(ErrorMessage = "Vui lòng nhập tên pháp lý trên mã số thuế.")]
         public string TaxCompanyName { get; set; } = string.Empty;
 
-        [Required]
+        [Required(ErrorMessage = "Vui lòng nhập địa chỉ xuất hóa đơn.")]
         public string TaxInvoiceAddress { get; set; } = string.Empty;
 
         public string? CurrentBusinessLicenseUrl { get; set; }

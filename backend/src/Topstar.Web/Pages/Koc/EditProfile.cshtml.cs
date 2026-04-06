@@ -3,6 +3,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Topstar.Application.Dashboard;
 using Topstar.Application.KocRegistration;
@@ -15,8 +16,15 @@ namespace Topstar.Web.Pages.Koc;
 public sealed class EditProfileModel(
     IDashboardDataService dashboardDataService,
     IKocRegistrationService kocRegistrationService,
-    TopstarDbContext dbContext) : KocGuardedPageModel(dashboardDataService)
+    TopstarDbContext dbContext,
+    ILogger<EditProfileModel> logger) : KocGuardedPageModel(dashboardDataService)
 {
+    [TempData]
+    public string? SuccessMessage { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public string ActiveTab { get; set; } = "basic";
+
     [BindProperty]
     public InputModel Input { get; set; } = new();
 
@@ -46,167 +54,270 @@ public sealed class EditProfileModel(
         return Page();
     }
 
-    public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
+    public async Task<IActionResult> OnPostAsync(string? saveSection, CancellationToken cancellationToken)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!Guid.TryParse(userId, out var parsedUserId))
+        try
         {
-            return RedirectToPage("/Public/Login");
+            var section = NormalizeSection(saveSection);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userId, out var parsedUserId))
+            {
+                return RedirectToPage("/Public/Login");
+            }
+
+            NormalizeInput();
+            ModelState.Clear();
+
+            if (section == "basic")
+            {
+                if (string.IsNullOrWhiteSpace(Input.FullName))
+                {
+                    ModelState.AddModelError("Input.FullName", "Vui lòng nhập họ và tên.");
+                }
+                if (string.IsNullOrWhiteSpace(Input.Email))
+                {
+                    ModelState.AddModelError("Input.Email", "Vui lòng nhập email.");
+                }
+                else if (!new EmailAddressAttribute().IsValid(Input.Email))
+                {
+                    ModelState.AddModelError("Input.Email", "Email không đúng định dạng.");
+                }
+                if (string.IsNullOrWhiteSpace(Input.Phone))
+                {
+                    ModelState.AddModelError("Input.Phone", "Vui lòng nhập số điện thoại.");
+                }
+                if (string.IsNullOrWhiteSpace(Input.Gender))
+                {
+                    ModelState.AddModelError("Input.Gender", "Vui lòng chọn giới tính.");
+                }
+                if (!Input.DateOfBirth.HasValue)
+                {
+                    ModelState.AddModelError("Input.DateOfBirth", "Vui lòng chọn ngày sinh.");
+                }
+                if (string.IsNullOrWhiteSpace(Input.StreetAddress))
+                {
+                    ModelState.AddModelError("Input.StreetAddress", "Vui lòng nhập số nhà và tên đường.");
+                }
+                if (!Input.ProvinceId.HasValue)
+                {
+                    ModelState.AddModelError("Input.ProvinceId", "Vui lòng chọn Tỉnh/Thành phố.");
+                }
+                if (!Input.WardId.HasValue)
+                {
+                    ModelState.AddModelError("Input.WardId", "Vui lòng chọn Phường/Xã.");
+                }
+
+                if (Input.ProvinceId.HasValue && !await kocRegistrationService.IsValidProvinceAsync(Input.ProvinceId.Value, cancellationToken))
+                {
+                    ModelState.AddModelError("Input.ProvinceId", "Tỉnh/Thành phố không hợp lệ.");
+                }
+
+                if (Input.WardId.HasValue && !await kocRegistrationService.IsValidWardAsync(Input.WardId.Value, Input.ProvinceId, cancellationToken))
+                {
+                    ModelState.AddModelError("Input.WardId", "Phường/Xã không hợp lệ.");
+                }
+            }
+
+            if (section == "social")
+            {
+                var hasAnyChannel = false;
+                for (var i = 0; i < Input.Platforms.Count; i++)
+                {
+                    var item = Input.Platforms[i];
+                    var hasChannel = !string.IsNullOrWhiteSpace(item.ChannelUrl);
+                    if (hasChannel)
+                    {
+                        hasAnyChannel = true;
+
+                        if (!Uri.TryCreate(item.ChannelUrl, UriKind.Absolute, out var channelUri)
+                            || (channelUri.Scheme != Uri.UriSchemeHttp && channelUri.Scheme != Uri.UriSchemeHttps))
+                        {
+                            ModelState.AddModelError($"Input.Platforms[{i}].ChannelUrl", "Link kênh không đúng định dạng (http/https).");
+                        }
+
+                        if (!item.Followers.HasValue || item.Followers.Value <= 0)
+                        {
+                            ModelState.AddModelError($"Input.Platforms[{i}].Followers", "Vui lòng nhập followers lớn hơn 0.");
+                        }
+
+                        if (item.SelectedCategoryCodes.Count == 0)
+                        {
+                            ModelState.AddModelError($"Input.Platforms[{i}].SelectedCategoryCodes", "Vui lòng chọn ít nhất 1 ngành hàng cho kênh này.");
+                        }
+                    }
+                    else if (item.Followers.HasValue && item.Followers.Value > 0)
+                    {
+                        ModelState.AddModelError($"Input.Platforms[{i}].ChannelUrl", "Vui lòng nhập link kênh khi đã khai báo followers.");
+                    }
+                }
+
+                if (!hasAnyChannel)
+                {
+                    ModelState.AddModelError("Input.Platforms", "Vui lòng nhập ít nhất 1 kênh mạng xã hội.");
+                }
+            }
+
+            await LoadLookupAsync(cancellationToken);
+            if (!ModelState.IsValid)
+            {
+                ActiveTab = section;
+                return Page();
+            }
+
+            var user = await dbContext.Users.FirstOrDefaultAsync(x => x.Id == parsedUserId, cancellationToken);
+            var kocProfile = await dbContext.KocProfiles.FirstOrDefaultAsync(x => x.UserId == parsedUserId, cancellationToken);
+            if (user is null || kocProfile is null)
+            {
+                ErrorMessage = "Không tìm thấy hồ sơ KOC.";
+                return Page();
+            }
+
+            if (section == "basic")
+            {
+                await ValidateUniqueLoginFieldsAsync(parsedUserId, cancellationToken);
+                if (!ModelState.IsValid)
+                {
+                    ActiveTab = section;
+                    return Page();
+                }
+                user.Email = Input.Email.Trim();
+                user.Phone = Input.Phone.Trim();
+                user.Gender = Input.Gender;
+                user.DateOfBirth = Input.DateOfBirth;
+                user.UpdatedAtUtc = DateTime.UtcNow;
+
+                kocProfile.DisplayName = Input.FullName.Trim();
+                kocProfile.StreetAddress = Input.StreetAddress.Trim();
+                kocProfile.ProvinceId = Input.ProvinceId;
+                kocProfile.WardId = Input.WardId;
+                kocProfile.Status = "PendingReview";
+                kocProfile.UpdatedAtUtc = DateTime.UtcNow;
+            }
+            else if (section == "social")
+            {
+                var existingSocial = await dbContext.KocSocialAccounts.Where(x => x.KocProfileId == kocProfile.Id).ToListAsync(cancellationToken);
+                dbContext.KocSocialAccounts.RemoveRange(existingSocial);
+
+                var existingProfileCategories = await dbContext.KocProfileCategories.Where(x => x.KocProfileId == kocProfile.Id).ToListAsync(cancellationToken);
+                dbContext.KocProfileCategories.RemoveRange(existingProfileCategories);
+
+                var categoryMap = await dbContext.KocCategories.AsNoTracking().ToDictionaryAsync(x => x.Code, x => x.Id, StringComparer.OrdinalIgnoreCase, cancellationToken);
+                var allCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var social in Input.Platforms)
+                {
+                    if (!string.IsNullOrWhiteSpace(social.ChannelUrl))
+                    {
+                        dbContext.KocSocialAccounts.Add(new KocSocialAccountEntity
+                        {
+                            Id = Guid.NewGuid(),
+                            KocProfileId = kocProfile.Id,
+                            Platform = social.Platform,
+                            ChannelUrl = social.ChannelUrl.Trim(),
+                            Followers = social.Followers ?? 0,
+                            IsPrimary = social.Platform.Equals("TikTok", StringComparison.OrdinalIgnoreCase),
+                            IsVerified = false,
+                            ViewCount = 0,
+                            IsVisible = true,
+                            CreatedAtUtc = DateTime.UtcNow
+                        });
+                    }
+
+                    foreach (var code in social.SelectedCategoryCodes.Where(x => !string.IsNullOrWhiteSpace(x)))
+                    {
+                        allCodes.Add(code.Trim());
+                    }
+                }
+
+                foreach (var code in allCodes)
+                {
+                    if (categoryMap.TryGetValue(code, out var categoryId))
+                    {
+                        dbContext.KocProfileCategories.Add(new KocProfileCategoryEntity
+                        {
+                            KocProfileId = kocProfile.Id,
+                            CategoryId = categoryId,
+                            CreatedAtUtc = DateTime.UtcNow
+                        });
+                    }
+                }
+            }
+            else
+            {
+                var bodyProfile = await dbContext.KocBodyProfiles.FirstOrDefaultAsync(x => x.KocProfileId == kocProfile.Id, cancellationToken);
+                if (bodyProfile is null)
+                {
+                    bodyProfile = new KocBodyProfileEntity
+                    {
+                        Id = Guid.NewGuid(),
+                        KocProfileId = kocProfile.Id,
+                        CreatedAtUtc = DateTime.UtcNow
+                    };
+                    dbContext.KocBodyProfiles.Add(bodyProfile);
+                }
+
+                bodyProfile.WeightKg = Input.WeightKg;
+                bodyProfile.HeightCm = Input.HeightCm;
+                bodyProfile.BustCm = Input.BustCm;
+                bodyProfile.WaistCm = Input.WaistCm;
+                bodyProfile.HipCm = Input.HipCm;
+                bodyProfile.MaritalStatus = Input.MaritalStatus;
+                bodyProfile.HasChildren = Input.HasChildren;
+                bodyProfile.ChildrenCount = Input.HasChildren ? Input.Children.Count : 0;
+                bodyProfile.UpdatedAtUtc = DateTime.UtcNow;
+
+                var existingChildren = await dbContext.KocChildren.Where(x => x.KocBodyProfileId == bodyProfile.Id).ToListAsync(cancellationToken);
+                dbContext.KocChildren.RemoveRange(existingChildren);
+                if (Input.HasChildren)
+                {
+                    foreach (var child in Input.Children)
+                    {
+                        dbContext.KocChildren.Add(new KocChildEntity
+                        {
+                            Id = Guid.NewGuid(),
+                            KocBodyProfileId = bodyProfile.Id,
+                            AgeYears = child.Age,
+                            Gender = child.Gender,
+                            BirthYear = child.Age.HasValue ? DateTime.UtcNow.Year - child.Age.Value : null,
+                            CreatedAtUtc = DateTime.UtcNow
+                        });
+                    }
+                }
+
+                var jobPreference = await dbContext.KocJobPreferences.FirstOrDefaultAsync(x => x.KocProfileId == kocProfile.Id, cancellationToken);
+                if (jobPreference is null)
+                {
+                    jobPreference = new KocJobPreferenceEntity
+                    {
+                        Id = Guid.NewGuid(),
+                        KocProfileId = kocProfile.Id,
+                        CreatedAtUtc = DateTime.UtcNow
+                    };
+                    dbContext.KocJobPreferences.Add(jobPreference);
+                }
+
+                jobPreference.MinBudgetAmount = Input.ServicePriceVnd;
+                jobPreference.UpdatedAtUtc = DateTime.UtcNow;
+            }
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+            SuccessMessage = "Lưu thông tin thành công.";
+            return RedirectToPage(new { activeTab = section });
         }
-
-        NormalizeInput();
-
-        if (Input.ProvinceId.HasValue && !await kocRegistrationService.IsValidProvinceAsync(Input.ProvinceId.Value, cancellationToken))
+        catch (DbUpdateException dbEx) when (TryMapUniqueViolationToModelState(dbEx))
         {
-            ModelState.AddModelError(nameof(Input.ProvinceId), "Tỉnh/Thành phố không hợp lệ.");
-        }
-
-        if (Input.WardId.HasValue && !await kocRegistrationService.IsValidWardAsync(Input.WardId.Value, Input.ProvinceId, cancellationToken))
-        {
-            ModelState.AddModelError(nameof(Input.WardId), "Phường/Xã không hợp lệ.");
-        }
-
-        var selectedCategoryCount = Input.Platforms
-            .SelectMany(x => x.SelectedCategoryCodes)
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Count();
-
-        if (selectedCategoryCount < 3)
-        {
-            ModelState.AddModelError(string.Empty, "Vui lòng chọn ít nhất 3 danh mục ngành hàng.");
-        }
-
-        await LoadLookupAsync(cancellationToken);
-        if (!ModelState.IsValid)
-        {
+            await LoadLookupAsync(cancellationToken);
+            ActiveTab = NormalizeSection(saveSection);
             return Page();
         }
-
-        var user = await dbContext.Users.FirstOrDefaultAsync(x => x.Id == parsedUserId, cancellationToken);
-        var kocProfile = await dbContext.KocProfiles.FirstOrDefaultAsync(x => x.UserId == parsedUserId, cancellationToken);
-        if (user is null || kocProfile is null)
+        catch (Exception ex)
         {
-            ErrorMessage = "Không tìm thấy hồ sơ KOC.";
+            logger.LogError(ex, "KOC profile update failed for user {UserId}", User.FindFirstValue(ClaimTypes.NameIdentifier));
+            await LoadLookupAsync(cancellationToken);
+            ErrorMessage = BuildFriendlySaveErrorMessage(ex);
+            ActiveTab = NormalizeSection(saveSection);
             return Page();
         }
-
-        user.Email = Input.Email.Trim();
-        user.Phone = Input.Phone.Trim();
-        user.Gender = Input.Gender;
-        user.UpdatedAtUtc = DateTime.UtcNow;
-
-        kocProfile.DisplayName = Input.FullName.Trim();
-        kocProfile.StreetAddress = Input.StreetAddress.Trim();
-        kocProfile.ProvinceId = Input.ProvinceId;
-        kocProfile.WardId = Input.WardId;
-        kocProfile.Status = "Submitted";
-        kocProfile.UpdatedAtUtc = DateTime.UtcNow;
-
-        var bodyProfile = await dbContext.KocBodyProfiles.FirstOrDefaultAsync(x => x.KocProfileId == kocProfile.Id, cancellationToken);
-        if (bodyProfile is null)
-        {
-            bodyProfile = new KocBodyProfileEntity
-            {
-                Id = Guid.NewGuid(),
-                KocProfileId = kocProfile.Id,
-                CreatedAtUtc = DateTime.UtcNow
-            };
-            dbContext.KocBodyProfiles.Add(bodyProfile);
-        }
-
-        bodyProfile.WeightKg = Input.WeightKg;
-        bodyProfile.HeightCm = Input.HeightCm;
-        bodyProfile.BustCm = Input.BustCm;
-        bodyProfile.WaistCm = Input.WaistCm;
-        bodyProfile.HipCm = Input.HipCm;
-        bodyProfile.MaritalStatus = Input.MaritalStatus;
-        bodyProfile.HasChildren = Input.HasChildren;
-        bodyProfile.ChildrenCount = Input.HasChildren ? Input.Children.Count : 0;
-        bodyProfile.UpdatedAtUtc = DateTime.UtcNow;
-
-        var existingChildren = await dbContext.KocChildren.Where(x => x.KocBodyProfileId == bodyProfile.Id).ToListAsync(cancellationToken);
-        dbContext.KocChildren.RemoveRange(existingChildren);
-        if (Input.HasChildren)
-        {
-            foreach (var child in Input.Children)
-            {
-                dbContext.KocChildren.Add(new KocChildEntity
-                {
-                    Id = Guid.NewGuid(),
-                    KocBodyProfileId = bodyProfile.Id,
-                    AgeYears = child.Age,
-                    Gender = child.Gender,
-                    BirthYear = child.Age.HasValue ? DateTime.UtcNow.Year - child.Age.Value : null,
-                    CreatedAtUtc = DateTime.UtcNow
-                });
-            }
-        }
-
-        var existingSocial = await dbContext.KocSocialAccounts.Where(x => x.KocProfileId == kocProfile.Id).ToListAsync(cancellationToken);
-        dbContext.KocSocialAccounts.RemoveRange(existingSocial);
-
-        var existingProfileCategories = await dbContext.KocProfileCategories.Where(x => x.KocProfileId == kocProfile.Id).ToListAsync(cancellationToken);
-        dbContext.KocProfileCategories.RemoveRange(existingProfileCategories);
-
-        var categoryMap = await dbContext.KocCategories.AsNoTracking().ToDictionaryAsync(x => x.Code, x => x.Id, StringComparer.OrdinalIgnoreCase, cancellationToken);
-        var allCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var social in Input.Platforms)
-        {
-            if (!string.IsNullOrWhiteSpace(social.ChannelUrl))
-            {
-                dbContext.KocSocialAccounts.Add(new KocSocialAccountEntity
-                {
-                    Id = Guid.NewGuid(),
-                    KocProfileId = kocProfile.Id,
-                    Platform = social.Platform,
-                    ChannelUrl = social.ChannelUrl.Trim(),
-                    Followers = social.Followers ?? 0,
-                    IsPrimary = social.Platform.Equals("TikTok", StringComparison.OrdinalIgnoreCase),
-                    IsVerified = false,
-                    ViewCount = 0,
-                    IsVisible = true,
-                    CreatedAtUtc = DateTime.UtcNow
-                });
-            }
-
-            foreach (var code in social.SelectedCategoryCodes.Where(x => !string.IsNullOrWhiteSpace(x)))
-            {
-                allCodes.Add(code.Trim());
-            }
-        }
-
-        foreach (var code in allCodes)
-        {
-            if (categoryMap.TryGetValue(code, out var categoryId))
-            {
-                dbContext.KocProfileCategories.Add(new KocProfileCategoryEntity
-                {
-                    KocProfileId = kocProfile.Id,
-                    CategoryId = categoryId,
-                    CreatedAtUtc = DateTime.UtcNow
-                });
-            }
-        }
-
-        var jobPreference = await dbContext.KocJobPreferences.FirstOrDefaultAsync(x => x.KocProfileId == kocProfile.Id, cancellationToken);
-        if (jobPreference is null)
-        {
-            jobPreference = new KocJobPreferenceEntity
-            {
-                Id = Guid.NewGuid(),
-                KocProfileId = kocProfile.Id,
-                CreatedAtUtc = DateTime.UtcNow
-            };
-            dbContext.KocJobPreferences.Add(jobPreference);
-        }
-
-        jobPreference.MinBudgetAmount = Input.ServicePriceVnd;
-        jobPreference.UpdatedAtUtc = DateTime.UtcNow;
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return RedirectToPage("/Koc/Dashboard");
     }
 
     public async Task<IActionResult> OnGetWardsByProvinceAsync(Guid? provinceId, CancellationToken cancellationToken)
@@ -251,6 +362,7 @@ public sealed class EditProfileModel(
             Email = user.Email,
             Phone = user.Phone ?? string.Empty,
             Gender = user.Gender ?? string.Empty,
+            DateOfBirth = user.DateOfBirth,
             StreetAddress = koc.StreetAddress ?? string.Empty,
             ProvinceId = koc.ProvinceId,
             WardId = koc.WardId,
@@ -271,7 +383,7 @@ public sealed class EditProfileModel(
                     Platform = platform,
                     ChannelUrl = social?.ChannelUrl,
                     Followers = social?.Followers,
-                    SelectedCategoryCodes = selectedCategoryCodes.ToList()
+                    SelectedCategoryCodes = social is null ? [] : selectedCategoryCodes.ToList()
                 };
             }).ToList()
         };
@@ -339,27 +451,96 @@ public sealed class EditProfileModel(
         }
     }
 
+    private static string NormalizeSection(string? saveSection)
+    {
+        var section = (saveSection ?? string.Empty).Trim().ToLowerInvariant();
+        return section is "basic" or "social" or "personal" ? section : "basic";
+    }
+
+    private static string BuildFriendlySaveErrorMessage(Exception ex)
+    {
+        var root = ex.GetBaseException().Message;
+        if (root.Contains("DateOfBirth", StringComparison.OrdinalIgnoreCase)
+            || root.Contains("Invalid column name", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Không thể lưu vì CSDL chưa cập nhật cấu trúc mới (thiếu cột Ngày sinh). Vui lòng chạy script cập nhật database rồi thử lại.";
+        }
+
+        return "Đã xảy ra lỗi khi lưu hồ sơ KOC. Vui lòng thử lại, nếu vẫn lỗi hãy liên hệ kỹ thuật.";
+    }
+
+    private async Task ValidateUniqueLoginFieldsAsync(Guid currentUserId, CancellationToken cancellationToken)
+    {
+        var email = (Input.Email ?? string.Empty).Trim();
+        var phone = (Input.Phone ?? string.Empty).Trim();
+
+        if (!string.IsNullOrWhiteSpace(email))
+        {
+            var emailExists = await dbContext.Users.AsNoTracking()
+                .AnyAsync(x => x.Id != currentUserId && x.Email == email, cancellationToken);
+            if (emailExists)
+            {
+                ModelState.AddModelError("Input.Email", "Email đã được sử dụng bởi tài khoản khác.");
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(phone))
+        {
+            var phoneExists = await dbContext.Users.AsNoTracking()
+                .AnyAsync(x => x.Id != currentUserId && x.Phone == phone, cancellationToken);
+            if (phoneExists)
+            {
+                ModelState.AddModelError("Input.Phone", "Số điện thoại đã được sử dụng bởi tài khoản khác.");
+            }
+        }
+    }
+
+    private bool TryMapUniqueViolationToModelState(DbUpdateException ex)
+    {
+        var rootMessage = ex.GetBaseException().Message;
+        if (ex.InnerException is SqlException sqlEx && (sqlEx.Number == 2601 || sqlEx.Number == 2627))
+        {
+            if (rootMessage.Contains("Email", StringComparison.OrdinalIgnoreCase))
+            {
+                ModelState.AddModelError("Input.Email", "Email đã được sử dụng bởi tài khoản khác.");
+                return true;
+            }
+
+            if (rootMessage.Contains("Phone", StringComparison.OrdinalIgnoreCase))
+            {
+                ModelState.AddModelError("Input.Phone", "Số điện thoại đã được sử dụng bởi tài khoản khác.");
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public sealed class InputModel
     {
-        [Required]
+        [Required(ErrorMessage = "Vui lòng nhập họ và tên.")]
         public string FullName { get; set; } = string.Empty;
 
-        [Required, EmailAddress]
+        [Required(ErrorMessage = "Vui lòng nhập email.")]
+        [EmailAddress(ErrorMessage = "Email không đúng định dạng.")]
         public string Email { get; set; } = string.Empty;
 
-        [Required]
+        [Required(ErrorMessage = "Vui lòng nhập số điện thoại.")]
         public string Phone { get; set; } = string.Empty;
 
-        [Required]
+        [Required(ErrorMessage = "Vui lòng chọn giới tính.")]
         public string Gender { get; set; } = string.Empty;
 
-        [Required]
+        [Required(ErrorMessage = "Vui lòng chọn ngày sinh.")]
+        public DateTime? DateOfBirth { get; set; }
+
+        [Required(ErrorMessage = "Vui lòng nhập số nhà và tên đường.")]
         public string StreetAddress { get; set; } = string.Empty;
 
-        [Required]
+        [Required(ErrorMessage = "Vui lòng chọn Tỉnh/Thành phố.")]
         public Guid? ProvinceId { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Vui lòng chọn Phường/Xã.")]
         public Guid? WardId { get; set; }
 
         public decimal? WeightKg { get; set; }

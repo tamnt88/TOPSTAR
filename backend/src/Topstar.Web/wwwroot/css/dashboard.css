@@ -192,7 +192,7 @@ body.dashboard-body {
 }
 
 .card-list { display: grid; gap: 14px; }
-.section-title { font-family: 'Saira Stencil', sans-serif; font-size: 56px; margin: 0; }
+.section-title { font-family: 'Saira Stencil', sans-serif; font-size: 25px; margin: 0; }
 .kpi-title { color: var(--dash-muted); font-size: 15px; }
 .kpi-grid { display: grid; gap: 12px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .kpi-box { background: #fff; border: 1px solid #f1c995; border-radius: 14px; padding: 14px; }
@@ -216,7 +216,7 @@ body.dashboard-body {
 @media (max-width: 991.98px) {
   .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .metric-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .section-title { font-size: 42px; }
+  .section-title { font-size: 25px; }
 }
 
 @media (max-width: 767.98px) {
@@ -225,5 +225,5 @@ body.dashboard-body {
   .dashboard-user-actions { gap: 8px; }
   .kpi-grid, .grid-2, .metric-row { grid-template-columns: 1fr; }
   .kpi-value { font-size: 34px; }
-  .section-title { font-size: 34px; }
+  .section-title { font-size: 25px; }
 }
