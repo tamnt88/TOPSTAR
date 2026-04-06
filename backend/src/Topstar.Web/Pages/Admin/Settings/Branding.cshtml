@@ -1,0 +1,89 @@
+﻿@page
+@model Topstar.Web.Pages.Admin.Settings.BrandingModel
+@{
+    ViewData["Title"] = "Logo & Favicon";
+}
+<style>
+    .branding-preview-wrap {
+        margin-top: 10px;
+        padding: 10px;
+        border: 1px dashed #d8c3a1;
+        border-radius: 10px;
+        background: #fffdf8;
+        min-height: 90px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .branding-preview-wrap img {
+        max-width: 100%;
+        max-height: 120px;
+        object-fit: contain;
+        border-radius: 6px;
+    }
+
+    .branding-preview-favicon img {
+        width: 48px;
+        height: 48px;
+    }
+</style>
+<div class="page-wrap card-list admin-page-wrap">
+    <div class="card-x">
+        <h2 class="section-title mb-2">Cấu hình logo & fav</h2>
+        <p class="kpi-title">Quản lý logo website, favicon, ảnh chia sẻ mặc định cho toàn hệ thống.</p>
+
+        @if (TempData["AdminMessageSuccess"] is string success)
+        {
+            <div class="alert alert-success py-2">@success</div>
+        }
+        @if (TempData["AdminMessageError"] is string error)
+        {
+            <div class="alert alert-danger py-2">@error</div>
+        }
+
+        <form method="post" asp-page-handler="Save" enctype="multipart/form-data" class="row g-3 mt-1">
+            <input type="hidden" asp-for="Input.LogoUrl" />
+            <input type="hidden" asp-for="Input.FaviconUrl" />
+            <input type="hidden" asp-for="Input.DefaultShareImageUrl" />
+
+            <div class="col-md-4">
+                <label class="form-label">Logo website</label>
+                <input class="form-control" type="file" asp-for="LogoFile" accept=".png,.jpg,.jpeg,.webp,.svg" />
+                @if (!string.IsNullOrWhiteSpace(Model.Input.LogoUrl))
+                {
+                    <div class="branding-preview-wrap">
+                        <img src="@Model.Input.LogoUrl" alt="Logo hiện tại" />
+                    </div>
+                    <div class="mt-2 small"><a href="@Model.Input.LogoUrl" target="_blank">Mở ảnh gốc</a></div>
+                }
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Favicon</label>
+                <input class="form-control" type="file" asp-for="FaviconFile" accept=".ico,.png,.svg" />
+                @if (!string.IsNullOrWhiteSpace(Model.Input.FaviconUrl))
+                {
+                    <div class="branding-preview-wrap branding-preview-favicon">
+                        <img src="@Model.Input.FaviconUrl" alt="Favicon hiện tại" />
+                    </div>
+                    <div class="mt-2 small"><a href="@Model.Input.FaviconUrl" target="_blank">Mở ảnh gốc</a></div>
+                }
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Ảnh chia sẻ mặc định</label>
+                <input class="form-control" type="file" asp-for="DefaultShareImageFile" accept=".png,.jpg,.jpeg,.webp" />
+                @if (!string.IsNullOrWhiteSpace(Model.Input.DefaultShareImageUrl))
+                {
+                    <div class="branding-preview-wrap">
+                        <img src="@Model.Input.DefaultShareImageUrl" alt="Ảnh chia sẻ hiện tại" />
+                    </div>
+                    <div class="mt-2 small"><a href="@Model.Input.DefaultShareImageUrl" target="_blank">Mở ảnh gốc</a></div>
+                }
+            </div>
+
+            <div class="col-12 d-flex justify-content-end">
+                <button class="btn btn-warning btn-sm" type="submit">Lưu cấu hình</button>
+            </div>
+        </form>
+    </div>
+</div>

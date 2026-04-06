@@ -1,0 +1,36 @@
+﻿@page
+@model Topstar.Web.Pages.Admin.Settings.WebsiteInfoModel
+@{
+    ViewData["Title"] = "Thông tin website";
+}
+<div class="page-wrap card-list admin-page-wrap">
+    <div class="card-x">
+        <h2 class="section-title mb-2">Cấu hình thông tin website</h2>
+        <p class="kpi-title">Tên website, domain, địa chỉ, email liên hệ, hotline và thông tin bản quyền.</p>
+        @if (TempData["AdminMessageSuccess"] is string success)
+        {
+            <div class="alert alert-success py-2">@success</div>
+        }
+        @if (TempData["AdminMessageError"] is string error)
+        {
+            <div class="alert alert-danger py-2">@error</div>
+        }
+
+        <form method="post" asp-page-handler="Save" class="row g-3 mt-1">
+            <div class="col-md-4"><label class="form-label">Tên website</label><input class="form-control" asp-for="Input.WebsiteName" /></div>
+            <div class="col-md-4"><label class="form-label">Tên ngắn</label><input class="form-control" asp-for="Input.ShortName" /></div>
+            <div class="col-md-4"><label class="form-label">Domain</label><input class="form-control" asp-for="Input.Domain" /></div>
+            <div class="col-md-6"><label class="form-label">Địa chỉ</label><input class="form-control" asp-for="Input.Address" /></div>
+            <div class="col-md-3"><label class="form-label">Email liên hệ</label><input class="form-control" asp-for="Input.ContactEmail" /></div>
+            <div class="col-md-3"><label class="form-label">Hotline</label><input class="form-control" asp-for="Input.Hotline" /></div>
+            <div class="col-md-12"><label class="form-label">Copyright</label><input class="form-control" asp-for="Input.CopyrightText" /></div>
+            <div class="col-md-12 d-flex gap-3">
+                <label class="form-check"><input class="form-check-input" type="checkbox" asp-for="Input.IsActive" /><span class="form-check-label">Hoạt động</span></label>
+                <label class="form-check"><input class="form-check-input" type="checkbox" asp-for="Input.IsVisible" /><span class="form-check-label">Hiển thị</span></label>
+            </div>
+            <div class="col-12 d-flex justify-content-end">
+                <button class="btn btn-warning btn-sm" type="submit">Lưu cấu hình</button>
+            </div>
+        </form>
+    </div>
+</div>

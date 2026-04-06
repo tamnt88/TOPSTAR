@@ -27,6 +27,7 @@ public sealed record RegisterRequest(
     UserRoleType Role,
     string Email,
     string? Phone,
+    string? Gender,
     string Password,
     string FullName,
     string? CompanyName,
@@ -46,7 +47,7 @@ public sealed record AuthResult<T>(bool Success, string Message, T? Data)
     public static AuthResult<T> Fail(string message) => new(false, message, default);
 }
 
-public sealed record ForgotPasswordResult(string ResetToken, DateTime ExpiresAtUtc);
+public sealed record ForgotPasswordResult(string ResetToken, DateTime ExpiresAtUtc, string UserEmail);
 
 public interface IAuthService
 {
@@ -84,4 +85,5 @@ public sealed record AuthUserRow(
 );
 
 public sealed record PasswordResetTokenRow(Guid TokenId, Guid UserId, DateTime ExpiresAtUtc, DateTime? UsedAtUtc);
+
 

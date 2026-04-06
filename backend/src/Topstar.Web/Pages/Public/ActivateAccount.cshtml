@@ -1,0 +1,16 @@
+@page "/kich-hoat-tai-khoan"
+@model Topstar.Web.Pages.Public.ActivateAccountModel
+@{
+    ViewData["Title"] = "Kích hoạt tài khoản";
+}
+
+<section class="py-5">
+    <div class="container" style="max-width:720px;">
+        <div class="card-x">
+            <h1 class="mb-3">Kích hoạt tài khoản</h1>
+            <p class="mb-4 @(Model.IsSuccess ? "text-success" : "text-danger")">@Model.Message</p>
+            <a asp-page="/Public/Login" class="btn koc-btn-primary">Đến trang đăng nhập</a>
+        </div>
+    </div>
+</section>
+

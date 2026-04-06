@@ -1,0 +1,37 @@
+﻿@model Topstar.Web.Features.Common.Paging.PagerViewModel
+@{
+    var startPage = Math.Max(1, Model.PageIndex - 2);
+    var endPage = Math.Min(Model.TotalPages, Model.PageIndex + 2);
+
+    var keyword = Model.RouteValues.TryGetValue("keyword", out var k) ? k : null;
+    var scope = Model.RouteValues.TryGetValue("scope", out var s) ? s : null;
+    var visible = Model.RouteValues.TryGetValue("visible", out var v) ? v : null;
+}
+<div class="menu-pagination">
+    <div class="text-muted">Tổng: @Model.TotalItems bản ghi • Trang @Model.PageIndex/@Model.TotalPages</div>
+    <div class="menu-pagination-right">
+        <form method="get" class="menu-page-size-form">
+            <input type="hidden" name="keyword" value="@keyword" />
+            <input type="hidden" name="scope" value="@scope" />
+            <input type="hidden" name="visible" value="@visible" />
+            <input type="hidden" name="pageIndex" value="1" />
+            <select name="pageSize" class="form-select form-select-sm" onchange="this.form.submit()">
+                @foreach (var size in Model.PageSizeOptions)
+                {
+                    <option value="@size" selected="@(Model.PageSize == size)">@size</option>
+                }
+            </select>
+        </form>
+
+        <ul class="menu-pager mb-0">
+            <li class="@(Model.PageIndex <= 1 ? "disabled" : "")"><a asp-page="@Model.PageName" asp-route-keyword="@keyword" asp-route-scope="@scope" asp-route-visible="@visible" asp-route-pageSize="@Model.PageSize" asp-route-pageIndex="1">«</a></li>
+            <li class="@(Model.PageIndex <= 1 ? "disabled" : "")"><a asp-page="@Model.PageName" asp-route-keyword="@keyword" asp-route-scope="@scope" asp-route-visible="@visible" asp-route-pageSize="@Model.PageSize" asp-route-pageIndex="@(Model.PageIndex - 1)">‹</a></li>
+            @for (var p = startPage; p <= endPage; p++)
+            {
+                <li class="@(p == Model.PageIndex ? "active" : "")"><a asp-page="@Model.PageName" asp-route-keyword="@keyword" asp-route-scope="@scope" asp-route-visible="@visible" asp-route-pageSize="@Model.PageSize" asp-route-pageIndex="@p">@p</a></li>
+            }
+            <li class="@(Model.PageIndex >= Model.TotalPages ? "disabled" : "")"><a asp-page="@Model.PageName" asp-route-keyword="@keyword" asp-route-scope="@scope" asp-route-visible="@visible" asp-route-pageSize="@Model.PageSize" asp-route-pageIndex="@(Model.PageIndex + 1)">›</a></li>
+            <li class="@(Model.PageIndex >= Model.TotalPages ? "disabled" : "")"><a asp-page="@Model.PageName" asp-route-keyword="@keyword" asp-route-scope="@scope" asp-route-visible="@visible" asp-route-pageSize="@Model.PageSize" asp-route-pageIndex="@Model.TotalPages">»</a></li>
+        </ul>
+    </div>
+</div>

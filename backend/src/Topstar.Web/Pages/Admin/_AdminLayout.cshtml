@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    @{
+        var seoTitle = (ViewData["Title"] as string) ?? "Admin";
+        var seoDescription = (ViewData["Description"] as string) ?? "Khu vực quản trị TopStar.";
+        var request = Context?.Request;
+        var baseUrl = request is null ? "" : $"{request.Scheme}://{request.Host}{request.PathBase}";
+        var currentPath = request?.Path.Value ?? "/";
+        var canonicalUrl = string.IsNullOrWhiteSpace(baseUrl) ? currentPath : $"{baseUrl}{currentPath}";
+    }
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@seoTitle - TopStar Admin</title>
+    <meta name="description" content="@seoDescription" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="canonical" href="@canonicalUrl" />
+    <link rel="icon" type="image/png" href="~/images/logo.png" />
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/fontawesome/css/all.min.css" />
+    <link rel="stylesheet" href="~/lib/flaticon/css/uicons-regular-rounded.css" />
+    <link rel="stylesheet" href="~/lib/swiper/swiper-bundle.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin/admin.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/Topstar.Web.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <partial name="_AdminHeader" />
+    <main class="admin-main-content">
+        <div class="container">
+            @RenderBody()
+        </div>
+    </main>
+    <partial name="_AdminFooter" />
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/swiper/swiper-bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/admin/admin.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

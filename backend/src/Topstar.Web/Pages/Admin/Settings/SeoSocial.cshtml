@@ -1,0 +1,100 @@
+﻿@page
+@model Topstar.Web.Pages.Admin.Settings.SeoSocialModel
+@{
+    ViewData["Title"] = "SEO & Social";
+}
+<div class="page-wrap card-list admin-page-wrap">
+    <div class="card-x">
+        <h2 class="section-title mb-2">Cấu hình SEO & Social cho trang public</h2>
+        <p class="kpi-title">Thiết lập SEO/OG/Twitter theo từng đường dẫn public như Trang chủ, Học viện KOC, Dành cho Brand, Gói KOC...</p>
+
+        @if (TempData["AdminMessageSuccess"] is string success)
+        {
+            <div class="alert alert-success py-2">@success</div>
+        }
+        @if (TempData["AdminMessageError"] is string error)
+        {
+            <div class="alert alert-danger py-2">@error</div>
+        }
+
+        <div class="table-responsive mt-3">
+            <table class="table table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th>PageKey</th>
+                        <th>Path</th>
+                        <th>SEO Title</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var row in Model.Rows)
+                {
+                    <tr>
+                        <td>@row.PageKey</td>
+                        <td>@row.PagePath</td>
+                        <td>@row.SeoTitle</td>
+                        <td>@(row.IsActive ? "Bật" : "Tắt")/@(row.IsVisible ? "Hiển thị" : "Ẩn")</td>
+                        <td class="text-end">
+                            <a class="btn btn-sm btn-outline-primary" asp-page="/Admin/Settings/SeoSocial" asp-route-editId="@row.Id"><i class="fa-solid fa-pen-to-square"></i></a>
+                            <form method="post" asp-page-handler="Delete" class="d-inline" onsubmit="return confirm('Xóa cấu hình SEO này?');">
+                                <input type="hidden" name="id" value="@row.Id" />
+                                <button class="btn btn-sm btn-outline-danger" type="submit"><i class="fa-solid fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card-x">
+        <h3 class="section-title mb-3">@(Model.Input.Id.HasValue ? "Cập nhật cấu hình SEO" : "Thêm cấu hình SEO")</h3>
+        <form method="post" asp-page-handler="Save" enctype="multipart/form-data" class="row g-3">
+            <input asp-for="Input.Id" type="hidden" />
+            <input asp-for="Input.OgImageUrl" type="hidden" />
+            <input asp-for="Input.TwitterImageUrl" type="hidden" />
+
+            <div class="col-md-3"><label class="form-label">PageKey</label><input class="form-control" asp-for="Input.PageKey" /></div>
+            <div class="col-md-9"><label class="form-label">PagePath</label><input class="form-control" asp-for="Input.PagePath" /></div>
+            <div class="col-md-12"><label class="form-label">SEO Title</label><input class="form-control" asp-for="Input.SeoTitle" /></div>
+            <div class="col-md-12"><label class="form-label">SEO Description</label><textarea class="form-control" rows="2" asp-for="Input.SeoDescription"></textarea></div>
+            <div class="col-md-12"><label class="form-label">SEO Keywords</label><input class="form-control" asp-for="Input.SeoKeywords" /></div>
+            <div class="col-md-12"><label class="form-label">Canonical URL</label><input class="form-control" asp-for="Input.CanonicalUrl" /></div>
+
+            <div class="col-md-4"><label class="form-label">OG Title</label><input class="form-control" asp-for="Input.OgTitle" /></div>
+            <div class="col-md-4"><label class="form-label">OG Description</label><input class="form-control" asp-for="Input.OgDescription" /></div>
+            <div class="col-md-4">
+                <label class="form-label">Ảnh OG</label>
+                <input class="form-control" type="file" asp-for="OgImageFile" accept=".png,.jpg,.jpeg,.webp" />
+                @if (!string.IsNullOrWhiteSpace(Model.Input.OgImageUrl))
+                {
+                    <div class="mt-1 small"><a href="@Model.Input.OgImageUrl" target="_blank">Xem ảnh OG hiện tại</a></div>
+                }
+            </div>
+
+            <div class="col-md-4"><label class="form-label">Twitter Title</label><input class="form-control" asp-for="Input.TwitterTitle" /></div>
+            <div class="col-md-4"><label class="form-label">Twitter Description</label><input class="form-control" asp-for="Input.TwitterDescription" /></div>
+            <div class="col-md-4">
+                <label class="form-label">Ảnh Twitter</label>
+                <input class="form-control" type="file" asp-for="TwitterImageFile" accept=".png,.jpg,.jpeg,.webp" />
+                @if (!string.IsNullOrWhiteSpace(Model.Input.TwitterImageUrl))
+                {
+                    <div class="mt-1 small"><a href="@Model.Input.TwitterImageUrl" target="_blank">Xem ảnh Twitter hiện tại</a></div>
+                }
+            </div>
+
+            <div class="col-md-12"><label class="form-label">JsonLd</label><textarea class="form-control" rows="3" asp-for="Input.JsonLd"></textarea></div>
+            <div class="col-md-12 d-flex gap-3">
+                <label class="form-check"><input class="form-check-input" type="checkbox" asp-for="Input.IsActive" /><span class="form-check-label">Kích hoạt</span></label>
+                <label class="form-check"><input class="form-check-input" type="checkbox" asp-for="Input.IsVisible" /><span class="form-check-label">Hiển thị</span></label>
+            </div>
+            <div class="col-12 d-flex justify-content-end gap-2">
+                <a class="btn btn-light btn-sm" asp-page="/Admin/Settings/SeoSocial">Làm mới</a>
+                <button class="btn btn-warning btn-sm" type="submit">Lưu</button>
+            </div>
+        </form>
+    </div>
+</div>

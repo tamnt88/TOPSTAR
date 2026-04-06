@@ -1,0 +1,133 @@
+﻿@page
+@model Topstar.Web.Pages.Admin.Settings.MenuManagementModel
+@{
+    ViewData["Title"] = "Quản lý menu";
+    var pagerModel = new Topstar.Web.Features.Common.Paging.PagerViewModel
+    {
+        PageName = "/Admin/Settings/MenuManagement",
+        PageIndex = Model.PageIndex,
+        TotalPages = Model.TotalPages,
+        TotalItems = Model.TotalItems,
+        PageSize = Model.PageSize,
+        PageSizeOptions = Model.PageSizeOptions,
+        RouteValues = new Dictionary<string, string?>
+        {
+            ["keyword"] = Model.Keyword,
+            ["scope"] = Model.Scope,
+            ["visible"] = Model.Visible
+        }
+    };
+}
+<div class="page-wrap card-list admin-page-wrap">
+    <div class="card-x">
+        <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-2">
+            <div>
+                <h2 class="section-title mb-1">CRUD quản lý menu (Admin/KOC/Brand)</h2>
+                <p class="kpi-title mb-0">Lọc, phân trang và theo dõi danh sách menu trong bảng Menus.</p>
+            </div>
+            <a class="btn btn-warning btn-sm" asp-page="/Admin/Settings/MenuCreate" asp-route-keyword="@Model.Keyword" asp-route-scope="@Model.Scope" asp-route-visible="@Model.Visible" asp-route-pageIndex="@Model.PageIndex" asp-route-pageSize="@Model.PageSize">
+                <i class="fa-solid fa-plus me-1"></i> Thêm menu
+            </a>
+        </div>
+
+        @if (TempData["AdminMessageSuccess"] is string success)
+        {
+            <div class="alert alert-success py-2">@success</div>
+        }
+        @if (TempData["AdminMessageError"] is string error)
+        {
+            <div class="alert alert-danger py-2">@error</div>
+        }
+
+        <form method="get" class="menu-filter-grid mt-3">
+            <div>
+                <label class="form-label">Từ khóa</label>
+                <input class="form-control" type="text" name="keyword" value="@Model.Keyword" placeholder="Tiêu đề, đường dẫn..." />
+            </div>
+            <div>
+                <label class="form-label">Phạm vi</label>
+                <select class="form-select" name="scope">
+                    @foreach (var option in Model.ScopeOptions)
+                    {
+                        <option value="@option.Value" selected="@(Model.Scope == option.Value)">@option.Label</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Hiển thị</label>
+                <select class="form-select" name="visible">
+                    <option value="ALL" selected="@(Model.Visible=="ALL")">Tất cả</option>
+                    <option value="YES" selected="@(Model.Visible=="YES")">Có</option>
+                    <option value="NO" selected="@(Model.Visible=="NO")">Không</option>
+                </select>
+            </div>
+            <div class="d-flex align-items-end">
+                <button type="submit" class="btn btn-warning btn-sm w-100">Lọc dữ liệu</button>
+            </div>
+        </form>
+
+        <div class="table-responsive mt-3">
+            <table class="table table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th>Tiêu đề</th>
+                        <th>Đường dẫn</th>
+                        <th>Danh mục cha</th>
+                        <th>Thứ tự</th>
+                        <th>Hiển thị</th>
+                        <th>Phạm vi</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Rows.Count == 0)
+                    {
+                        <tr><td colspan="7" class="text-center text-muted py-4">Không có dữ liệu phù hợp.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var m in Model.Rows)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">@m.Title</div>
+                                    <div class="small text-muted">@m.Code</div>
+                                </td>
+                                <td><span class="menu-tag menu-path">@(string.IsNullOrWhiteSpace(m.Path) ? "-" : m.Path)</span></td>
+                                <td><span class="menu-tag menu-parent">@m.ParentTitle</span></td>
+                                <td>@m.OrderNo</td>
+                                <td><span class="menu-tag @(m.IsVisible ? "menu-yes" : "menu-no")">@(m.IsVisible ? "Có" : "Không")</span></td>
+                                <td><span class="menu-tag menu-scope">@m.ScopeTag</span></td>
+                                <td class="text-end">
+                                    <div class="menu-actions">
+                                        <a class="btn btn-sm btn-outline-primary" title="Sửa"
+                                           asp-page="/Admin/Settings/MenuEdit"
+                                           asp-route-id="@m.Id"
+                                           asp-route-keyword="@Model.Keyword"
+                                           asp-route-scope="@Model.Scope"
+                                           asp-route-visible="@Model.Visible"
+                                           asp-route-pageIndex="@Model.PageIndex"
+                                           asp-route-pageSize="@Model.PageSize">
+                                            <i class="fa-solid fa-pen-to-square"></i>
+                                        </a>
+                                        <form method="post" asp-page-handler="Delete" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa menu này?');">
+                                            <input type="hidden" name="DeleteId" value="@m.Id" />
+                                            <input type="hidden" name="keyword" value="@Model.Keyword" />
+                                            <input type="hidden" name="scope" value="@Model.Scope" />
+                                            <input type="hidden" name="visible" value="@Model.Visible" />
+                                            <input type="hidden" name="pageIndex" value="@Model.PageIndex" />
+                                            <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa"><i class="fa-solid fa-trash"></i></button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <partial name="_Pager" model="pagerModel" />
+    </div>
+</div>

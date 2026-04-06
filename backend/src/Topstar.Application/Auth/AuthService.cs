@@ -89,7 +89,7 @@ internal sealed class AuthService(IAuthRepository authRepository) : IAuthService
         await authRepository.CreatePasswordResetTokenAsync(user.UserId, tokenHash, expires, deviceId, request.Device.IpAddress, cancellationToken);
         await authRepository.AddAuthEventAsync(user.UserId, lookup, "ForgotPassword", "Success", null, deviceId, request.Device, cancellationToken);
 
-        return AuthResult<ForgotPasswordResult>.Ok(new ForgotPasswordResult(token, expires), "Yêu cầu đặt lại mật khẩu thành công.");
+        return AuthResult<ForgotPasswordResult>.Ok(new ForgotPasswordResult(token, expires, user.Email), "Yêu cầu đặt lại mật khẩu thành công.");
     }
 
     public async Task<AuthResult<bool>> ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken = default)
@@ -131,4 +131,5 @@ internal sealed class AuthService(IAuthRepository authRepository) : IAuthService
         return Convert.ToHexString(bytes).ToLowerInvariant();
     }
 }
+
 

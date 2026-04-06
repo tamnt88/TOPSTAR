@@ -13,7 +13,13 @@ internal static class TopstarModelBuilder
 
     private static void ConfigureTables(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<UserEntity>(e => { e.ToTable("Users"); e.HasKey(x => x.Id); e.HasIndex(x => x.Email).IsUnique(); });
+        modelBuilder.Entity<UserEntity>(e =>
+        {
+            e.ToTable("Users");
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.Email).IsUnique();
+            e.Property(x => x.Gender).HasMaxLength(20);
+        });
         modelBuilder.Entity<RoleEntity>(e => { e.ToTable("Roles"); e.HasKey(x => x.Id); e.HasIndex(x => x.Code).IsUnique(); });
         modelBuilder.Entity<UserRoleEntity>(e => { e.ToTable("UserRoles"); e.HasKey(x => new { x.UserId, x.RoleId }); });
         modelBuilder.Entity<BrandProfileEntity>(e => { e.ToTable("BrandProfiles"); e.HasKey(x => x.Id); e.HasIndex(x => x.UserId).IsUnique(); });
@@ -56,6 +62,33 @@ internal static class TopstarModelBuilder
         modelBuilder.Entity<AuthEventEntity>(e => { e.ToTable("AuthEvents"); e.HasKey(x => x.Id); });
         modelBuilder.Entity<AuthSessionEntity>(e => { e.ToTable("AuthSessions"); e.HasKey(x => x.Id); });
         modelBuilder.Entity<PasswordResetTokenEntity>(e => { e.ToTable("PasswordResetTokens"); e.HasKey(x => x.Id); });
+        modelBuilder.Entity<EmailVerificationTokenEntity>(e => { e.ToTable("EmailVerificationTokens"); e.HasKey(x => x.Id); });
+        modelBuilder.Entity<ProvinceEntity>(e => { e.ToTable("Provinces"); e.HasKey(x => x.Id); e.HasIndex(x => x.ProvinceCode).IsUnique(); });
+        modelBuilder.Entity<WardEntity>(e => { e.ToTable("Wards"); e.HasKey(x => x.Id); e.HasIndex(x => x.WardCode).IsUnique(); });
+        modelBuilder.Entity<SystemEmailAccountEntity>(e =>
+        {
+            e.ToTable("SystemEmailAccounts");
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.EmailAddress);
+        });
+        modelBuilder.Entity<SystemShippingConfigEntity>(e =>
+        {
+            e.ToTable("SystemShippingConfigs");
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.ProviderCode).IsUnique();
+        });
+        modelBuilder.Entity<SystemWebsiteConfigEntity>(e =>
+        {
+            e.ToTable("SystemWebsiteConfigs");
+            e.HasKey(x => x.Id);
+        });
+        modelBuilder.Entity<PublicPageSeoConfigEntity>(e =>
+        {
+            e.ToTable("PublicPageSeoConfigs");
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.PageKey).IsUnique();
+            e.HasIndex(x => x.PagePath).IsUnique();
+        });
     }
 
     private static void ConfigureRelationships(ModelBuilder modelBuilder)
@@ -121,5 +154,13 @@ internal static class TopstarModelBuilder
         modelBuilder.Entity<AuthSessionEntity>().HasOne<UserDeviceEntity>().WithMany().HasForeignKey(x => x.UserDeviceId);
         modelBuilder.Entity<PasswordResetTokenEntity>().HasOne<UserEntity>().WithMany().HasForeignKey(x => x.UserId);
         modelBuilder.Entity<PasswordResetTokenEntity>().HasOne<UserDeviceEntity>().WithMany().HasForeignKey(x => x.RequestedByDeviceId);
+        modelBuilder.Entity<EmailVerificationTokenEntity>().HasOne<UserEntity>().WithMany().HasForeignKey(x => x.UserId);
+        modelBuilder.Entity<WardEntity>().HasOne<ProvinceEntity>().WithMany().HasForeignKey(x => x.ProvinceId);
+        modelBuilder.Entity<BrandProfileEntity>().HasOne<WardEntity>().WithMany().HasForeignKey(x => x.WardId).OnDelete(DeleteBehavior.NoAction);
+        modelBuilder.Entity<BrandProfileEntity>().HasOne<ProvinceEntity>().WithMany().HasForeignKey(x => x.ProvinceId).OnDelete(DeleteBehavior.NoAction);
+        modelBuilder.Entity<KocProfileEntity>().HasOne<WardEntity>().WithMany().HasForeignKey(x => x.WardId).OnDelete(DeleteBehavior.NoAction);
+        modelBuilder.Entity<KocProfileEntity>().HasOne<ProvinceEntity>().WithMany().HasForeignKey(x => x.ProvinceId).OnDelete(DeleteBehavior.NoAction);
+        modelBuilder.Entity<ShipmentEntity>().HasOne<WardEntity>().WithMany().HasForeignKey(x => x.WardId).OnDelete(DeleteBehavior.NoAction);
+        modelBuilder.Entity<ShipmentEntity>().HasOne<ProvinceEntity>().WithMany().HasForeignKey(x => x.ProvinceId).OnDelete(DeleteBehavior.NoAction);
     }
 }

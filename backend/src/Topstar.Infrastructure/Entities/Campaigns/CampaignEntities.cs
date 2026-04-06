@@ -90,6 +90,14 @@ public sealed class ShipmentEntity
 {
     public Guid Id { get; set; }
     public Guid ParticipationId { get; set; }
+    public string? ReceiverName { get; set; }
+    public string? ReceiverPhone { get; set; }
+    public string? StreetAddress { get; set; }
+    public Guid? WardId { get; set; }
+    public Guid? ProvinceId { get; set; }
+    public string? AddressV2 { get; set; }
+    public string? WardCodeV2 { get; set; }
+    public bool IsNewAddress { get; set; }
     public string? TrackingCode { get; set; }
     public string? Carrier { get; set; }
     public string Status { get; set; } = string.Empty;

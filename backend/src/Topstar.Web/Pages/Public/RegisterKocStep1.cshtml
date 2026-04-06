@@ -1,4 +1,5 @@
-@page "/dang-ky-koc/buoc-1"
+﻿@page "/dang-ky-koc/buoc-1"
+@model Topstar.Web.Pages.Public.RegisterKocStep1Model
 @{
     ViewData["Title"] = "Đăng ký KOC - Bước 1";
 }
@@ -33,42 +34,148 @@
 
             <h2 class="koc-form-title">Thông tin cơ bản</h2>
 
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label">Họ và tên <span class="text-danger">*</span></label>
-                    <input class="form-control" placeholder="Nguyễn Văn A" />
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Email <span class="text-danger">*</span></label>
-                    <input class="form-control" placeholder="you@example.com" />
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Số điện thoại</label>
-                    <input class="form-control" placeholder="VD: 0912345678" />
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Ngày sinh</label>
-                    <input type="date" class="form-control" />
-                </div>
-                <div class="col-12">
-                    <label class="form-label">Địa chỉ</label>
-                    <input class="form-control" placeholder="VD: 123 Đường ABC, Quận XYZ, TP.HCM" />
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Mật khẩu <span class="text-danger">*</span></label>
-                    <input type="password" class="form-control" placeholder="••••••••" />
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Ảnh đại diện</label>
-                    <input type="file" class="form-control" />
-                </div>
-            </div>
+            <form method="post" enctype="multipart/form-data" novalidate>
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
 
-            <div class="d-flex justify-content-end mt-4">
-                <a asp-page="/Public/RegisterKocStep2" class="btn koc-btn-primary">Tiếp tục <i class="fa-solid fa-arrow-right"></i></a>
-            </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="Input.FullName" class="form-label">Họ và tên <span class="text-danger">*</span></label>
+                        <input asp-for="Input.FullName" class="form-control" placeholder="Nguyễn Văn A" />
+                        <span asp-validation-for="Input.FullName" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.Email" class="form-label">Email <span class="text-danger">*</span></label>
+                        <input asp-for="Input.Email" class="form-control" placeholder="you@example.com" id="koc-email" />
+                        <span asp-validation-for="Input.Email" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.Phone" class="form-label">Số điện thoại <span class="text-danger">*</span></label>
+                        <input asp-for="Input.Phone" class="form-control" placeholder="VD: 0912345678" id="koc-phone" />
+                        <span asp-validation-for="Input.Phone" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.Gender" class="form-label">Giới tính <span class="text-danger">*</span></label>
+                        <select asp-for="Input.Gender" class="form-select">
+                            <option value="">Chọn giới tính</option>
+                            <option value="Male">Nam</option>
+                            <option value="Female">Nữ</option>
+                            <option value="Other">Khác</option>
+                        </select>
+                        <span asp-validation-for="Input.Gender" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.BirthDate" class="form-label">Ngày sinh <span class="text-danger">*</span></label>
+                        <input asp-for="Input.BirthDate" type="date" class="form-control" />
+                        <span asp-validation-for="Input.BirthDate" class="text-danger"></span>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Input.StreetAddress" class="form-label">Số nhà + tên đường <span class="text-danger">*</span></label>
+                        <input asp-for="Input.StreetAddress" class="form-control" placeholder="VD: 123 Đường ABC" />
+                        <span asp-validation-for="Input.StreetAddress" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.ProvinceId" class="form-label">Tỉnh/Thành phố <span class="text-danger">*</span></label>
+                        <select asp-for="Input.ProvinceId" asp-items="Model.ProvinceOptions" class="form-select" id="koc-province">
+                            <option value="">Chọn Tỉnh/Thành phố</option>
+                        </select>
+                        <span asp-validation-for="Input.ProvinceId" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.WardId" class="form-label">Phường/Xã <span class="text-danger">*</span></label>
+                        <select asp-for="Input.WardId" asp-items="Model.WardOptions" class="form-select" id="koc-ward">
+                            <option value="">Chọn Phường/Xã</option>
+                        </select>
+                        <span asp-validation-for="Input.WardId" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.Password" class="form-label">Mật khẩu <span class="text-danger">*</span></label>
+                        <input asp-for="Input.Password" type="password" class="form-control" placeholder="••••••••" />
+                        <span asp-validation-for="Input.Password" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Ảnh đại diện</label>
+                        <input type="file" class="form-control" accept="image/*" />
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end mt-4">
+                    <button type="submit" class="btn koc-btn-primary">Tiếp tục <i class="fa-solid fa-arrow-right"></i></button>
+                </div>
+            </form>
 
             <p class="koc-login-hint">Đã có tài khoản? <a asp-page="/Public/Login">Đăng nhập ngay</a></p>
         </div>
     </div>
 </section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var $email = $("#koc-email");
+            var $phone = $("#koc-phone");
+            var $province = $("#koc-province");
+            var $ward = $("#koc-ward");
+            var timer;
+
+            function resetField($el) {
+                $el.removeClass("is-invalid");
+                $el[0].setCustomValidity("");
+            }
+
+            function setFieldError($el, message) {
+                $el.addClass("is-invalid");
+                $el[0].setCustomValidity(message);
+                if ($("form").data("validator")) {
+                    $("form").validate().element($el);
+                }
+            }
+
+            function checkExists() {
+                clearTimeout(timer);
+                timer = setTimeout(function () {
+                    var email = ($email.val() || "").trim();
+                    var phone = ($phone.val() || "").trim();
+                    if (!email && !phone) return;
+
+                    $.get(window.location.pathname + "?handler=CheckIdentity", { email: email, phone: phone })
+                        .done(function (res) {
+                            resetField($email);
+                            resetField($phone);
+                            if (res && res.emailExists) setFieldError($email, "Email đã tồn tại trong hệ thống.");
+                            if (res && res.phoneExists) setFieldError($phone, "Số điện thoại đã tồn tại trong hệ thống.");
+                        });
+                }, 250);
+            }
+
+            $email.on("blur", checkExists);
+            $phone.on("blur", checkExists);
+
+            function reloadWardOptions(items) {
+                var current = $ward.val();
+                $ward.empty().append($("<option/>", { value: "", text: "Chọn Phường/Xã" }));
+                $.each(items || [], function (_, ward) {
+                    $ward.append($("<option/>", { value: ward.id, text: ward.name }));
+                });
+
+                if (current && $ward.find('option[value="' + current + '"]').length > 0) {
+                    $ward.val(current);
+                } else {
+                    $ward.val("");
+                }
+            }
+
+            $province.on("change", function () {
+                var provinceId = ($province.val() || "").trim();
+                reloadWardOptions([]);
+
+                if (!provinceId) return;
+
+                $.get(window.location.pathname + "?handler=WardsByProvince", { provinceId: provinceId })
+                    .done(function (res) {
+                        reloadWardOptions((res && res.data) ? res.data : []);
+                    });
+            });
+        })();
+    </script>
+}

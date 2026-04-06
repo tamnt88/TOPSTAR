@@ -1,4 +1,5 @@
-@page "/dang-ky-koc/buoc-3"
+﻿@page "/dang-ky-koc/buoc-3"
+@model Topstar.Web.Pages.Public.RegisterKocStep3Model
 @{
     ViewData["Title"] = "Đăng ký KOC - Bước 3";
 }
@@ -33,48 +34,220 @@
 
             <h2 class="koc-form-title">Thông tin cá nhân</h2>
 
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label">Cân nặng (kg)</label>
-                    <input class="form-control" placeholder="VD: 50" />
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Chiều cao (cm)</label>
-                    <input class="form-control" placeholder="VD: 160" />
-                </div>
-                <div class="col-12">
-                    <label class="form-label">Số đo 3 vòng (cm)</label>
-                    <input class="form-control" placeholder="VD: 80-60-85" />
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Tình trạng hôn nhân</label>
-                    <select class="form-select">
-                        <option selected>Chọn tình trạng</option>
-                        <option>Độc thân</option>
-                        <option>Đã kết hôn</option>
-                        <option>Khác</option>
-                    </select>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Có con chưa?</label>
-                    <select class="form-select">
-                        <option selected>Chọn</option>
-                        <option>Chưa</option>
-                        <option>Đã có</option>
-                    </select>
-                </div>
-                <div class="col-12">
-                    <label class="form-label">Bảng giá dịch vụ (VNĐ/post)</label>
-                    <input class="form-control" placeholder="VD: 500,000" />
-                </div>
-            </div>
+            <form id="koc-step3-form" method="post" novalidate>
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+                @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+                {
+                    <div class="alert alert-danger py-2">@Model.ErrorMessage</div>
+                }
 
-            <div class="d-flex gap-2 mt-4">
-                <a asp-page="/Public/RegisterKocStep2" class="btn koc-btn-outline"><i class="fa-solid fa-arrow-left"></i>Quay lại</a>
-                <button class="btn koc-btn-primary flex-grow-1">Hoàn tất đăng ký</button>
-            </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="Input.WeightKg" class="form-label"></label>
+                        <input asp-for="Input.WeightKg" class="form-control" placeholder="VD: 50" />
+                        <span asp-validation-for="Input.WeightKg" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.HeightCm" class="form-label"></label>
+                        <input asp-for="Input.HeightCm" class="form-control" placeholder="VD: 160" />
+                        <span asp-validation-for="Input.HeightCm" class="text-danger"></span>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Input.Measurements" class="form-label"></label>
+                        <input asp-for="Input.Measurements" class="form-control" placeholder="VD: 80-60-85" />
+                        <span asp-validation-for="Input.Measurements" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.MaritalStatus" class="form-label"></label>
+                        <select asp-for="Input.MaritalStatus" class="form-select">
+                            <option value="">Chọn tình trạng</option>
+                            <option value="Single">Độc thân</option>
+                            <option value="Married">Đã kết hôn</option>
+                            <option value="Other">Khác</option>
+                        </select>
+                        <span asp-validation-for="Input.MaritalStatus" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.HasChildren" class="form-label"></label>
+                        <select asp-for="Input.HasChildren" class="form-select" id="has-children-select">
+                            <option value="false">Chưa</option>
+                            <option value="true">Có</option>
+                        </select>
+                        <span asp-validation-for="Input.HasChildren" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-12 @(Model.Input.HasChildren ? string.Empty : "d-none")" id="children-section">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label mb-0">Thông tin con cái</label>
+                            <button type="button" class="btn btn-link p-0 koc-add-child-btn" id="add-child-btn">
+                                <i class="fa-solid fa-plus"></i> Thêm con
+                            </button>
+                        </div>
+                        <div id="children-list">
+                            @for (var i = 0; i < Model.Input.Children.Count; i++)
+                            {
+                                <div class="koc-child-row">
+                                    <div class="row g-2 align-items-center">
+                                        <div class="col-md-5">
+                                            <input asp-for="Input.Children[i].Age" type="number" min="0" max="30" class="form-control child-age" placeholder="Tuổi" />
+                                            <span asp-validation-for="Input.Children[i].Age" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <select asp-for="Input.Children[i].Gender" class="form-select child-gender">
+                                                <option value="">Giới tính</option>
+                                                <option value="Male">Nam</option>
+                                                <option value="Female">Nữ</option>
+                                                <option value="Other">Khác</option>
+                                            </select>
+                                            <span asp-validation-for="Input.Children[i].Gender" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-1 text-end">
+                                            <button type="button" class="btn koc-remove-child-btn" title="Xóa"><i class="fa-solid fa-xmark"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        <span asp-validation-for="Input.Children" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="Input.ServicePriceVnd" class="form-label"></label>
+                        <div class="input-icon-wrap">
+                            <span class="input-icon"><i class="fa-solid fa-dollar-sign"></i></span>
+                            <input asp-for="Input.ServicePriceVnd" class="form-control ps-5" placeholder="VD: 500,000" />
+                        </div>
+                        <span asp-validation-for="Input.ServicePriceVnd" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <a asp-page="/Public/RegisterKocStep2" class="btn koc-btn-outline"><i class="fa-solid fa-arrow-left"></i>Quay lại</a>
+                    <button type="submit" class="btn koc-btn-primary">Hoàn tất đăng ký</button>
+                </div>
+            </form>
 
             <p class="koc-login-hint">Đã có tài khoản? <a asp-page="/Public/Login">Đăng nhập ngay</a></p>
         </div>
     </div>
 </section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var $hasChildren = $("#has-children-select");
+            var $childrenSection = $("#children-section");
+            var $childrenList = $("#children-list");
+            var storageKey = "topstar.register.koc.step3";
+
+            function childTemplate(index, age, gender) {
+                return '' +
+                    '<div class="koc-child-row">' +
+                    '  <div class="row g-2 align-items-center">' +
+                    '    <div class="col-md-5">' +
+                    '      <input type="number" min="0" max="30" class="form-control child-age" name="Input.Children[' + index + '].Age" placeholder="Tuổi" value="' + (age || '') + '" />' +
+                    '    </div>' +
+                    '    <div class="col-md-6">' +
+                    '      <select class="form-select child-gender" name="Input.Children[' + index + '].Gender">' +
+                    '        <option value="">Giới tính</option>' +
+                    '        <option value="Male" ' + (gender === 'Male' ? 'selected' : '') + '>Nam</option>' +
+                    '        <option value="Female" ' + (gender === 'Female' ? 'selected' : '') + '>Nữ</option>' +
+                    '        <option value="Other" ' + (gender === 'Other' ? 'selected' : '') + '>Khác</option>' +
+                    '      </select>' +
+                    '    </div>' +
+                    '    <div class="col-md-1 text-end">' +
+                    '      <button type="button" class="btn koc-remove-child-btn" title="Xóa"><i class="fa-solid fa-xmark"></i></button>' +
+                    '    </div>' +
+                    '  </div>' +
+                    '</div>';
+            }
+
+            function reindexChildren() {
+                $childrenList.find('.koc-child-row').each(function (i) {
+                    $(this).find('.child-age').attr('name', 'Input.Children[' + i + '].Age');
+                    $(this).find('.child-gender').attr('name', 'Input.Children[' + i + '].Gender');
+                });
+            }
+
+            function toggleChildren() {
+                var show = $hasChildren.val() === 'true';
+                $childrenSection.toggleClass('d-none', !show);
+                if (show && $childrenList.children().length === 0) {
+                    $childrenList.append(childTemplate(0));
+                }
+            }
+
+            function saveLocal() {
+                var data = {
+                    hasChildren: $hasChildren.val() === 'true',
+                    weight: $('[name="Input.WeightKg"]').val(),
+                    height: $('[name="Input.HeightCm"]').val(),
+                    measurements: $('[name="Input.Measurements"]').val(),
+                    maritalStatus: $('[name="Input.MaritalStatus"]').val(),
+                    servicePrice: $('[name="Input.ServicePriceVnd"]').val(),
+                    children: []
+                };
+
+                $childrenList.find('.koc-child-row').each(function () {
+                    data.children.push({
+                        age: $(this).find('.child-age').val(),
+                        gender: $(this).find('.child-gender').val()
+                    });
+                });
+
+                localStorage.setItem(storageKey, JSON.stringify(data));
+            }
+
+            function restoreLocal() {
+                var raw = localStorage.getItem(storageKey);
+                if (!raw) return;
+
+                try {
+                    var data = JSON.parse(raw);
+                    if (data.weight) $('[name="Input.WeightKg"]').val(data.weight);
+                    if (data.height) $('[name="Input.HeightCm"]').val(data.height);
+                    if (data.measurements) $('[name="Input.Measurements"]').val(data.measurements);
+                    if (data.maritalStatus) $('[name="Input.MaritalStatus"]').val(data.maritalStatus);
+                    if (data.servicePrice) $('[name="Input.ServicePriceVnd"]').val(data.servicePrice);
+
+                    $hasChildren.val(data.hasChildren ? 'true' : 'false');
+                    toggleChildren();
+                    if (data.hasChildren && Array.isArray(data.children)) {
+                        $childrenList.empty();
+                        data.children.forEach(function (item, index) {
+                            $childrenList.append(childTemplate(index, item.age, item.gender));
+                        });
+                        reindexChildren();
+                    }
+                } catch (_) { }
+            }
+
+            $('#add-child-btn').on('click', function () {
+                var index = $childrenList.children().length;
+                $childrenList.append(childTemplate(index));
+                reindexChildren();
+                saveLocal();
+            });
+
+            $childrenList.on('click', '.koc-remove-child-btn', function () {
+                $(this).closest('.koc-child-row').remove();
+                if ($hasChildren.val() === 'true' && $childrenList.children().length === 0) {
+                    $childrenList.append(childTemplate(0));
+                }
+                reindexChildren();
+                saveLocal();
+            });
+
+            $(document).on('input change', '#koc-step3-form input, #koc-step3-form select', saveLocal);
+            $hasChildren.on('change', function () { toggleChildren(); saveLocal(); });
+
+            restoreLocal();
+            toggleChildren();
+
+            $('#koc-step3-form').on('submit', function () {
+                localStorage.removeItem(storageKey);
+            });
+        })();
+    </script>
+}

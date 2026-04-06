@@ -1,28 +1,107 @@
 @page
-@{ ViewData["Title"] = "Admin Dashboard"; }
-<div class="page-wrap card-list">
-  <div class="d-flex justify-content-between align-items-end">
-    <div><h1 class="section-title mb-0">Admin Dashboard</h1><div class="kpi-title">Quan tri he thong</div></div>
-    <div class="top-nav"><a class="active" asp-page="/Admin/Dashboard">Tong quan</a><a asp-page="/Admin/Brands">Brand</a><a asp-page="/Admin/Academy">Hoc vien</a></div>
-  </div>
-  <div class="kpi-grid">
-    <div class="kpi-box"><div class="kpi-title">Brand hoat dong</div><div class="kpi-value">24</div></div>
-    <div class="kpi-box"><div class="kpi-title">KOC Active</div><div class="kpi-value">156</div></div>
-    <div class="kpi-box"><div class="kpi-title">Chien dich dang chay</div><div class="kpi-value">18</div></div>
-    <div class="kpi-box"><div class="kpi-title">Doanh thu thang</div><div class="kpi-value">420tr</div></div>
-  </div>
-  <div class="card-x">
-    <h2 class="h5">Canh bao can xu ly</h2>
-    <div class="kpi-grid">
-      <div class="kpi-box" style="border-color:#facc15;background:#fffdf2"><div class="kpi-value">3</div><div class="kpi-title">Chien dich sap tre deadline</div></div>
-      <div class="kpi-box" style="border-color:#fda4af;background:#fff5f6"><div class="kpi-value">2</div><div class="kpi-title">KOC khong phan hoi</div></div>
-      <div class="kpi-box" style="border-color:#93c5fd;background:#f4f8ff"><div class="kpi-value">5</div><div class="kpi-title">Brand can ho tro</div></div>
+@{
+    ViewData["Title"] = "Admin Dashboard";
+    ViewData["Description"] = "Dashboard quản trị hệ thống TopStar cho admin.";
+    ViewData["AdminHeaderTitle"] = "Admin Dashboard";
+    ViewData["AdminHeaderSubtitle"] = "Quản trị hệ thống";
+}
+
+<section class="admin-dashboard-page">
+    <div class="container admin-dashboard-wrap">
+        <div class="admin-kpi-grid">
+            <article class="admin-kpi-card">
+                <span class="kpi-icon kpi-blue"><i class="fa-regular fa-building"></i></span>
+                <p>Brand hoạt động</p>
+                <h3>24 <small>+3</small></h3>
+            </article>
+            <article class="admin-kpi-card">
+                <span class="kpi-icon kpi-green"><i class="fa-solid fa-user-group"></i></span>
+                <p>KOC Active</p>
+                <h3>156 <small>+12</small></h3>
+            </article>
+            <article class="admin-kpi-card">
+                <span class="kpi-icon kpi-purple"><i class="fa-regular fa-circle-dot"></i></span>
+                <p>Chiến dịch đang chạy</p>
+                <h3>18 <small>+5</small></h3>
+            </article>
+            <article class="admin-kpi-card">
+                <span class="kpi-icon kpi-orange"><i class="fa-solid fa-dollar-sign"></i></span>
+                <p>Doanh thu tháng</p>
+                <h3>420tr <small>+24%</small></h3>
+            </article>
+        </div>
+
+        <div class="admin-block">
+            <h2><i class="fa-regular fa-circle-exclamation text-danger"></i> Cảnh báo cần xử lý</h2>
+            <div class="admin-alert-grid">
+                <div class="admin-alert-card alert-yellow">
+                    <b>3</b>
+                    <span>3 chiến dịch sắp trễ deadline</span>
+                </div>
+                <div class="admin-alert-card alert-red">
+                    <b>2</b>
+                    <span>2 KOC không phản hồi</span>
+                </div>
+                <div class="admin-alert-card alert-blue">
+                    <b>5</b>
+                    <span>5 Brand cần hỗ trợ</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-block">
+            <h2>Trạng thái chiến dịch</h2>
+            <div class="admin-status-list">
+                <div class="admin-status-row">
+                    <div class="status-main">
+                        <span class="status-icon wait"><i class="fa-regular fa-clock"></i></span>
+                        <div><b>Chờ triển khai</b><p>5 chiến dịch</p></div>
+                    </div>
+                    <button class="admin-btn-detail">Xem chi tiết</button>
+                </div>
+                <div class="admin-status-row">
+                    <div class="status-main">
+                        <span class="status-icon run"><i class="fa-regular fa-circle-dot"></i></span>
+                        <div><b>Đang chạy</b><p>18 chiến dịch</p></div>
+                    </div>
+                    <button class="admin-btn-detail">Xem chi tiết</button>
+                </div>
+                <div class="admin-status-row">
+                    <div class="status-main">
+                        <span class="status-icon done"><i class="fa-solid fa-check"></i></span>
+                        <div><b>Đã hoàn thành</b><p>142 chiến dịch</p></div>
+                    </div>
+                    <button class="admin-btn-detail">Xem chi tiết</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-block">
+            <h2>Hoạt động gần đây</h2>
+            <ul class="admin-activity-list">
+                <li><b>Brand “Shopee” đã tạo chiến dịch mới</b><span>2 phút trước</span></li>
+                <li><b>KOC “Minh Anh” đã hoàn thành job #1234</b><span>15 phút trước</span></li>
+                <li><b>Gói “Growth Pack” đã được mua bởi “Vinamilk”</b><span>1 giờ trước</span></li>
+                <li><b>Admin “John” đã duyệt nội dung chiến dịch #5678</b><span>2 giờ trước</span></li>
+            </ul>
+        </div>
+
+        <div class="admin-quick-grid">
+            <a href="#" class="quick-card quick-1">
+                <i class="fa-regular fa-cube"></i>
+                <h3>Quản lý gói</h3>
+                <p>Tạo và cấu hình gói KOC</p>
+            </a>
+            <a href="#" class="quick-card quick-2">
+                <i class="fa-solid fa-users"></i>
+                <h3>KOC Pool</h3>
+                <p>Quản lý database KOC</p>
+            </a>
+            <a href="#" class="quick-card quick-3">
+                <i class="fa-regular fa-circle-dot"></i>
+                <h3>Chiến dịch</h3>
+                <p>Quản lý và giám sát</p>
+            </a>
+        </div>
     </div>
-  </div>
-  <div class="card-x">
-    <h2 class="h5">Trang thai chien dich</h2>
-    <div class="list-row"><div><b>Cho trien khai</b><div class="kpi-title">5 chien dich</div></div><button class="btn-x btn-blue">Xem chi tiet</button></div>
-    <div class="list-row"><div><b>Dang chay</b><div class="kpi-title">18 chien dich</div></div><button class="btn-x btn-blue">Xem chi tiet</button></div>
-    <div class="list-row"><div><b>Da hoan thanh</b><div class="kpi-title">142 chien dich</div></div><button class="btn-x btn-blue">Xem chi tiet</button></div>
-  </div>
-</div>
+</section>

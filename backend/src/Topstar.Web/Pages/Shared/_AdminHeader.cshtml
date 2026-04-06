@@ -1,0 +1,105 @@
+﻿@using Topstar.Application.Navigation
+@inject INavigationService NavigationService
+@{
+    var path = Context?.Request?.Path.Value ?? string.Empty;
+    var lowerPath = path.ToLowerInvariant();
+    var roleCode = User?.Claims?.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value?.ToUpperInvariant() ?? "ADMIN";
+
+    var menus = await NavigationService.GetMenusByRoleAsync(roleCode, Context?.RequestAborted ?? default);
+    var parents = menus.Where(x => x.ParentId == null).ToList();
+}
+
+<header class="admin-layout-header">
+    <div class="container admin-layout-top">
+        <a class="admin-header-logo" asp-page="/Index" aria-label="TopStar">
+            <img src="~/images/logo.png" alt="TopStar" />
+        </a>
+        <div class="admin-dashboard-userbar">
+            <div class="admin-user-chip"><span>AD</span> Admin</div>
+            <a class="admin-logout-link" asp-page="/Public/Logout"><i class="fa-solid fa-right-from-bracket"></i> Đăng xuất</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <nav class="admin-dashboard-tabs admin-tabs-dynamic">
+            @foreach (var parent in parents)
+            {
+                var children = menus.Where(x => x.ParentId == parent.Id).OrderBy(x => x.OrderNo).ThenBy(x => x.Title).ToList();
+                var isParentActive = !string.IsNullOrWhiteSpace(parent.Path) &&
+                                     lowerPath.StartsWith(parent.Path.ToLowerInvariant(), StringComparison.OrdinalIgnoreCase);
+                var isChildActive = children.Any(c => !string.IsNullOrWhiteSpace(c.Path) &&
+                                                      lowerPath.StartsWith(c.Path!.ToLowerInvariant(), StringComparison.OrdinalIgnoreCase));
+                var isActive = isParentActive || isChildActive;
+
+                if (children.Count == 0)
+                {
+                    if (string.IsNullOrWhiteSpace(parent.Path))
+                    {
+                        <span class="admin-tab-link @(isActive ? "active" : string.Empty)">
+                            @if (!string.IsNullOrWhiteSpace(parent.Icon))
+                            {
+                                <i class="@parent.Icon"></i>
+                            }
+                            @parent.Title
+                        </span>
+                    }
+                    else
+                    {
+                        <a class="admin-tab-link @(isActive ? "active" : string.Empty)" href="@parent.Path">
+                            @if (!string.IsNullOrWhiteSpace(parent.Icon))
+                            {
+                                <i class="@parent.Icon"></i>
+                            }
+                            @parent.Title
+                        </a>
+                    }
+                }
+                else
+                {
+                    <div class="admin-tab-dropdown">
+                        <button type="button"
+                                class="admin-tab-link admin-tab-toggle @(isActive ? "active" : string.Empty)"
+                                aria-expanded="false">
+                            @if (!string.IsNullOrWhiteSpace(parent.Icon))
+                            {
+                                <i class="@parent.Icon"></i>
+                            }
+                            @parent.Title
+                            <i class="fa-solid fa-chevron-down admin-tab-caret"></i>
+                        </button>
+                        <ul class="admin-tab-menu">
+                            @foreach (var child in children)
+                            {
+                                if (string.IsNullOrWhiteSpace(child.Path))
+                                {
+                                    <li>
+                                        <span class="admin-tab-item">
+                                            @if (!string.IsNullOrWhiteSpace(child.Icon))
+                                            {
+                                                <i class="@child.Icon"></i>
+                                            }
+                                            @child.Title
+                                        </span>
+                                    </li>
+                                }
+                                else
+                                {
+                                    var childActive = lowerPath.StartsWith(child.Path.ToLowerInvariant(), StringComparison.OrdinalIgnoreCase);
+                                    <li>
+                                        <a class="admin-tab-item @(childActive ? "active" : string.Empty)" href="@child.Path">
+                                            @if (!string.IsNullOrWhiteSpace(child.Icon))
+                                            {
+                                                <i class="@child.Icon"></i>
+                                            }
+                                            @child.Title
+                                        </a>
+                                    </li>
+                                }
+                            }
+                        </ul>
+                    </div>
+                }
+            }
+        </nav>
+    </div>
+</header>

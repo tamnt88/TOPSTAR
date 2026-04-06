@@ -1,0 +1,152 @@
+﻿/* Admin specific styles */
+.admin-main-content {
+  min-height: calc(100vh - 170px);
+  padding-top: 14px;
+  padding-bottom: 14px;
+  font-family: 'BeVietnamPro', 'Segoe UI', Tahoma, sans-serif;
+  font-size: 13px;
+}
+.admin-page-wrap {
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
+
+.admin-main-content .page-wrap {
+  max-width: none;
+}
+
+.admin-layout-header,
+.admin-layout-footer,
+.admin-main-content h1,
+.admin-main-content h2,
+.admin-main-content h3,
+.admin-main-content h4,
+.admin-main-content h5,
+.admin-main-content h6 {
+  font-family: 'BeVietnamPro', 'Segoe UI', Tahoma, sans-serif;
+}
+
+.admin-main-content .form-control,
+.admin-main-content .form-select,
+.admin-main-content .btn,
+.admin-main-content .form-label,
+.admin-main-content .table,
+.admin-main-content .card-x,
+.admin-layout-header .admin-tab-link,
+.admin-layout-header .admin-tab-item,
+.admin-layout-footer {
+  font-family: 'BeVietnamPro', 'Segoe UI', Tahoma, sans-serif;
+}
+
+.admin-dashboard-tabs {
+  border-top: 0;
+  border-bottom: 0;
+  margin-bottom: 0;
+}
+
+.admin-tab-link.active,
+.admin-tab-link:hover {
+  color: var(--gold-600);
+  border-bottom-color: transparent;
+}
+
+.menu-filter-grid .form-control,
+.menu-filter-grid .form-select {
+  height: 31px;
+  padding-top: .25rem;
+  padding-bottom: .25rem;
+  font-size: 13px;
+}
+
+.menu-filter-grid .btn.btn-sm {
+  height: 31px;
+  line-height: 1.2;
+  padding-top: .2rem;
+  padding-bottom: .2rem;
+}
+
+.admin-tab-dropdown { position: relative; z-index: 2000; }
+.admin-tab-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 260px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, .08);
+  padding: 8px;
+  margin: 0;
+  list-style: none;
+}
+.admin-tab-menu.show { display: block; }
+
+.menu-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.menu-filter-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr auto;
+  gap: 10px;
+}
+.menu-tag {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid #e5e7eb;
+}
+.menu-path { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+.menu-parent { background: #f8fafc; color: #334155; border-color: #e2e8f0; }
+.menu-yes { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+.menu-no { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+.menu-scope { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+
+.menu-pagination {
+  margin-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.menu-pagination-right { display: flex; align-items: center; gap: 12px; }
+.menu-page-size-form { display: inline-flex; align-items: center; gap: 8px; }
+.menu-page-size-form .form-select { min-width: 84px; }
+.menu-pager {
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.menu-pager li a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  text-decoration: none;
+  color: #2563eb;
+  border-right: 1px solid #e5e7eb;
+  background: #fff;
+  font-weight: 500;
+}
+.menu-pager li:last-child a { border-right: 0; }
+.menu-pager li.active a { background: #0d6efd; color: #fff; }
+.menu-pager li.disabled a { color: #9ca3af; pointer-events: none; background: #f9fafb; }
+
+@media (max-width: 992px) {
+  .menu-filter-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 576px) {
+  .menu-filter-grid { grid-template-columns: 1fr; }
+  .menu-pagination { flex-direction: column; align-items: flex-start; }
+  .menu-pagination-right { width: 100%; flex-wrap: wrap; }
+}

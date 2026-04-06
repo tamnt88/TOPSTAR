@@ -34,17 +34,33 @@
                             </div>
                             <div class="col-md-6">
                                 <label asp-for="Input.Email" class="form-label">Email</label>
-                                <input asp-for="Input.Email" class="form-control" placeholder="brand@email.com" />
+                                <input asp-for="Input.Email" class="form-control" placeholder="brand@email.com" id="brand-email" />
                                 <span asp-validation-for="Input.Email" class="text-danger"></span>
                             </div>
                             <div class="col-md-6">
                                 <label asp-for="Input.Phone" class="form-label">Số điện thoại tài khoản</label>
-                                <input asp-for="Input.Phone" class="form-control" placeholder="09xxxxxxxx" />
+                                <input asp-for="Input.Phone" class="form-control" placeholder="09xxxxxxxx" id="brand-phone" />
+                                <span asp-validation-for="Input.Phone" class="text-danger"></span>
                             </div>
                             <div class="col-md-6">
                                 <label asp-for="Input.ContactPhone" class="form-label">SĐT liên hệ làm việc</label>
                                 <input asp-for="Input.ContactPhone" class="form-control" placeholder="09xxxxxxxx" />
                                 <span asp-validation-for="Input.ContactPhone" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Input.StreetAddress" class="form-label">Số nhà + tên đường</label>
+                                <input asp-for="Input.StreetAddress" class="form-control" placeholder="VD: 55 Nguyễn Trãi" />
+                                <span asp-validation-for="Input.StreetAddress" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Input.WardName" class="form-label">Phường/Xã</label>
+                                <input asp-for="Input.WardName" class="form-control" placeholder="VD: Phường Bến Thành" />
+                                <span asp-validation-for="Input.WardName" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Input.CityName" class="form-label">Tỉnh/Thành phố</label>
+                                <input asp-for="Input.CityName" class="form-control" placeholder="VD: TP.HCM" />
+                                <span asp-validation-for="Input.CityName" class="text-danger"></span>
                             </div>
                             <div class="col-md-6">
                                 <label asp-for="Input.Password" class="form-label">Mật khẩu</label>
@@ -75,4 +91,44 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var $email = $("#brand-email");
+            var $phone = $("#brand-phone");
+            var timer;
+
+            function resetField($el) {
+                $el.removeClass("is-invalid");
+                $el[0].setCustomValidity("");
+            }
+
+            function setFieldError($el, message) {
+                $el.addClass("is-invalid");
+                $el[0].setCustomValidity(message);
+                if ($("form").data("validator")) {
+                    $("form").validate().element($el);
+                }
+            }
+
+            function checkExists() {
+                clearTimeout(timer);
+                timer = setTimeout(function () {
+                    var email = ($email.val() || "").trim();
+                    var phone = ($phone.val() || "").trim();
+                    if (!email && !phone) return;
+
+                    $.get(window.location.pathname + "?handler=CheckIdentity", { email: email, phone: phone })
+                        .done(function (res) {
+                            resetField($email);
+                            resetField($phone);
+                            if (res && res.emailExists) setFieldError($email, "Email đã tồn tại trong hệ thống.");
+                            if (res && res.phoneExists) setFieldError($phone, "Số điện thoại đã tồn tại trong hệ thống.");
+                        });
+                }, 250);
+            }
+
+            $email.on("blur", checkExists);
+            $phone.on("blur", checkExists);
+        })();
+    </script>
 }

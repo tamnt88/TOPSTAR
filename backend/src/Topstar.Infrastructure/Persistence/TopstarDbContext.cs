@@ -48,6 +48,13 @@ public sealed class TopstarDbContext(DbContextOptions<TopstarDbContext> options)
     public DbSet<AuthEventEntity> AuthEvents => Set<AuthEventEntity>();
     public DbSet<AuthSessionEntity> AuthSessions => Set<AuthSessionEntity>();
     public DbSet<PasswordResetTokenEntity> PasswordResetTokens => Set<PasswordResetTokenEntity>();
+    public DbSet<EmailVerificationTokenEntity> EmailVerificationTokens => Set<EmailVerificationTokenEntity>();
+    public DbSet<ProvinceEntity> Provinces => Set<ProvinceEntity>();
+    public DbSet<WardEntity> Wards => Set<WardEntity>();
+    public DbSet<SystemEmailAccountEntity> SystemEmailAccounts => Set<SystemEmailAccountEntity>();
+    public DbSet<SystemShippingConfigEntity> SystemShippingConfigs => Set<SystemShippingConfigEntity>();
+    public DbSet<SystemWebsiteConfigEntity> SystemWebsiteConfigs => Set<SystemWebsiteConfigEntity>();
+    public DbSet<PublicPageSeoConfigEntity> PublicPageSeoConfigs => Set<PublicPageSeoConfigEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -9,6 +9,12 @@ public sealed class BrandProfileEntity
     public string ContactPhone { get; set; } = string.Empty;
     public string? Industry { get; set; }
     public string? Website { get; set; }
+    public string? StreetAddress { get; set; }
+    public Guid? WardId { get; set; }
+    public Guid? ProvinceId { get; set; }
+    public string? AddressV2 { get; set; }
+    public string? WardCodeV2 { get; set; }
+    public bool IsNewAddress { get; set; }
     public string Status { get; set; } = string.Empty;
     public string? ReviewNote { get; set; }
     public long ViewCount { get; set; }
@@ -26,6 +32,12 @@ public sealed class KocProfileEntity
     public string DisplayName { get; set; } = string.Empty;
     public string? Gender { get; set; }
     public string? Region { get; set; }
+    public string? StreetAddress { get; set; }
+    public Guid? WardId { get; set; }
+    public Guid? ProvinceId { get; set; }
+    public string? AddressV2 { get; set; }
+    public string? WardCodeV2 { get; set; }
+    public bool IsNewAddress { get; set; }
     public int Followers { get; set; }
     public decimal Score { get; set; }
     public string Status { get; set; } = string.Empty;
@@ -58,6 +70,7 @@ public sealed class KocChildEntity
 {
     public Guid Id { get; set; }
     public Guid KocBodyProfileId { get; set; }
+    public int? AgeYears { get; set; }
     public string? Gender { get; set; }
     public int? BirthYear { get; set; }
     public DateTime CreatedAtUtc { get; set; }

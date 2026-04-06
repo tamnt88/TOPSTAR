@@ -1,4 +1,5 @@
-@page "/dang-ky-koc/buoc-2"
+﻿@page "/dang-ky-koc/buoc-2"
+@model Topstar.Web.Pages.Public.RegisterKocStep2Model
 @{
     ViewData["Title"] = "Đăng ký KOC - Bước 2";
 }
@@ -31,56 +32,93 @@
                 </div>
             </div>
 
-            <h2 class="koc-form-title">Thông tin mạng xã hội</h2>
+            <h2 class="koc-form-title koc-step2-caption">Thông tin mạng xã hội</h2>
 
-            <div class="koc-social-box mb-3">
-                <h3>TikTok <span class="text-danger">*</span></h3>
-                <div class="row g-3">
-                    <div class="col-12">
-                        <label class="form-label">Link TikTok</label>
-                        <input class="form-control" placeholder="username hoặc link đầy đủ" />
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label">Số Followers</label>
-                        <input class="form-control" placeholder="VD: 50,000" />
-                    </div>
+            <form method="post" novalidate>
+                <div class="koc-social-scroll pe-2">
+                    @for (var i = 0; i < Model.Platforms.Count; i++)
+                    {
+                        var platform = Model.Platforms[i];
+                        <div class="koc-social-box mb-3">
+                            <input type="hidden" asp-for="Input.Platforms[i].Platform" value="@platform.Name" />
+                            <h3>@platform.Name @if (platform.IsRequired)
+                                {
+                                    <span class="text-danger">*</span>
+                                }</h3>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">@platform.LinkLabel</label>
+                                    <div class="input-icon-wrap">
+                                        <span class="input-icon"><i class="fa-solid fa-link"></i></span>
+                                        <input asp-for="Input.Platforms[i].ChannelUrl" class="form-control ps-5" placeholder="@platform.LinkPlaceholder" />
+                                    </div>
+                                    <span asp-validation-for="Input.Platforms[i].ChannelUrl" class="text-danger"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Số Followers</label>
+                                    <div class="input-icon-wrap">
+                                        <span class="input-icon"><i class="fa-solid fa-users"></i></span>
+                                        <input asp-for="Input.Platforms[i].Followers" class="form-control ps-5" placeholder="@platform.FollowersPlaceholder" />
+                                    </div>
+                                    <span asp-validation-for="Input.Platforms[i].Followers" class="text-danger"></span>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">@($"Ngành hàng trên {platform.Name}") @(platform.IsRequired ? "*" : "") <span class="koc-cat-hint">(Chọn 1-3 ngành)</span></label>
+                                    <div class="koc-chip-list" data-platform-index="@i">
+                                        @foreach (var category in Model.CategoryOptions)
+                                        {
+                                            var selected = Model.Input.Platforms.Count > i && Model.Input.Platforms[i].SelectedCategoryCodes.Contains(category.Value, StringComparer.OrdinalIgnoreCase);
+                                            <button type="button" class="koc-chip @(selected ? "active" : "")" data-category-code="@category.Value">@category.Text</button>
+                                        }
+                                    </div>
+                                    <div class="koc-category-hidden-container" data-platform-index="@i"></div>
+                                    <span asp-validation-for="Input.Platforms[i].SelectedCategoryCodes" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                    }
                 </div>
-            </div>
 
-            <div class="koc-social-box mb-3">
-                <h3>Facebook</h3>
-                <div class="row g-3">
-                    <div class="col-12">
-                        <label class="form-label">Link Facebook</label>
-                        <input class="form-control" placeholder="Link profile/page" />
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label">Số Followers</label>
-                        <input class="form-control" placeholder="VD: 20,000" />
-                    </div>
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <a asp-page="/Public/RegisterKocStep1" class="btn koc-btn-outline"><i class="fa-solid fa-arrow-left"></i>Quay lại</a>
+                    <button type="submit" class="btn koc-btn-primary">Tiếp tục <i class="fa-solid fa-arrow-right"></i></button>
                 </div>
-            </div>
-
-            <div class="koc-social-box mb-3">
-                <h3>Instagram</h3>
-                <div class="row g-3">
-                    <div class="col-12">
-                        <label class="form-label">Link Instagram</label>
-                        <input class="form-control" placeholder="Link profile Instagram" />
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label">Số Followers</label>
-                        <input class="form-control" placeholder="VD: 10,000" />
-                    </div>
-                </div>
-            </div>
-
-            <div class="d-flex gap-2 mt-4">
-                <a asp-page="/Public/RegisterKocStep1" class="btn koc-btn-outline"><i class="fa-solid fa-arrow-left"></i>Quay lại</a>
-                <a asp-page="/Public/RegisterKocStep3" class="btn koc-btn-primary flex-grow-1">Tiếp tục <i class="fa-solid fa-arrow-right"></i></a>
-            </div>
+            </form>
 
             <p class="koc-login-hint">Đã có tài khoản? <a asp-page="/Public/Login">Đăng nhập ngay</a></p>
         </div>
     </div>
 </section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            function syncHidden(index) {
+                var selected = [];
+                $('.koc-chip-list[data-platform-index="' + index + '"] .koc-chip.active').each(function () {
+                    selected.push($(this).data('category-code'));
+                });
+                var $container = $('.koc-category-hidden-container[data-platform-index="' + index + '"]');
+                $container.empty();
+                selected.forEach(function (code) {
+                    $('<input/>', {
+                        type: 'hidden',
+                        name: 'Input.Platforms[' + index + '].SelectedCategoryCodes',
+                        value: code
+                    }).appendTo($container);
+                });
+            }
+
+            $('.koc-chip').on('click', function () {
+                var $list = $(this).closest('.koc-chip-list');
+                $(this).toggleClass('active');
+                syncHidden($list.data('platform-index'));
+            });
+
+            $('.koc-chip-list').each(function () {
+                syncHidden($(this).data('platform-index'));
+            });
+        })();
+    </script>
+}

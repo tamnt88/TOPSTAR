@@ -27,6 +27,7 @@ CREATE TABLE [dbo].[Users] (
   [Id] UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
   [Email] NVARCHAR(320) NOT NULL,
   [Phone] NVARCHAR(20) NULL,
+  [Gender] NVARCHAR(20) NULL CHECK ([Gender] IN ('Male','Female','Other')),
   [PasswordHash] NVARCHAR(512) NOT NULL,
   [Status] NVARCHAR(30) NOT NULL DEFAULT 'Active' CHECK ([Status] IN ('Active','Locked','Disabled')),
   [CreatedAtUtc] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
@@ -127,6 +128,7 @@ GO
 CREATE TABLE [dbo].[KocChildren] (
   [Id] UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
   [KocBodyProfileId] UNIQUEIDENTIFIER NOT NULL,
+  [AgeYears] INT NULL,
   [Gender] NVARCHAR(20) NULL CHECK ([Gender] IN ('Male','Female','Other')),
   [BirthYear] INT NULL,
   [CreatedAtUtc] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),

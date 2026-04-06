@@ -62,6 +62,7 @@ internal sealed class EfAuthRepository(TopstarDbContext dbContext) : IAuthReposi
             Id = Guid.NewGuid(),
             Email = request.Email,
             Phone = request.Phone,
+            Gender = request.Gender,
             PasswordHash = passwordHash,
             Status = "Active",
             EmailConfirmed = false,
@@ -101,6 +102,7 @@ internal sealed class EfAuthRepository(TopstarDbContext dbContext) : IAuthReposi
                 Id = Guid.NewGuid(),
                 UserId = user.Id,
                 DisplayName = request.FullName,
+                Gender = request.Gender,
                 Status = "Draft",
                 CreatedAtUtc = DateTime.UtcNow
             });

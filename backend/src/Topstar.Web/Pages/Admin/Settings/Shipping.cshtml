@@ -1,0 +1,71 @@
+﻿@page
+@model Topstar.Web.Pages.Admin.Settings.ShippingModel
+@{
+    ViewData["Title"] = "Cài đặt giao nhận";
+}
+<div class="page-wrap card-list admin-page-wrap">
+    <div class="card-x">
+        <h2 class="section-title mb-2">Cấu hình giao nhận</h2>
+        <p class="kpi-title">Quản lý nhà vận chuyển mặc định, token/API key, webhook và môi trường sandbox/live.</p>
+        @if (TempData["AdminMessageSuccess"] is string success)
+        {
+            <div class="alert alert-success py-2">@success</div>
+        }
+        @if (TempData["AdminMessageError"] is string error)
+        {
+            <div class="alert alert-danger py-2">@error</div>
+        }
+
+        <div class="table-responsive mt-3">
+            <table class="table table-sm align-middle">
+                <thead><tr><th>Mã</th><th>Tên</th><th>Base Url</th><th>Mặc định</th><th>Môi trường</th><th>Trạng thái</th><th class="text-end">Thao tác</th></tr></thead>
+                <tbody>
+                @foreach (var row in Model.Rows)
+                {
+                    <tr>
+                        <td>@row.ProviderCode</td>
+                        <td>@row.ProviderName</td>
+                        <td>@row.ApiBaseUrl</td>
+                        <td>@(row.IsDefault ? "Có" : "-")</td>
+                        <td>@(row.IsSandbox ? "Sandbox" : "Live")</td>
+                        <td>@(row.IsActive ? "Hoạt động" : "Tắt")</td>
+                        <td class="text-end">
+                            <a class="btn btn-sm btn-outline-primary" asp-page="/Admin/Settings/Shipping" asp-route-editId="@row.Id"><i class="fa-solid fa-pen-to-square"></i></a>
+                            <form method="post" asp-page-handler="Delete" class="d-inline" onsubmit="return confirm('Xóa cấu hình giao nhận này?');">
+                                <input type="hidden" name="id" value="@row.Id" />
+                                <button class="btn btn-sm btn-outline-danger" type="submit"><i class="fa-solid fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card-x">
+        <h3 class="section-title mb-3">@(Model.Input.Id.HasValue ? "Cập nhật giao nhận" : "Thêm giao nhận")</h3>
+        <form method="post" asp-page-handler="Save" class="row g-3">
+            <input asp-for="Input.Id" type="hidden" />
+            <div class="col-md-2"><label class="form-label">Mã NCC</label><input class="form-control" asp-for="Input.ProviderCode" /></div>
+            <div class="col-md-3"><label class="form-label">Tên NCC</label><input class="form-control" asp-for="Input.ProviderName" /></div>
+            <div class="col-md-7"><label class="form-label">API Base Url</label><input class="form-control" asp-for="Input.ApiBaseUrl" /></div>
+            <div class="col-md-3"><label class="form-label">Token</label><input class="form-control" asp-for="Input.ApiToken" /></div>
+            <div class="col-md-2"><label class="form-label">ShopId</label><input class="form-control" asp-for="Input.ShopId" /></div>
+            <div class="col-md-2"><label class="form-label">ClientId</label><input class="form-control" asp-for="Input.ClientId" /></div>
+            <div class="col-md-2"><label class="form-label">ClientSecret</label><input class="form-control" asp-for="Input.ClientSecret" /></div>
+            <div class="col-md-3"><label class="form-label">Webhook Url</label><input class="form-control" asp-for="Input.WebhookUrl" /></div>
+            <div class="col-md-12"><label class="form-label">Webhook Secret</label><input class="form-control" asp-for="Input.WebhookSecret" /></div>
+            <div class="col-md-12 d-flex gap-3 flex-wrap">
+                <label class="form-check"><input class="form-check-input" type="checkbox" asp-for="Input.IsSandbox" /> <span class="form-check-label">Sandbox</span></label>
+                <label class="form-check"><input class="form-check-input" type="checkbox" asp-for="Input.IsDefault" /> <span class="form-check-label">Mặc định</span></label>
+                <label class="form-check"><input class="form-check-input" type="checkbox" asp-for="Input.IsActive" /> <span class="form-check-label">Hoạt động</span></label>
+                <label class="form-check"><input class="form-check-input" type="checkbox" asp-for="Input.IsVisible" /> <span class="form-check-label">Hiển thị</span></label>
+            </div>
+            <div class="col-12 d-flex justify-content-end gap-2">
+                <a class="btn btn-light btn-sm" asp-page="/Admin/Settings/Shipping">Làm mới</a>
+                <button class="btn btn-warning btn-sm" type="submit">Lưu</button>
+            </div>
+        </form>
+    </div>
+</div>

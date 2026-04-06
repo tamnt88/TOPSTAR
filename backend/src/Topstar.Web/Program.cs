@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authentication.Cookies;
 using Topstar.Application;
 using Topstar.Infrastructure;
+using Topstar.Web.Services.Email;
+using Topstar.Web.Services.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +33,9 @@ builder.Services.AddRazorPages(options =>
 });
 builder.Services.AddTopstarApplication();
 builder.Services.AddTopstarInfrastructure(builder.Configuration);
+builder.Services.AddScoped<IEmailSender, EmailSender>();
+builder.Services.AddScoped<IEmailTemplateRenderer, EmailTemplateRenderer>();
+builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 
 var app = builder.Build();
 
@@ -50,5 +55,3 @@ app.MapRazorPages()
    .WithStaticAssets();
 
 app.Run();
-
-

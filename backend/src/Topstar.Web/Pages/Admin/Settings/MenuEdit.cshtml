@@ -1,0 +1,104 @@
+﻿@page "{id:guid}"
+@model Topstar.Web.Pages.Admin.Settings.MenuEditModel
+@{
+    ViewData["Title"] = "Cập nhật menu";
+}
+<div class="page-wrap card-list admin-page-wrap">
+    <div class="card-x">
+        <h2 class="section-title mb-2">Cập nhật menu</h2>
+        <p class="text-muted mb-3">Cập nhật theo Phạm vi + Danh mục cha. Mã nội bộ hệ thống tự điều chỉnh.</p>
+
+        @if (TempData["AdminMessageError"] is string error)
+        {
+            <div class="alert alert-danger py-2">@error</div>
+        }
+
+        <form method="post" class="row g-3">
+            <input type="hidden" asp-for="Keyword" />
+            <input type="hidden" asp-for="Scope" />
+            <input type="hidden" asp-for="Visible" />
+            <input type="hidden" asp-for="PageIndex" />
+            <input type="hidden" asp-for="PageSize" />
+            <input type="hidden" asp-for="Input.Id" />
+
+            <div class="col-md-6">
+                <label class="form-label">Phạm vi *</label>
+                <select class="form-select" asp-for="Input.ScopeCode" id="scope-select">
+                    @foreach (var option in Model.ScopeOptions)
+                    {
+                        <option value="@option.Value">@option.Label</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Danh mục cha</label>
+                <select class="form-select" asp-for="Input.ParentId" id="parent-select">
+                    <option value="">-- Gốc --</option>
+                    @foreach (var p in Model.ParentOptions)
+                    {
+                        <option value="@p.Id">@p.DisplayText</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Tiêu đề *</label>
+                <input class="form-control" asp-for="Input.Title" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Đường dẫn</label>
+                <input class="form-control" asp-for="Input.Path" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Icon</label>
+                <input class="form-control" asp-for="Input.Icon" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Thứ tự</label>
+                <input class="form-control" type="number" min="1" asp-for="Input.OrderNo" />
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" asp-for="Input.IsVisible" />
+                    <label class="form-check-label" asp-for="Input.IsVisible">Hiển thị</label>
+                </div>
+            </div>
+
+            <div class="col-12 d-flex justify-content-end gap-2 mt-2">
+                <a class="btn btn-light btn-sm" asp-page="/Admin/Settings/MenuManagement" asp-route-keyword="@Model.Keyword" asp-route-scope="@Model.Scope" asp-route-visible="@Model.Visible" asp-route-pageIndex="@Model.PageIndex" asp-route-pageSize="@Model.PageSize">Quay lại</a>
+                <button class="btn btn-warning btn-sm" type="submit">Cập nhật</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const scopeSelect = document.getElementById('scope-select');
+            const parentSelect = document.getElementById('parent-select');
+            if (!scopeSelect || !parentSelect) return;
+
+            async function loadParents() {
+                const scope = encodeURIComponent(scopeSelect.value || 'ADMIN');
+                const url = `?handler=ParentOptions&scopeCode=${scope}`;
+                const response = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                if (!response.ok) return;
+                const current = parentSelect.value;
+                const json = await response.json();
+                parentSelect.innerHTML = '<option value="">-- Gốc --</option>';
+                (json.data || []).forEach(x => {
+                    const op = document.createElement('option');
+                    op.value = x.id;
+                    op.textContent = x.text;
+                    parentSelect.appendChild(op);
+                });
+                if (current && [...parentSelect.options].some(x => x.value === current)) {
+                    parentSelect.value = current;
+                }
+            }
+
+            scopeSelect.addEventListener('change', loadParents);
+        })();
+    </script>
+}
