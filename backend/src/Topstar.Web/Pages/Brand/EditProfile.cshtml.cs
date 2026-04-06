@@ -15,7 +15,8 @@ public sealed class EditProfileModel(
     IDashboardDataService dashboardDataService,
     IKocRegistrationService kocRegistrationService,
     TopstarDbContext dbContext,
-    IWebHostEnvironment environment) : BrandGuardedPageModel(dashboardDataService)
+    IWebHostEnvironment environment,
+    ILogger<EditProfileModel> logger) : BrandGuardedPageModel(dashboardDataService)
 {
     [BindProperty]
     public InputModel Input { get; set; } = new();
@@ -48,77 +49,87 @@ public sealed class EditProfileModel(
 
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!Guid.TryParse(userId, out var parsedUserId))
+        try
         {
-            return RedirectToPage("/Public/Login");
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userId, out var parsedUserId))
+            {
+                return RedirectToPage("/Public/Login");
+            }
+
+            NormalizeInput();
+
+            if (Input.ProvinceId.HasValue && !await kocRegistrationService.IsValidProvinceAsync(Input.ProvinceId.Value, cancellationToken))
+            {
+                ModelState.AddModelError(nameof(Input.ProvinceId), "Tỉnh/Thành phố không hợp lệ.");
+            }
+
+            if (Input.WardId.HasValue && !await kocRegistrationService.IsValidWardAsync(Input.WardId.Value, Input.ProvinceId, cancellationToken))
+            {
+                ModelState.AddModelError(nameof(Input.WardId), "Phường/Xã không hợp lệ.");
+            }
+
+            await LoadLookupAsync(cancellationToken);
+            if (!ModelState.IsValid)
+            {
+                return Page();
+            }
+
+            var user = await dbContext.Users.FirstOrDefaultAsync(x => x.Id == parsedUserId, cancellationToken);
+            var brand = await dbContext.BrandProfiles.FirstOrDefaultAsync(x => x.UserId == parsedUserId, cancellationToken);
+            if (user is null || brand is null)
+            {
+                ErrorMessage = "Không tìm thấy hồ sơ Brand.";
+                return Page();
+            }
+
+            if (BusinessLicenseFile is not null && BusinessLicenseFile.Length > 0)
+            {
+                var uploadRoot = Path.Combine(environment.WebRootPath, "uploads", "brand-license");
+                Directory.CreateDirectory(uploadRoot);
+                var ext = Path.GetExtension(BusinessLicenseFile.FileName);
+                var safeExt = string.IsNullOrWhiteSpace(ext) ? ".bin" : ext;
+                var fileName = $"{Guid.NewGuid():N}{safeExt}";
+                var fullPath = Path.Combine(uploadRoot, fileName);
+
+                await using var fs = System.IO.File.Create(fullPath);
+                await BusinessLicenseFile.CopyToAsync(fs, cancellationToken);
+
+                brand.BusinessLicenseFileUrl = $"/uploads/brand-license/{fileName}";
+            }
+            else if (string.IsNullOrWhiteSpace(brand.BusinessLicenseFileUrl))
+            {
+                ModelState.AddModelError(nameof(BusinessLicenseFile), "Vui lòng tải lên giấy phép kinh doanh.");
+                return Page();
+            }
+
+            brand.TaxCode = Input.TaxCode;
+            brand.TaxCompanyName = Input.TaxCompanyName;
+            brand.TaxInvoiceAddress = Input.TaxInvoiceAddress;
+
+            user.Email = Input.Email;
+            user.Phone = Input.Phone;
+            user.UpdatedAtUtc = DateTime.UtcNow;
+
+            brand.CompanyName = Input.CompanyName;
+            brand.ContactName = Input.ContactName;
+            brand.ContactPhone = Input.ContactPhone;
+            brand.StreetAddress = Input.StreetAddress;
+            brand.ProvinceId = Input.ProvinceId;
+            brand.WardId = Input.WardId;
+            brand.Status = "Submitted";
+            brand.UpdatedAtUtc = DateTime.UtcNow;
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return RedirectToPage("/Brand/Dashboard");
         }
-
-        NormalizeInput();
-
-        if (Input.ProvinceId.HasValue && !await kocRegistrationService.IsValidProvinceAsync(Input.ProvinceId.Value, cancellationToken))
+        catch (Exception ex)
         {
-            ModelState.AddModelError(nameof(Input.ProvinceId), "Tỉnh/Thành phố không hợp lệ.");
-        }
-
-        if (Input.WardId.HasValue && !await kocRegistrationService.IsValidWardAsync(Input.WardId.Value, Input.ProvinceId, cancellationToken))
-        {
-            ModelState.AddModelError(nameof(Input.WardId), "Phường/Xã không hợp lệ.");
-        }
-
-        await LoadLookupAsync(cancellationToken);
-        if (!ModelState.IsValid)
-        {
+            logger.LogError(ex, "Brand profile update failed for user {UserId}", User.FindFirstValue(ClaimTypes.NameIdentifier));
+            await LoadLookupAsync(cancellationToken);
+            ErrorMessage = $"Đã xảy ra lỗi khi lưu hồ sơ Brand: {ex.Message}";
             return Page();
         }
-
-        var user = await dbContext.Users.FirstOrDefaultAsync(x => x.Id == parsedUserId, cancellationToken);
-        var brand = await dbContext.BrandProfiles.FirstOrDefaultAsync(x => x.UserId == parsedUserId, cancellationToken);
-        if (user is null || brand is null)
-        {
-            ErrorMessage = "Không tìm thấy hồ sơ Brand.";
-            return Page();
-        }
-
-        if (BusinessLicenseFile is not null && BusinessLicenseFile.Length > 0)
-        {
-            var uploadRoot = Path.Combine(environment.WebRootPath, "uploads", "brand-license");
-            Directory.CreateDirectory(uploadRoot);
-            var ext = Path.GetExtension(BusinessLicenseFile.FileName);
-            var safeExt = string.IsNullOrWhiteSpace(ext) ? ".bin" : ext;
-            var fileName = $"{Guid.NewGuid():N}{safeExt}";
-            var fullPath = Path.Combine(uploadRoot, fileName);
-
-            await using var fs = System.IO.File.Create(fullPath);
-            await BusinessLicenseFile.CopyToAsync(fs, cancellationToken);
-
-            brand.BusinessLicenseFileUrl = $"/uploads/brand-license/{fileName}";
-        }
-        else if (string.IsNullOrWhiteSpace(brand.BusinessLicenseFileUrl))
-        {
-            ModelState.AddModelError(nameof(BusinessLicenseFile), "Vui lòng tải lên giấy phép kinh doanh.");
-            return Page();
-        }
-
-        brand.TaxCode = Input.TaxCode;
-        brand.TaxCompanyName = Input.TaxCompanyName;
-        brand.TaxInvoiceAddress = Input.TaxInvoiceAddress;
-
-        user.Email = Input.Email;
-        user.Phone = Input.Phone;
-        user.UpdatedAtUtc = DateTime.UtcNow;
-
-        brand.CompanyName = Input.CompanyName;
-        brand.ContactName = Input.ContactName;
-        brand.ContactPhone = Input.ContactPhone;
-        brand.StreetAddress = Input.StreetAddress;
-        brand.ProvinceId = Input.ProvinceId;
-        brand.WardId = Input.WardId;
-        brand.Status = "Submitted";
-        brand.UpdatedAtUtc = DateTime.UtcNow;
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return RedirectToPage("/Brand/Dashboard");
     }
 
     public async Task<IActionResult> OnGetWardsByProvinceAsync(Guid? provinceId, CancellationToken cancellationToken)
