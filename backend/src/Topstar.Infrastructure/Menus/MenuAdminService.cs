@@ -7,8 +7,13 @@ using Topstar.Infrastructure.Persistence;
 
 namespace Topstar.Infrastructure.Menus;
 
-public sealed class MenuAdminService(TopstarDbContext db) : IMenuAdminService
+public sealed class MenuAdminService(TopstarDbContext db, Microsoft.Extensions.Caching.Memory.IMemoryCache cache) : IMenuAdminService
 {
+    private void InvalidateNavigation()
+    {
+        foreach (var role in new[] { "ADMIN", "KOC", "BRAND" })
+            cache.Remove(Topstar.Infrastructure.Navigation.NavigationService.CacheKey(role));
+    }
     public async Task<MenuListResult> GetListAsync(MenuListQuery query, CancellationToken cancellationToken = default)
     {
         var pageIndex = query.PageIndex < 1 ? 1 : query.PageIndex;
@@ -104,6 +109,7 @@ public sealed class MenuAdminService(TopstarDbContext db) : IMenuAdminService
         });
 
         await db.SaveChangesAsync(cancellationToken);
+        InvalidateNavigation();
         return new ServiceResult(true, "Đã thêm menu thành công.");
     }
 
@@ -130,6 +136,7 @@ public sealed class MenuAdminService(TopstarDbContext db) : IMenuAdminService
         entity.UpdatedAtUtc = DateTime.UtcNow;
 
         await db.SaveChangesAsync(cancellationToken);
+        InvalidateNavigation();
         return new ServiceResult(true, "Đã cập nhật menu thành công.");
     }
 
@@ -185,6 +192,7 @@ public sealed class MenuAdminService(TopstarDbContext db) : IMenuAdminService
 
         db.Menus.Remove(entity);
         await db.SaveChangesAsync(cancellationToken);
+        InvalidateNavigation();
         return new ServiceResult(true, "Đã xóa menu thành công.");
     }
 }

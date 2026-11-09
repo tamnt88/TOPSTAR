@@ -34,7 +34,29 @@ internal sealed class EfAuthRepository(TopstarDbContext dbContext) : IAuthReposi
             ?? user.AdminProfile?.FullName
             ?? user.Email;
 
-        return new AuthUserRow(user.Id, user.Email, user.Phone, user.PasswordHash, user.Status, user.LockoutEndAtUtc, role, displayName);
+        return new AuthUserRow(user.Id, user.Email, user.Phone, user.PasswordHash, user.Status, user.EmailConfirmed, user.LockoutEndAtUtc, role, displayName);
+    }
+
+    public async Task<AuthUserRow?> FindUserByIdAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var user = await dbContext.Users
+            .Include(x => x.UserRoles).ThenInclude(x => x.Role)
+            .Include(x => x.KocProfile)
+            .Include(x => x.BrandProfile)
+            .Include(x => x.AdminProfile)
+            .FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
+
+        if (user is null) return null;
+
+        var role = user.UserRoles.Select(x => x.Role.Code)
+            .OrderBy(x => x == "ADMIN" ? 1 : x == "BRAND" ? 2 : 3)
+            .FirstOrDefault() ?? "KOC";
+        var displayName = user.KocProfile?.DisplayName
+            ?? user.BrandProfile?.ContactName
+            ?? user.AdminProfile?.FullName
+            ?? user.Email;
+
+        return new AuthUserRow(user.Id, user.Email, user.Phone, user.PasswordHash, user.Status, user.EmailConfirmed, user.LockoutEndAtUtc, role, displayName);
     }
 
     public Task<bool> EmailExistsAsync(string email, CancellationToken cancellationToken)
@@ -117,7 +139,7 @@ internal sealed class EfAuthRepository(TopstarDbContext dbContext) : IAuthReposi
         await dbContext.SaveChangesAsync(cancellationToken);
         await tx.CommitAsync(cancellationToken);
 
-        return new AuthUserRow(user.Id, user.Email, user.Phone, user.PasswordHash, user.Status, null, roleCode, displayName);
+        return new AuthUserRow(user.Id, user.Email, user.Phone, user.PasswordHash, user.Status, user.EmailConfirmed, null, roleCode, displayName);
     }
 
     public async Task UpdateLoginSuccessAsync(Guid userId, CancellationToken cancellationToken)
@@ -126,6 +148,15 @@ internal sealed class EfAuthRepository(TopstarDbContext dbContext) : IAuthReposi
         user.LastLoginAtUtc = DateTime.UtcNow;
         user.FailedLoginCount = 0;
         user.LockoutEndAtUtc = null;
+        user.UpdatedAtUtc = DateTime.UtcNow;
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task ConfirmEmailAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var user = await dbContext.Users.FirstAsync(x => x.Id == userId, cancellationToken);
+        if (user.EmailConfirmed) return;
+        user.EmailConfirmed = true;
         user.UpdatedAtUtc = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
     }

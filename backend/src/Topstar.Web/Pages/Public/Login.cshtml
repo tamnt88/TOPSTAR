@@ -6,7 +6,12 @@
     ViewData["Keywords"] = "đăng nhập TopStar, tài khoản KOC, tài khoản Brand";
 }
 
-<div class="login-page">
+@section Styles {
+    <link rel="stylesheet" href="~/css/public/login-theme.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/public/auth-polish.css" asp-append-version="true" />
+}
+
+<div class="login-page login-page-theme">
     <section class="login-section section-flow reveal-up py-5">
         <div class="container">
             <div class="row justify-content-center">
@@ -31,10 +36,11 @@
                                     <p class="text-muted mb-4">Vui lòng nhập thông tin tài khoản của bạn</p>
 
                                     <form method="post">
+                                        <input type="hidden" asp-for="ReturnUrl" />
                                         <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
                                         @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
                                         {
-                                            <div class="alert alert-danger py-2">@Model.ErrorMessage</div>
+                                            <div class="alert alert-danger py-2">@Model.ErrorMessage@if (Model.NeedsActivation) { <div class="mt-2"><a asp-page="/Public/ActivateAccount" asp-route-email="@Model.Input.EmailOrPhone" class="alert-link"><i class="fa-solid fa-envelope-circle-check me-1"></i>Kích hoạt hoặc gửi lại mã</a></div> }</div>
                                         }
 
                                         <div class="mb-3">
@@ -59,27 +65,33 @@
                                         <button type="submit" class="btn login-submit-btn w-100">Đăng nhập</button>
                                     </form>
 
+                                    @if (Model.GoogleLoginEnabled || Model.FacebookLoginEnabled)
+                                    {
                                     <div class="social-auth-block">
                                         <p class="social-auth-title">Đăng nhập nhanh</p>
                                         <div class="social-auth-grid">
-                                            <form method="post" asp-page-handler="External" class="m-0">
+                                            @if (Model.FacebookLoginEnabled) { <form method="post" asp-page-handler="External" class="m-0">
                                                 <input type="hidden" name="provider" value="Facebook" />
                                                 <input type="hidden" name="mode" value="login" />
+                                                <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
                                                 <button type="submit" class="social-auth-btn social-auth-btn-inline w-100" aria-label="Đăng nhập với Facebook">
                                                     <img src="~/images/icon/facebook.png" alt="Facebook" />
                                                     <span>Facebook</span>
                                                 </button>
-                                            </form>
-                                            <form method="post" asp-page-handler="External" class="m-0">
+                                            </form> }
+                                            @if (Model.GoogleLoginEnabled) { <form method="post" asp-page-handler="External" class="m-0">
                                                 <input type="hidden" name="provider" value="Google" />
-                                                <input type="hidden" name="mode" value="login" />
-                                                <button type="submit" class="social-auth-btn social-auth-btn-inline w-100" aria-label="Đăng nhập với Google">
+                                                <input type="hidden" name="mode" value="login-or-register" />
+                                                <input type="hidden" name="role" value="Koc" />
+                                                <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+                                                <button type="submit" class="social-auth-btn social-auth-btn-inline w-100" aria-label="Đăng nhập hoặc đăng ký với Google">
                                                     <img src="~/images/icon/google.png" alt="Google" />
-                                                    <span>Google</span>
+                                                    <span>Tiếp tục với Google</span>
                                                 </button>
-                                            </form>
+                                            </form> }
                                         </div>
                                     </div>
+                                    }
 
                                     <div class="login-divider"><span>hoặc</span></div>
 

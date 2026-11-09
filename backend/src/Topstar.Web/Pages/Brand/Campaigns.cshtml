@@ -1,11 +1,153 @@
-﻿@page
+@page
 @model Topstar.Web.Pages.Brand.CampaignsModel
-@{ ViewData["Title"] = "Brand Campaigns"; }
-<div class="page-wrap card-list">
-  <h1 class="section-title mb-0">Tat ca chien dich</h1>
-  <div class="card-x">
-    <div class="list-row"><div><b>Flash Sale 12.12 - TikTok Campaign</b><div class="kpi-title">KOCs 15 • Engagement 185K • Conversions 12.5K • Chi phi 32tr</div></div><button class="btn-x btn-blue">Xem chi tiet</button></div>
-    <div class="list-row"><div><b>Tet 2025 - Multi-Platform</b><div class="kpi-title">KOCs 20 • Engagement 425K • Conversions 28.5K • Chi phi 100tr</div></div><button class="btn-x btn-blue">Xem chi tiet</button></div>
-    <div class="list-row"><div><b>Beauty Launch - Instagram Focus</b><div class="kpi-title">KOCs 10 • Engagement 0K • Conversions 0K • Chi phi 0tr</div></div><button class="btn-x btn-blue">Xem chi tiet</button></div>
-  </div>
+@{
+    ViewData["Title"] = "Chiến dịch của bạn";
+}
+
+<div class="brand-campaign-page">
+    <div class="d-none">@Html.AntiForgeryToken()</div>
+    <header class="brand-page-heading">
+        <div>
+            <span class="brand-page-eyebrow"><i class="fa-solid fa-bullhorn"></i> ĐỒNG HÀNH CÙNG KOC</span>
+            <h1>Chiến dịch của bạn</h1>
+            <p>Theo dõi tiến độ và tiếp tục công việc cùng KOC.</p>
+        </div>
+        <a asp-page="/Brand/CampaignNeeds" class="btn btn-brand-primary btn-sm">
+            <i class="fa-solid fa-circle-plus"></i> Tạo chiến dịch mới
+        </a>
+    </header>
+
+    <section class="brand-campaign-stats" aria-label="Thống kê chiến dịch">
+        <article>
+            <span class="brand-stat-icon is-draft"><i class="fa-regular fa-pen-to-square"></i></span>
+            <div><small>Bản nháp</small><strong id="brandCampaignDraftCount">0</strong></div>
+        </article>
+        <article>
+            <span class="brand-stat-icon is-review"><i class="fa-regular fa-clock"></i></span>
+            <div><small>Chờ duyệt</small><strong id="brandCampaignReviewCount">0</strong></div>
+        </article>
+        <article>
+            <span class="brand-stat-icon is-running"><i class="fa-solid fa-play"></i></span>
+            <div><small>Đang triển khai</small><strong id="brandCampaignRunningCount">0</strong></div>
+        </article>
+        <article>
+            <span class="brand-stat-icon is-done"><i class="fa-solid fa-check"></i></span>
+            <div><small>Đã hoàn thành</small><strong id="brandCampaignCompletedCount">0</strong></div>
+        </article>
+    </section>
+
+    <section class="brand-campaign-card">
+        <div class="brand-campaign-filter">
+            <div class="brand-filter-search">
+                <label for="brandCampaignKeyword">Tìm kiếm</label>
+                <div class="brand-input-icon">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input id="brandCampaignKeyword" class="form-control" placeholder="Tìm theo tên chiến dịch" />
+                </div>
+            </div>
+            <div>
+                <label for="brandCampaignStatus">Trạng thái</label>
+                <select id="brandCampaignStatus" class="form-select">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="Draft">Bản nháp</option>
+                    <option value="Submitted">Chờ duyệt</option>
+                    <option value="NeedEdit">Cần bổ sung thông tin</option>
+                    <option value="Published">Đang tuyển KOC</option>
+                    <option value="InProgress">Đang triển khai</option>
+                    <option value="Completed">Đã hoàn thành</option>
+                    <option value="Rejected">Không được phê duyệt</option>
+                    <option value="Cancelled">Đã hủy</option>
+                    <option value="Paused">Tạm ngừng</option>
+                </select>
+            </div>
+            <div>
+                <label for="brandCampaignPageSize">Hiển thị</label>
+                <select id="brandCampaignPageSize" class="form-select">
+                    <option value="10">10 dòng</option>
+                    <option value="20">20 dòng</option>
+                    <option value="50">50 dòng</option>
+                </select>
+            </div>
+            <button id="brandCampaignFilterButton" type="button" class="btn btn-brand-primary btn-sm">
+                <i class="fa-solid fa-filter"></i> Áp dụng
+            </button>
+            <button id="brandCampaignClear" type="button" class="btn btn-outline-secondary btn-sm">
+                <i class="fa-solid fa-rotate-left"></i> Đặt lại
+            </button>
+        </div>
+
+        <div id="brandCampaignCards" class="brand-campaign-grid" aria-live="polite"></div>
+        <div class="brand-campaign-table-wrap brand-campaign-pagination">
+            <table id="brandCampaignTable" data-clear-filters="#brandCampaignClear" class="table brand-data-table w-100 campaign-data-source">
+                <thead>
+                    <tr>
+                        <th>STT</th>
+                        <th>Chiến dịch</th>
+                        <th>Ngân sách</th>
+                        <th>Thời gian</th>
+                        <th>KOC đã chọn</th>
+                        <th>Tiến độ</th>
+                        <th>Trạng thái chiến dịch</th>
+                        <th>Tiếp theo</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </section>
 </div>
+
+<div class="modal fade" id="brandCampaignSubmitModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content brand-action-modal">
+            <div class="modal-header">
+                <div class="brand-modal-title">
+                    <span><i class="fa-solid fa-paper-plane"></i></span>
+                    <div><h2>Gửi duyệt chiến dịch</h2><p id="brandCampaignSubmitName"></p></div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body">
+                <div class="brand-modal-notice">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>Hãy kiểm tra ngân sách, thời gian, nội dung cần thực hiện và tiêu chí KOC. Sau khi gửi, chiến dịch sẽ tạm khóa chỉnh sửa trong thời gian Topstar xét duyệt.</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Hủy</button>
+                <button type="button" class="btn btn-brand-primary btn-sm" id="brandCampaignSubmitConfirm">
+                    <i class="fa-solid fa-paper-plane"></i> Xác nhận gửi duyệt
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="campaignImagesModal" tabindex="-1" aria-labelledby="campaignImagesTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content">
+        <form method="post" asp-page-handler="Images" enctype="multipart/form-data" id="campaignImagesForm" novalidate>
+            <input type="hidden" name="id"/>
+            <div class="modal-header"><div><h2 class="modal-title h5" id="campaignImagesTitle">Hình ảnh chiến dịch</h2><small class="text-muted" data-media-campaign-name></small></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div>
+            <div class="modal-body">
+                <p class="small text-muted">Có thể thay ảnh đại diện và banner khi chiến dịch chưa triển khai. Ảnh không chọn mới sẽ được giữ nguyên.</p>
+                <div class="row g-3">
+                    <div class="col-md-4"><label for="campaignAvatarFile" class="form-label">Ảnh đại diện</label><div class="campaign-list-media-preview is-avatar"><img data-media-preview="avatarFile" alt="Ảnh đại diện chiến dịch" hidden/></div><input id="campaignAvatarFile" name="avatarFile" type="file" accept=".jpg,.jpeg,.png,.webp" class="form-control"/></div>
+                    <div class="col-md-8"><label for="campaignBannerFile" class="form-label">Banner chiến dịch</label><div class="campaign-list-media-preview"><img data-media-preview="bannerFile" alt="Banner chiến dịch" hidden/></div><input id="campaignBannerFile" name="bannerFile" type="file" accept=".jpg,.jpeg,.png,.webp" class="form-control"/></div>
+                </div>
+                <p class="small text-muted mt-3 mb-0">JPG, PNG hoặc WEBP; tối đa 5 MB mỗi ảnh.</p>
+                <div data-media-error class="text-danger small mt-2" role="alert"></div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button><button type="submit" class="btn brand-btn-primary"><i class="fa-solid fa-floppy-disk"></i> Lưu hình ảnh</button></div>
+        </form>
+    </div></div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/lib/datatables/css/dataTables.bootstrap5.min.css?v=2.3.8" />
+}
+
+@section Scripts {
+    <script src="~/lib/datatables/js/dataTables.min.js?v=2.3.8"></script>
+    <script src="~/lib/datatables/js/dataTables.bootstrap5.min.js?v=2.3.8"></script>
+    <script src="~/js/brand/brand-campaigns.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,6 @@
+@page "{id:guid}"
+@model Topstar.Web.Pages.Admin.Settings.OperationalCatalogDeleteModel
+@{ViewData["Title"]="Xóa danh mục vận hành";ViewData["AdminHeaderTitle"]=ViewData["Title"];ViewData["AdminActivePath"]="/Admin/Settings/OperationalSetup";}
+@section Styles{<link rel="stylesheet" href="~/css/admin/operational-setup.css" asp-append-version="true"/>}
+<div class="ops-form"><header><a asp-page="OperationalSetup"><i class="fa-solid fa-arrow-left"></i> Quay lại cấu hình</a><h1>Xóa danh mục</h1><p>Chỉ danh mục chưa phát sinh dữ liệu mới được xóa.</p></header><form method="post" class="ops-card" novalidate><div asp-validation-summary="ModelOnly" class="alert alert-danger"></div><h2>@Model.Item.Name</h2><p>Mã: <code>@Model.Item.Code</code></p><label>Lý do xóa <span class="text-danger">*</span></label><textarea asp-for="Reason" class="form-control" minlength="10" maxlength="500" rows="4"></textarea><span asp-validation-for="Reason" class="text-danger"></span><div class="d-flex justify-content-end gap-2 mt-3"><a asp-page="OperationalSetup" class="btn btn-light">Hủy</a><button class="btn btn-danger"><i class="fa-solid fa-trash"></i> Xóa danh mục</button></div></form></div>
+@section Scripts{<partial name="_ValidationScriptsPartial"/>}

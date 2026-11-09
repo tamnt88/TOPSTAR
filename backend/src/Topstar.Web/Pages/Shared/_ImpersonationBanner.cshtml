@@ -1,0 +1,15 @@
+@using Topstar.Web.Features.Auth
+@{
+    var adminId = User.FindFirst(ImpersonationClaims.OriginalAdminId)?.Value;
+    var isImpersonating = Guid.TryParse(adminId, out _);
+}
+@if (isImpersonating)
+{
+    <aside class="impersonation-banner" role="status">
+        <div><i class="fa-solid fa-user-shield"></i><span>Bạn đang hỗ trợ dưới tài khoản <strong>@User.Identity?.Name</strong>. Mọi thao tác vẫn được ghi nhận.</span></div>
+        <form method="post" action="/Support/Impersonation?handler=Exit">
+            @Html.AntiForgeryToken()
+            <button type="submit"><i class="fa-solid fa-arrow-right-from-bracket"></i> Quay lại Admin</button>
+        </form>
+    </aside>
+}

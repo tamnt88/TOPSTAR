@@ -3,35 +3,27 @@
     var startPage = Math.Max(1, Model.PageIndex - 2);
     var endPage = Math.Min(Model.TotalPages, Model.PageIndex + 2);
 
-    var keyword = Model.RouteValues.TryGetValue("keyword", out var k) ? k : null;
-    var scope = Model.RouteValues.TryGetValue("scope", out var s) ? s : null;
-    var visible = Model.RouteValues.TryGetValue("visible", out var v) ? v : null;
+    Dictionary<string, string?> Routes(int target) {
+        var values = new Dictionary<string, string?>(Model.RouteValues, StringComparer.OrdinalIgnoreCase);
+        values["pageIndex"] = Math.Clamp(target, 1, Math.Max(1, Model.TotalPages)).ToString();
+        values["pageSize"] = Model.PageSize.ToString();
+        return values;
+    }
 }
 <div class="menu-pagination">
     <div class="text-muted">Tổng: @Model.TotalItems bản ghi • Trang @Model.PageIndex/@Model.TotalPages</div>
     <div class="menu-pagination-right">
-        <form method="get" class="menu-page-size-form">
-            <input type="hidden" name="keyword" value="@keyword" />
-            <input type="hidden" name="scope" value="@scope" />
-            <input type="hidden" name="visible" value="@visible" />
-            <input type="hidden" name="pageIndex" value="1" />
-            <select name="pageSize" class="form-select form-select-sm" onchange="this.form.submit()">
-                @foreach (var size in Model.PageSizeOptions)
-                {
-                    <option value="@size" selected="@(Model.PageSize == size)">@size</option>
-                }
-            </select>
-        </form>
 
-        <ul class="menu-pager mb-0">
-            <li class="@(Model.PageIndex <= 1 ? "disabled" : "")"><a asp-page="@Model.PageName" asp-route-keyword="@keyword" asp-route-scope="@scope" asp-route-visible="@visible" asp-route-pageSize="@Model.PageSize" asp-route-pageIndex="1">«</a></li>
-            <li class="@(Model.PageIndex <= 1 ? "disabled" : "")"><a asp-page="@Model.PageName" asp-route-keyword="@keyword" asp-route-scope="@scope" asp-route-visible="@visible" asp-route-pageSize="@Model.PageSize" asp-route-pageIndex="@(Model.PageIndex - 1)">‹</a></li>
+
+        <ul class="menu-pager mb-0" aria-label="Phân trang danh sách">
+            <li class="@(Model.PageIndex <= 1 ? "disabled" : "")"><a asp-page="@Model.PageName" asp-all-route-data="@Routes(1)" aria-label="Trang đầu" title="Trang đầu">«</a></li>
+            <li class="@(Model.PageIndex <= 1 ? "disabled" : "")"><a asp-page="@Model.PageName" asp-all-route-data="@Routes(Model.PageIndex - 1)" aria-label="Trang trước" title="Trang trước">‹</a></li>
             @for (var p = startPage; p <= endPage; p++)
             {
-                <li class="@(p == Model.PageIndex ? "active" : "")"><a asp-page="@Model.PageName" asp-route-keyword="@keyword" asp-route-scope="@scope" asp-route-visible="@visible" asp-route-pageSize="@Model.PageSize" asp-route-pageIndex="@p">@p</a></li>
+                <li class="@(p == Model.PageIndex ? "active" : "")"><a asp-page="@Model.PageName" asp-all-route-data="@Routes(p)">@p</a></li>
             }
-            <li class="@(Model.PageIndex >= Model.TotalPages ? "disabled" : "")"><a asp-page="@Model.PageName" asp-route-keyword="@keyword" asp-route-scope="@scope" asp-route-visible="@visible" asp-route-pageSize="@Model.PageSize" asp-route-pageIndex="@(Model.PageIndex + 1)">›</a></li>
-            <li class="@(Model.PageIndex >= Model.TotalPages ? "disabled" : "")"><a asp-page="@Model.PageName" asp-route-keyword="@keyword" asp-route-scope="@scope" asp-route-visible="@visible" asp-route-pageSize="@Model.PageSize" asp-route-pageIndex="@Model.TotalPages">»</a></li>
+            <li class="@(Model.PageIndex >= Model.TotalPages ? "disabled" : "")"><a asp-page="@Model.PageName" asp-all-route-data="@Routes(Model.PageIndex + 1)" aria-label="Trang sau" title="Trang sau">›</a></li>
+            <li class="@(Model.PageIndex >= Model.TotalPages ? "disabled" : "")"><a asp-page="@Model.PageName" asp-all-route-data="@Routes(Model.TotalPages)" aria-label="Trang cuối" title="Trang cuối">»</a></li>
         </ul>
     </div>
 </div>

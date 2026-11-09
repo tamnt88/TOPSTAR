@@ -1,0 +1,3 @@
+/* Stable entry point for /danh-cho-brand, loaded conditionally by the shared layout. */
+@import url("/css/public/brand-public.css?v=20260814-final2");
+@import url("/css/public/brand-landing-journey-fix.css?v=20260814-final2");

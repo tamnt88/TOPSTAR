@@ -1,0 +1,20 @@
+@model Topstar.Application.Operations.OperationsAdminDashboard
+<section class="mb-5 ops-work-panel">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+        <div>
+            <h2 class="h4 mb-1">Đầu việc quá hạn</h2><p class="small text-muted mb-0">Escalation được lưu thành hồ sơ, không chỉ là cảnh báo tạm thời.</p>
+            @if(Model.SubmissionScanRuns.Count>0){var last=Model.SubmissionScanRuns[0];<div class="small mt-1">Quét gần nhất <strong>@last.CompletedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm")</strong> bởi @last.ActorLabel · thấy @last.DetectedCount, tạo @last.CreatedCount, đóng @last.ResolvedCount</div>}else{<div class="small text-warning mt-1">Chưa có lịch sử quét deadline.</div>}
+        </div>
+        <form method="post" asp-page-handler="Scan"><button class="btn btn-outline-primary">Quét deadline hiện tại</button></form>
+    </div>
+    @if(Model.SubmissionEscalations.Count==0){<div class="card-x text-center py-4 text-muted">Chưa có escalation đang mở. Bấm quét để đối chiếu deadline.</div>}
+    <div class="row g-3">
+    @foreach(var item in Model.SubmissionEscalations){<div class="col-12 col-xl-6"><article class="card-x h-100 @(item.Severity=="Critical"?"border-danger":"border-warning")">
+        <div class="d-flex flex-wrap justify-content-between gap-2"><div><div class="small text-muted">@item.CampaignTitle · @item.DeliverableType</div><h3 class="h5 mb-1">@item.KocName</h3><div class="small">Brand: @item.BrandName</div></div><div class="text-end"><span class="badge @(item.Severity=="Critical"?"bg-danger":"bg-warning text-dark")">@item.Severity</span><div class="small text-muted mt-1">@item.EscalationStatus</div></div></div>
+        <div class="alert alert-warning py-2 mt-3 mb-2"><strong>Hạn:</strong> @item.DueDateUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm") · @item.SubmissionStatus</div>
+        <div class="small text-muted">Phát hiện @item.FirstDetectedAtUtc.ToVietnamTime().ToString("dd/MM HH:mm") · quét gần nhất @item.LastDetectedAtUtc.ToVietnamTime().ToString("dd/MM HH:mm")</div>
+        @if(item.EscalationStatus=="Open"){<form method="post" asp-page-handler="Acknowledge" class="input-group mt-3"><input type="hidden" name="id" value="@item.EscalationId"/><input name="note" minlength="5" maxlength="1000" required class="form-control" placeholder="Ghi chú tiếp nhận và hướng xử lý"/><button class="btn btn-primary">Tiếp nhận</button></form>}
+        @if(item.History.Count>0){<details class="mt-3"><summary class="small text-primary">Timeline escalation (@item.History.Count)</summary><div class="border-start ps-3 mt-2">@foreach(var h in item.History){<div class="small mb-2">@(h.FromStatus??"Khởi tạo") → <strong>@h.ToStatus</strong> · @h.CreatedAtUtc.ToVietnamTime().ToString("dd/MM HH:mm")<div class="text-muted">@h.ActorLabel · @h.Note</div></div>}</div></details>}
+    </article></div>}
+    </div>
+</section>

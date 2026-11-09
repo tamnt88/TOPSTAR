@@ -1,0 +1,25 @@
+@page
+@model Topstar.Web.Pages.Admin.Finance.TaxFeesModel
+@{ ViewData["Title"]="Thuế và phí"; ViewData["AdminHeaderTitle"]="Thuế và phí"; }
+@section Styles {
+<link rel="stylesheet" href="~/css/admin/campaign-fee-policy.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/admin/campaign-fee-policy-fixes.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/admin/tax-fees.css" asp-append-version="true" />
+}
+<div class="tax-fees-page">
+<header class="admin-management-heading"><div><span class="admin-page-eyebrow"><i class="fa-solid fa-calculator"></i> TÀI CHÍNH</span><h1>Thuế và phí</h1><p>Quản lý chi phí Brand và khoản khấu trừ KOC. Các giao dịch đã chốt giữ nguyên số tiền.</p></div></header>
+@if(Model.Message is not null){<div hidden data-ts-notification="@(Model.Success?"success":"error")">@Model.Message</div>}
+<nav class="ts-tabs nav nav-tabs tax-fees-tabs mb-4" aria-label="Đối tượng áp dụng"><a class="nav-link @(Model.Tab=="Brand"?"active":"")" asp-route-tab="Brand"><i class="fa-solid fa-building"></i> Brand</a><a class="nav-link @(Model.Tab=="Koc"?"active":"")" asp-route-tab="Koc"><i class="fa-solid fa-users"></i> KOC</a></nav>
+@if(Model.Tab=="Brand"){
+ <section class="tax-fees-block"><header><span><i class="fa-solid fa-file-invoice-dollar"></i></span><div><h2>Thuế GTGT</h2><p>Áp dụng cho thanh toán chiến dịch của Brand.</p></div></header>
+ @if(Model.Vat.Ready){<partial name="_BrandVatEditor" model="Model.Vat"/>}else{<p>Cần triển khai SQL 166 trước.</p>}</section>
+ <section class="tax-fees-block"><header><span><i class="fa-solid fa-percent"></i></span><div><h2>Phí nền tảng và thanh toán</h2><p>Cấu hình phí Brand, thời hạn thanh toán và quy tắc đối soát.</p></div></header><partial name="_BrandFeeEditor" model="Model.BrandFee"/></section>
+}else{
+ <section class="tax-fees-block"><header><span><i class="fa-solid fa-percent"></i></span><div><h2>Phí nền tảng KOC</h2><p>Khấu trừ từ thù lao trước thuế; tỷ lệ được chốt theo chiến dịch.</p></div></header>
+ <form method="post" asp-page-handler="KocFee" novalidate><input type="hidden" name="Tab" value="Koc"/><div asp-validation-summary="ModelOnly" class="text-danger"></div><div class="row g-3 align-items-end"><div class="col-sm-6 col-lg-4"><label asp-for="KocFeeRate" class="form-label">Phí nền tảng (%)</label><input asp-for="KocFeeRate" type="number" min="0" max="99" step="0.01" class="form-control"/><span asp-validation-for="KocFeeRate" class="text-danger"></span></div><div class="col-auto tax-inline-save"><button class="btn btn-primary" disabled="@(!Model.FeeReady)"><i class="fa-solid fa-floppy-disk"></i> Lưu</button></div></div></form></section>
+ <section class="tax-fees-block"><header><span><i class="fa-solid fa-file-invoice"></i></span><div><h2>Thuế thu nhập cá nhân</h2><p>TopStar khấu trừ khi cộng thu nhập vào ví KOC.</p></div><a asp-page="/Admin/Finance/KocIncomeTax" class="btn btn-outline-primary"><i class="fa-solid fa-list-check"></i> Đối soát thuế</a></header>
+ @if(Model.KocTax.Ready){<partial name="_KocTaxEditor" model="Model.KocTax"/>}else{<p>Cần triển khai SQL 167 trước.</p>}</section>
+ <section class="tax-fees-block"><header><span><i class="fa-solid fa-money-bill-transfer"></i></span><div><h2>Phí và điều kiện rút tiền</h2><p>Áp dụng cho yêu cầu rút tiền mới.</p></div></header>@if(Model.PayoutReady){<partial name="_KocPayoutEditor" model="Model.Payout"/>}else{<p>Chưa có chính sách rút tiền. Cần triển khai SQL 58.</p>}</section>
+}
+</div>
+@section Scripts{<script src="~/js/admin/campaign-fee-policy.js" asp-append-version="true"></script>}

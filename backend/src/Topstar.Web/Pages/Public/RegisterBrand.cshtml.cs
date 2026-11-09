@@ -1,8 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.Security.Claims;
 using System.Text.RegularExpressions;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Topstar.Application;
@@ -117,20 +114,7 @@ public sealed class RegisterBrandModel(IAuthService authService, IAuthRepository
             return Page();
         }
 
-        var user = result.Data;
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-            new(ClaimTypes.Email, user.Email),
-            new(ClaimTypes.Name, user.DisplayName),
-            new(ClaimTypes.Role, user.Role.ToString())
-        };
-
-        await HttpContext.SignInAsync(
-            CookieAuthenticationDefaults.AuthenticationScheme,
-            new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme)),
-            new AuthenticationProperties { IsPersistent = true, ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7) });
-
-        return Redirect("/Brand/Dashboard");
+        TempData["EmailWarning"] = "Tài khoản đã được tạo. Vui lòng gửi mã và xác minh email trước khi đăng nhập.";
+        return RedirectToPage("/Public/ActivateAccount", new { email = Input.Email });
     }
 }

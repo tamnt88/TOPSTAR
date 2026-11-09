@@ -1,0 +1,39 @@
+@page
+@model Topstar.Web.Pages.Admin.Settings.OperationalSetupModel
+@using Topstar.Application.Settings
+@{
+ ViewData["Title"]="Cấu hình vận hành";ViewData["AdminHeaderTitle"]="Cấu hình vận hành";
+ string Key(string type)=>type==OperationalCatalogTypes.Violation?"violation":type==OperationalCatalogTypes.Deliverable?"deliverable":"checkpoint";
+ string Title(string type)=>type==OperationalCatalogTypes.Violation?"Danh mục vi phạm":type==OperationalCatalogTypes.Deliverable?"Loại deliverable":"Checkpoint vận chuyển";
+ string Description(string type)=>type==OperationalCatalogTypes.Violation?"Quy định loại vi phạm, mức độ và điểm phạt mặc định.":type==OperationalCatalogTypes.Deliverable?"Các loại nội dung Brand được chọn khi tạo chiến dịch.":"Các checkpoint được phép dùng khi cập nhật hành trình.";
+ var catalogOrder=new[]{OperationalCatalogTypes.Violation,OperationalCatalogTypes.Deliverable,OperationalCatalogTypes.ShipmentCheckpoint};
+ var groups=catalogOrder.Select(type=>Model.Catalogs.Where(x=>x.CatalogType==type).GroupBy(x=>x.CatalogType).Single()).ToList();
+}
+@section Styles { <link rel="stylesheet" href="~/css/admin/operational-setup.css" asp-append-version="true" /> }
+<main class="ops-setup">
+ <header class="ops-page-head"><div><span><i class="fa-solid fa-sliders"></i> CÀI ĐẶT HỆ THỐNG</span><h1>Cấu hình vận hành</h1><p>Quản trị SLA, giới hạn bảo mật và các danh mục dùng trong luồng nghiệp vụ.</p></div><a asp-page="OperationalCatalogForm" class="btn btn-primary"><i class="fa-solid fa-plus"></i><span>Thêm danh mục</span></a></header>
+ @if(!string.IsNullOrWhiteSpace(Model.Message)){<div class="alert @(Model.Success?"alert-success":"alert-danger")">@Model.Message</div>}
+ <nav class="ts-tabs ops-tabs" role="tablist" aria-label="Nhóm cấu hình vận hành">
+  <button type="button" class="is-active" data-ops-tab="policy"><i class="fa-solid fa-gauge-high"></i><span>SLA &amp; hạn mức</span></button>
+  @foreach(var group in groups){<button type="button" data-ops-tab="@Key(group.Key)"><i class="fa-solid @(group.Key==OperationalCatalogTypes.Violation?"fa-triangle-exclamation":group.Key==OperationalCatalogTypes.Deliverable?"fa-photo-film":"fa-truck-fast")"></i><span>@(group.Key==OperationalCatalogTypes.Violation?"Vi phạm":group.Key==OperationalCatalogTypes.Deliverable?"Deliverable":"Vận chuyển")</span><b>@group.Count()</b></button>}
+  <button type="button" data-ops-tab="history"><i class="fa-solid fa-clock-rotate-left"></i><span>Lịch sử</span></button>
+ </nav>
+ <section class="ops-panel is-active" data-ops-panel="policy">
+  <div class="ops-panel-head"><div><h2>SLA và hạn mức</h2><p>Các thông số được áp dụng trực tiếp vào luồng nghiệp vụ.</p></div></div>
+  <form method="post" asp-page-handler="Policy" class="row g-3" novalidate>
+   <div class="col-md-6 col-xl-3"><label>Thời gian sửa đánh giá <small>Giờ</small></label><input name="reviewEditHours" type="number" min="1" max="168" value="@Model.Policy.ReviewEditHours" class="form-control" required></div>
+   <div class="col-md-6 col-xl-3"><label>Booking trước tối thiểu <small>Phút</small></label><input name="bookingLeadMinutes" type="number" min="1" max="1440" value="@Model.Policy.BookingLeadMinutes" class="form-control" required></div>
+   <div class="col-md-6 col-xl-3"><label>Thời lượng booking tối đa <small>Giờ</small></label><input name="bookingMaxHours" type="number" min="1" max="168" value="@Model.Policy.BookingMaxHours" class="form-control" required></div>
+   <div class="col-md-6 col-xl-3"><label>Tài khoản payout tối đa <small>Tài khoản</small></label><input name="maxPayoutAccounts" type="number" min="1" max="20" value="@Model.Policy.MaxPayoutAccounts" class="form-control" required></div>
+   <div class="col-md-6 col-xl-3"><label>Số lần gửi OTP <small>Lần</small></label><input name="otpRequestLimit" type="number" min="1" max="20" value="@Model.Policy.OtpRequestLimit" class="form-control" required></div>
+   <div class="col-md-6 col-xl-3"><label>Cửa sổ giới hạn OTP <small>Phút</small></label><input name="otpWindowMinutes" type="number" min="1" max="1440" value="@Model.Policy.OtpWindowMinutes" class="form-control" required></div>
+   <div class="col-md-6 col-xl-3"><label>Thời gian hiệu lực OTP <small>Phút</small></label><input name="otpExpiryMinutes" type="number" min="1" max="60" value="@Model.Policy.OtpExpiryMinutes" class="form-control" required></div>
+   <div class="col-md-6 col-xl-3"><label>Số lần nhập OTP tối đa <small>Lần</small></label><input name="otpMaxAttempts" type="number" min="1" max="20" value="@Model.Policy.OtpMaxAttempts" class="form-control" required></div>
+   <div class="col-12"><label>Lý do thay đổi <span class="text-danger">*</span></label><textarea name="reason" minlength="10" maxlength="500" rows="3" class="form-control" placeholder="Nhập lý do từ 10 đến 500 ký tự" required></textarea></div>
+   <div class="col-12 ops-submit"><button class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i><span>Lưu cấu hình</span></button></div>
+  </form>
+ </section>
+ @foreach(var group in groups){<section class="ops-panel" data-ops-panel="@Key(group.Key)" hidden><div class="ops-panel-head"><div><h2>@Title(group.Key)</h2><p>@Description(group.Key)</p></div><span>@group.Count() mục</span></div><div class="table-responsive"><table class="table ops-table align-middle"><thead><tr><th>Thứ tự</th><th>Tên danh mục</th><th>Mã</th><th>Mặc định</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>@foreach(var item in group){<tr><td>@item.SortOrder</td><td><strong>@item.Name</strong>@if(!string.IsNullOrWhiteSpace(item.Description)){<small>@item.Description</small>}</td><td><code>@item.Code</code></td><td>@(item.DefaultSeverity is null?"—":$"{item.DefaultSeverity} · {item.DefaultPenaltyPoints} điểm")</td><td><span class="ops-status @(item.IsActive?"is-active":"is-hidden")"><i class="fa-solid @(item.IsActive?"fa-circle-check":"fa-eye-slash")"></i>@(item.IsActive?"Đang dùng":"Tạm ẩn")</span></td><td><div class="ops-actions"><a asp-page="OperationalCatalogForm" asp-route-id="@item.Id" class="btn"><i class="fa-solid fa-pen"></i><span>Sửa</span></a><a asp-page="OperationalCatalogDelete" asp-route-id="@item.Id" class="btn is-delete" title="Xóa" aria-label="Xóa @item.Name"><i class="fa-solid fa-trash"></i></a></div></td></tr>}</tbody></table></div></section>}
+ <section class="ops-panel" data-ops-panel="history" hidden><div class="ops-panel-head"><div><h2>Lịch sử thay đổi</h2><p>Theo dõi cấu hình, lý do và người thực hiện.</p></div></div><div class="ops-history-groups"><section><h3>SLA và hạn mức</h3>@if(Model.Policy.History.Count==0){<p class="ops-empty">Chưa có thay đổi.</p>}@foreach(var h in Model.Policy.History){<article class="ops-history"><div><strong>@h.Actor</strong><time>@h.CreatedAtUtc.AddHours(7).ToString("dd/MM/yyyy HH:mm")</time></div><p>@h.Reason</p><code>@h.SnapshotJson</code></article>}</section><section><h3>Danh mục nghiệp vụ</h3>@if(Model.CatalogHistory.Count==0){<p class="ops-empty">Chưa có thay đổi.</p>}@foreach(var h in Model.CatalogHistory){<article class="ops-history"><div><strong>@h.Action · @h.Actor</strong><time>@h.CreatedAtUtc.AddHours(7).ToString("dd/MM/yyyy HH:mm")</time></div><p>@h.Reason</p><code>@h.SnapshotJson</code></article>}</section></div></section>
+</main>
+@section Scripts { <script src="~/js/admin/operational-setup.js" asp-append-version="true"></script> }

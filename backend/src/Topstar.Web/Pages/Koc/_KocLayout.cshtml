@@ -1,15 +1,21 @@
 ﻿@using System.Security.Claims
 @using Topstar.Application.Dashboard
+@using Microsoft.EntityFrameworkCore
+@inject Topstar.Infrastructure.Persistence.TopstarDbContext HeaderDbContext
+@using Topstar.Application.Profiles
 @using Topstar.Application.Navigation
 @using Topstar.Application.Website
-@inject IDashboardDataService DashboardDataService
+@using Topstar.Application.Notifications
+@inject IProfileAccessService ProfileAccessService
 @inject INavigationService NavigationService
 @inject IWebsiteContentService WebsiteContentService
+@inject INotificationInboxService NotificationInboxService
+@{ var kocWebsite = await WebsiteContentService.GetWebsiteContentAsync(Context?.RequestAborted ?? default); }
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     @{
-        var website = await WebsiteContentService.GetWebsiteContentAsync(Context?.RequestAborted ?? default);
+        var website = kocWebsite;
         var websiteName = website?.WebsiteName ?? "TopStar";
         var logoPath = string.IsNullOrWhiteSpace(website?.LogoUrl) ? "/images/logo.png" : website!.LogoUrl!;
         var faviconPath = string.IsNullOrWhiteSpace(website?.FaviconUrl) ? logoPath : website!.FaviconUrl!;
@@ -17,28 +23,66 @@
     }
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title>@title - @websiteName</title>
     <link rel="icon" type="image/png" href="@faviconPath" />
     <link rel="apple-touch-icon" href="@faviconPath" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Arimo:ital,wght@0,400..700;1,400..700&family=Saira+Stencil:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/lib/fontawesome/css/all.min.css" />
-    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" href="/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="/lib/fontawesome/css/all.min.css" />
+    <link rel="stylesheet" href="/lib/datatables/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="/lib/colorbox/colorbox.css" />
+    <link rel="stylesheet" href="/css/dashboard.css" />
+    <link rel="stylesheet" href="~/css/koc/koc-core.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/koc/koc-workspaces.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/koc/koc-logistics.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/koc/koc-theme.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/shared/portal-footer.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/shared/impersonation.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/shared/file-picker.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/shared/notifications.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/select2/select2.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/jquery-ui/jquery-ui.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/shared/form-controls.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/shared/statistics.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
+    <link rel="stylesheet" href="~/css/shared/lists.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/koc/koc-foundation.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/shared/ui-standard.css" asp-append-version="true" />
 </head>
 <body class="dashboard-body dashboard-body-koc">
+    <partial name="/Pages/Shared/_ImpersonationBanner.cshtml" />
     @{
-        var websiteBody = await WebsiteContentService.GetWebsiteContentAsync(Context?.RequestAborted ?? default);
+        var websiteBody = kocWebsite;
         var websiteNameBody = websiteBody?.WebsiteName ?? "TopStar";
         var logoPathBody = string.IsNullOrWhiteSpace(websiteBody?.LogoUrl) ? "/images/logo.png" : websiteBody!.LogoUrl!;
+        var contactEmailBody = string.IsNullOrWhiteSpace(websiteBody?.ContactEmail) ? "info@topstar.vn" : websiteBody!.ContactEmail!;
+        var hotlineBody = string.IsNullOrWhiteSpace(websiteBody?.Hotline) ? "08 3333 1004" : websiteBody!.Hotline!;
+        var hotlineHref = hotlineBody.Replace(" ", string.Empty).Replace(".", string.Empty).Replace("-", string.Empty);
+        var copyrightBody = string.IsNullOrWhiteSpace(websiteBody?.CopyrightText)
+            ? $"© {DateTime.UtcNow.Year} {websiteNameBody}. Bảo lưu mọi quyền."
+            : websiteBody!.CopyrightText!;
         var path = (Context?.Request?.Path.Value ?? string.Empty).ToLowerInvariant();
         var roleCode = User?.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value?.ToUpperInvariant() ?? "KOC";
         var displayName = User?.Identity?.Name
             ?? User?.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value
             ?? "KOC";
 
+        var headerUserIdRaw = User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var headerProfile = Guid.TryParse(headerUserIdRaw, out var headerUserId)
+            ? await HeaderDbContext.KocProfiles.AsNoTracking()
+                .Where(x => x.UserId == headerUserId)
+                .Select(x => new { x.DisplayName, x.AvatarUrl })
+                .FirstOrDefaultAsync(Context?.RequestAborted ?? default)
+            : null;
+        if (!string.IsNullOrWhiteSpace(headerProfile?.DisplayName)) displayName = headerProfile.DisplayName;
+        var headerAvatarUrl = headerProfile?.AvatarUrl;
         var parts = displayName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         var initials = parts.Length switch
         {
@@ -49,89 +93,139 @@
 
         var menus = await NavigationService.GetMenusByRoleAsync(roleCode, Context?.RequestAborted ?? default);
         var parents = menus.Where(x => x.ParentId == null).OrderBy(x => x.OrderNo).ThenBy(x => x.Title).ToList();
+        bool IsKocMenuActive(string? menuPath)
+        {
+            if (string.IsNullOrWhiteSpace(menuPath)) return false;
+            var normalized = menuPath.ToLowerInvariant();
+            if (path.StartsWith(normalized, StringComparison.OrdinalIgnoreCase)) return true;
+            return normalized switch
+            {
+                "/koc/profile" => path.StartsWith("/koc/editprofile", StringComparison.OrdinalIgnoreCase),
+                "/koc/jobs" => path.StartsWith("/koc/campaigndetail", StringComparison.OrdinalIgnoreCase),
+                "/koc/disputes" => path.StartsWith("/koc/disputedetail", StringComparison.OrdinalIgnoreCase),
+                _ => false
+            };
+        }
+        string KocMenuTitle(string title, string? menuPath)
+            => (menuPath ?? string.Empty).StartsWith("/Koc/Jobs", StringComparison.OrdinalIgnoreCase)
+                ? "Tìm việc"
+                : title;
 
-        var isProfileLocked = false;
+        var isProfileIncomplete = false;
+        var isApprovalPending = false;
+        var unreadNotificationCount = 0;
         var kocUserIdRaw = User?.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
         if (Guid.TryParse(kocUserIdRaw, out var kocUserId))
         {
-            var kocData = await DashboardDataService.GetKocDashboardAsync(kocUserId, Context?.RequestAborted ?? default);
-            isProfileLocked = kocData.NeedsProfileCompletion;
+            var access = await ProfileAccessService.CheckKocAsync(kocUserId, Context?.RequestAborted ?? default);
+            isProfileIncomplete = !access.IsComplete;
+            isApprovalPending = access.IsComplete && !access.IsApproved;
+            unreadNotificationCount = ViewData["KocUnreadNotificationCount"] is int pageUnreadCount
+                ? pageUnreadCount
+                : await NotificationInboxService.GetUnreadCountAsync(kocUserId, "KOC", Context?.RequestAborted ?? default);
+        }
+        bool CanBrowseWhilePending(string? menuPath)
+        {
+            var normalized = menuPath?.ToLowerInvariant() ?? string.Empty;
+            return normalized.StartsWith("/koc/dashboard")
+                || normalized.StartsWith("/koc/jobs")
+                || normalized.StartsWith("/koc/campaigndetail")
+                || normalized.StartsWith("/koc/academy")
+                || normalized.StartsWith("/koc/notifications")
+                || normalized.StartsWith("/koc/profile")
+                || normalized.StartsWith("/koc/editprofile");
         }
     }
 
-    <header class="dashboard-topbar">
-        <div class="dashboard-topbar-inner container">
-            <a class="dashboard-brand dashboard-brand-stack" asp-page="/Koc/Dashboard">
+    <header class="koc-header">
+        <div class="container koc-header-bar">
+            <a class="koc-brand" asp-page="/Koc/Dashboard" aria-label="Về tổng quan KOC">
                 <img src="@logoPathBody" alt="@websiteNameBody" />
-                <small>KOC Dashboard</small>
             </a>
-            <div class="dashboard-user-actions">
-                <div class="admin-user-chip"><span>@initials</span> @displayName</div>
-                <a asp-page="/Public/Logout" class="dashboard-logout"><i class="fa-solid fa-right-from-bracket"></i> Đăng xuất</a>
-            </div>
-        </div>
-    </header>
-
-    <nav class="dashboard-subnav">
-        <div class="container dashboard-subnav-inner admin-dashboard-tabs admin-tabs-dynamic">
+            <button type="button" class="koc-mobile-toggle" aria-expanded="false" aria-label="Mở menu KOC">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <nav class="koc-primary-nav" aria-label="Điều hướng KOC">
             @foreach (var parent in parents)
             {
-                var children = menus.Where(x => x.ParentId == parent.Id).OrderBy(x => x.OrderNo).ThenBy(x => x.Title).ToList();
-                var parentPath = parent.Path?.ToLowerInvariant() ?? string.Empty;
-                var parentIsProfile = parentPath.StartsWith("/koc/profile", StringComparison.OrdinalIgnoreCase)
-                    || parentPath.StartsWith("/koc/editprofile", StringComparison.OrdinalIgnoreCase);
-                var parentDisabled = isProfileLocked && !parentIsProfile;
-
-                var isParentActive = !string.IsNullOrWhiteSpace(parent.Path) &&
-                                     path.StartsWith(parent.Path.ToLowerInvariant(), StringComparison.OrdinalIgnoreCase);
-                var isChildActive = children.Any(c => !string.IsNullOrWhiteSpace(c.Path) &&
-                                                      path.StartsWith(c.Path!.ToLowerInvariant(), StringComparison.OrdinalIgnoreCase));
-                var isActive = isParentActive || isChildActive;
-
-                if (children.Count == 0)
+                var allChildren = menus.Where(x => x.ParentId == parent.Id).OrderBy(x => x.OrderNo).ThenBy(x => x.Title).ToList();
+                var jobMenu = allChildren.FirstOrDefault(x => (x.Path ?? string.Empty).StartsWith("/Koc/Jobs", StringComparison.OrdinalIgnoreCase));
+                var children = allChildren.Where(x => x != jobMenu).ToList();
+                if (jobMenu is not null)
                 {
-                    if (string.IsNullOrWhiteSpace(parent.Path) || parentDisabled)
+                    var jobActive = IsKocMenuActive(jobMenu.Path);
+                    var jobDisabled = isProfileIncomplete;
+                    if (jobDisabled)
                     {
-                        <span class="admin-tab-link @(isActive ? "active" : string.Empty) @(parentDisabled ? "disabled" : string.Empty)">
-                            @if (!string.IsNullOrWhiteSpace(parent.Icon))
-                            {
-                                <i class="@parent.Icon"></i>
-                            }
-                            @parent.Title
+                        <span class="koc-nav-link @(jobActive ? "active" : string.Empty) is-disabled">
+                            <i class="fa-solid fa-magnifying-glass"></i>Tìm việc
                         </span>
                     }
                     else
                     {
-                        <a class="admin-tab-link @(isActive ? "active" : string.Empty)" href="@parent.Path">
+                        <a class="koc-nav-link @(jobActive ? "active" : string.Empty)" href="@jobMenu.Path">
+                            <i class="fa-solid fa-magnifying-glass"></i>Tìm việc
+                        </a>
+                    }
+                }
+                var parentPath = parent.Path?.ToLowerInvariant() ?? string.Empty;
+                var parentIsProfile = parentPath.StartsWith("/koc/profile", StringComparison.OrdinalIgnoreCase)
+                    || parentPath.StartsWith("/koc/editprofile", StringComparison.OrdinalIgnoreCase);
+                var groupContainsProfile = parentIsProfile || children.Any(c =>
+                    (c.Path ?? string.Empty).StartsWith("/Koc/Profile", StringComparison.OrdinalIgnoreCase)
+                    || (c.Path ?? string.Empty).StartsWith("/Koc/EditProfile", StringComparison.OrdinalIgnoreCase));
+                var groupCanBrowse = CanBrowseWhilePending(parent.Path) || children.Any(c => CanBrowseWhilePending(c.Path));
+                var parentDisabled = (isProfileIncomplete && !groupContainsProfile) || (isApprovalPending && !groupCanBrowse);
+
+                var isParentActive = IsKocMenuActive(parent.Path);
+                var isChildActive = children.Any(c => IsKocMenuActive(c.Path));
+                var isActive = isParentActive || isChildActive;
+
+                if (children.Count <= 1)
+                {
+                    var directPath = children.Count == 1 ? children[0].Path : parent.Path;
+                    if (string.IsNullOrWhiteSpace(directPath) || parentDisabled)
+                    {
+                        <span class="koc-nav-link @(isActive ? "active" : string.Empty) @(parentDisabled ? "is-disabled" : string.Empty)">
                             @if (!string.IsNullOrWhiteSpace(parent.Icon))
                             {
                                 <i class="@parent.Icon"></i>
                             }
-                            @parent.Title
+                            @KocMenuTitle(parent.Title, directPath)
+                        </span>
+                    }
+                    else
+                    {
+                        <a class="koc-nav-link @(isActive ? "active" : string.Empty)" href="@directPath">
+                            @if (!string.IsNullOrWhiteSpace(parent.Icon))
+                            {
+                                <i class="@parent.Icon"></i>
+                            }
+                            @KocMenuTitle(parent.Title, directPath)
                         </a>
                     }
                 }
                 else
                 {
-                    <div class="admin-tab-dropdown">
+                    <div class="koc-nav-dropdown">
                         <button type="button"
-                                class="admin-tab-link admin-tab-toggle @(isActive ? "active" : string.Empty) @(parentDisabled ? "disabled" : string.Empty)"
+                                class="koc-nav-link koc-nav-toggle @(isActive ? "active" : string.Empty) @(parentDisabled ? "is-disabled" : string.Empty)"
                                 aria-expanded="false"
                                 disabled="@parentDisabled">
                             @if (!string.IsNullOrWhiteSpace(parent.Icon))
                             {
                                 <i class="@parent.Icon"></i>
                             }
-                            @parent.Title
-                            <i class="fa-solid fa-chevron-down admin-tab-caret"></i>
+                            <span class="koc-nav-label">@KocMenuTitle(parent.Title, parent.Path)</span>
+                            <i class="fa-solid fa-chevron-down koc-nav-caret" aria-hidden="true"></i>
                         </button>
-                        <ul class="admin-tab-menu">
+                        <ul class="koc-nav-menu">
                             @foreach (var child in children)
                             {
                                 if (string.IsNullOrWhiteSpace(child.Path))
                                 {
                                     <li>
-                                        <span class="admin-tab-item">
+                                        <span class="koc-nav-item">
                                             @if (!string.IsNullOrWhiteSpace(child.Icon))
                                             {
                                                 <i class="@child.Icon"></i>
@@ -145,12 +239,12 @@
                                     var childPath = child.Path!.ToLowerInvariant();
                                     var childIsProfile = childPath.StartsWith("/koc/profile", StringComparison.OrdinalIgnoreCase)
                                         || childPath.StartsWith("/koc/editprofile", StringComparison.OrdinalIgnoreCase);
-                                    var childDisabled = isProfileLocked && !childIsProfile;
-                                    var childActive = path.StartsWith(child.Path.ToLowerInvariant(), StringComparison.OrdinalIgnoreCase);
+                                    var childDisabled = (isProfileIncomplete && !childIsProfile) || (isApprovalPending && !CanBrowseWhilePending(child.Path));
+                                    var childActive = IsKocMenuActive(child.Path);
                                     <li>
                                         @if (childDisabled)
                                         {
-                                            <span class="admin-tab-item disabled @(childActive ? "active" : string.Empty)">
+                                            <span class="koc-nav-item is-disabled @(childActive ? "active" : string.Empty)">
                                                 @if (!string.IsNullOrWhiteSpace(child.Icon))
                                                 {
                                                     <i class="@child.Icon"></i>
@@ -160,7 +254,7 @@
                                         }
                                         else
                                         {
-                                            <a class="admin-tab-item @(childActive ? "active" : string.Empty)" href="@child.Path">
+                                            <a class="koc-nav-item @(childActive ? "active" : string.Empty)" href="@child.Path">
                                                 @if (!string.IsNullOrWhiteSpace(child.Icon))
                                                 {
                                                     <i class="@child.Icon"></i>
@@ -175,14 +269,70 @@
                     </div>
                 }
             }
+            </nav>
+            <div class="koc-header-actions">
+                <a asp-page="/Koc/Notifications" class="koc-header-notifications @(path.StartsWith("/koc/notifications") ? "active" : null)" aria-label="Thông báo@(unreadNotificationCount > 0 ? $", {unreadNotificationCount} chưa đọc" : "")">
+                    <i class="fa-regular fa-bell"></i>
+                    @if (unreadNotificationCount > 0) { <b>@(unreadNotificationCount > 99 ? "99+" : unreadNotificationCount)</b> }
+                </a>
+                <div class="dropdown koc-account-dropdown">
+                    <button class="koc-user-chip koc-account-toggle"
+                            type="button"
+                            data-bs-toggle="dropdown"
+                            data-bs-auto-close="outside"
+                            aria-expanded="false"
+                            aria-label="Mở menu tài khoản">
+                        <span class="koc-header-avatar">@if (!string.IsNullOrWhiteSpace(headerAvatarUrl)) { <img src="@headerAvatarUrl" alt="Ảnh đại diện @displayName" /> } else { @initials }</span>
+                        <strong>@displayName</strong>
+                        <i class="fa-solid fa-chevron-down koc-account-chevron" aria-hidden="true"></i>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end koc-account-menu">
+                        <div class="koc-account-summary">
+                            <span class="koc-header-avatar">@if (!string.IsNullOrWhiteSpace(headerAvatarUrl)) { <img src="@headerAvatarUrl" alt="Ảnh đại diện @displayName" /> } else { @initials }</span>
+                            <div>
+                                <strong>@displayName</strong>
+                                <small>Tài khoản KOC</small>
+                            </div>
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" asp-page="/Koc/Profile">
+                            <i class="fa-regular fa-id-card"></i>
+                            <span>Hồ sơ của tôi</span>
+                        </a>
+                        <button class="dropdown-item"
+                                type="button"
+                                data-bs-toggle="modal"
+                                data-bs-target="#kocChangePasswordModal">
+                            <i class="fa-solid fa-key"></i>
+                            <span>Đổi mật khẩu</span>
+                        </button>
+                        <div class="dropdown-divider"></div>
+                        <a asp-page="/Public/Logout" class="dropdown-item koc-account-logout">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                            <span>Đăng xuất</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
-    </nav>
+    </header>
 
-    @if (isProfileLocked)
+    @if (isProfileIncomplete)
     {
         <div class="container mt-3">
             <div class="alert alert-warning mb-0">
-                Hồ sơ KOC chưa đầy đủ. Vui lòng cập nhật hồ sơ trước khi sử dụng các chức năng khác.
+                <i class="fa-solid fa-circle-exclamation me-1"></i>
+                Hồ sơ chưa đủ điều kiện sử dụng tính năng.
+                <a asp-page="/Koc/Profile" asp-fragment="profile-completion" class="alert-link">Xem chính xác những mục cần cập nhật</a>.
+            </div>
+        </div>
+    }
+    else if (isApprovalPending)
+    {
+        <div class="container mt-3">
+            <div class="alert alert-info mb-0" role="status">
+                <i class="fa-solid fa-clock me-1"></i>
+                Hồ sơ đang chờ duyệt. Bạn vẫn có thể xem cơ hội và học viện; thao tác ứng tuyển, nhận việc và tài chính sẽ mở sau khi được duyệt.
             </div>
         </div>
     }
@@ -193,9 +343,139 @@
         </div>
     </main>
 
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/dashboard.js" asp-append-version="true"></script>
+    <partial name="_PortalFooter" model='"KOC"' />
+
+    <nav class="koc-mobile-bottom-nav" aria-label="Truy cập nhanh trên điện thoại">
+        @if (isProfileIncomplete)
+        {
+            <a asp-page="/Koc/Profile" class="active"><i class="fa-regular fa-address-card"></i><span>Hồ sơ</span></a>
+            <span class="is-disabled" aria-disabled="true"><i class="fa-solid fa-magnifying-glass"></i><span>Cơ hội</span></span>
+            <span class="is-disabled" aria-disabled="true"><i class="fa-solid fa-list-check"></i><span>Công việc</span></span>
+            <span class="is-disabled" aria-disabled="true"><i class="fa-regular fa-calendar"></i><span>Lịch</span></span>
+            <span class="is-disabled" aria-disabled="true"><i class="fa-solid fa-wallet"></i><span>Ví</span></span>
+        }
+        else
+        {
+            <a asp-page="/Koc/Dashboard" class="@(path.StartsWith("/koc/dashboard") ? "active" : null)"><i class="fa-solid fa-list-check"></i><span>Việc cần làm</span></a>
+            <a asp-page="/Koc/Jobs" class="@(path.StartsWith("/koc/jobs") || path.StartsWith("/koc/campaigndetail") ? "active" : null)"><i class="fa-solid fa-magnifying-glass"></i><span>Tìm việc</span></a>
+            @if (isApprovalPending)
+            {
+                <span class="is-disabled" aria-disabled="true"><i class="fa-solid fa-list-check"></i><span>Công việc</span></span>
+                <span class="is-disabled" aria-disabled="true"><i class="fa-regular fa-calendar"></i><span>Lịch</span></span>
+                <span class="is-disabled" aria-disabled="true"><i class="fa-solid fa-wallet"></i><span>Ví</span></span>
+            }
+            else
+            {
+                <a asp-page="/Koc/Tasks" class="@(path.StartsWith("/koc/tasks") ? "active" : null)"><i class="fa-solid fa-list-check"></i><span>Công việc</span></a>
+                <a asp-page="/Koc/Bookings" class="@(path.StartsWith("/koc/bookings") ? "active" : null)"><i class="fa-regular fa-calendar"></i><span>Lịch</span></a>
+                <a asp-page="/Koc/Wallet" class="@(path.StartsWith("/koc/wallet") ? "active" : null)"><i class="fa-solid fa-wallet"></i><span>Ví</span></a>
+            }
+        }
+    </nav>
+
+    <div class="modal fade"
+         id="kocChangePasswordModal"
+         tabindex="-1"
+         aria-labelledby="kocChangePasswordModalTitle"
+         aria-hidden="true"
+         data-bs-backdrop="static"
+         data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered koc-security-modal">
+            <div class="modal-content">
+                <form id="kocChangePasswordForm"
+                      method="post"
+                      action="/Koc/AccountSecurity?handler=ChangePassword"
+                      novalidate>
+                    @Html.AntiForgeryToken()
+                    <div class="modal-header">
+                        <div class="koc-security-modal-heading">
+                            <span><i class="fa-solid fa-shield-halved"></i></span>
+                            <div>
+                                <h2 class="modal-title" id="kocChangePasswordModalTitle">Đổi mật khẩu</h2>
+                                <p>Tăng cường bảo mật cho tài khoản của bạn.</p>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="koc-security-note">
+                            <i class="fa-solid fa-circle-info"></i>
+                            <span>Mật khẩu mới cần ít nhất 8 ký tự, gồm chữ hoa, chữ thường và chữ số.</span>
+                        </div>
+
+                        <div class="koc-password-field">
+                            <label for="kocCurrentPassword">Mật khẩu hiện tại <span>*</span></label>
+                            <div class="koc-password-control">
+                                <i class="fa-solid fa-lock"></i>
+                                <input id="kocCurrentPassword"
+                                       name="currentPassword"
+                                       type="password"
+                                       autocomplete="current-password"
+                                       placeholder="Nhập mật khẩu hiện tại" />
+                                <button type="button" data-password-toggle aria-label="Hiện mật khẩu">
+                                    <i class="fa-regular fa-eye"></i>
+                                </button>
+                            </div>
+                            <div class="koc-field-error" data-error-for="currentPassword"></div>
+                        </div>
+
+                        <div class="koc-password-field">
+                            <label for="kocNewPassword">Mật khẩu mới <span>*</span></label>
+                            <div class="koc-password-control">
+                                <i class="fa-solid fa-key"></i>
+                                <input id="kocNewPassword"
+                                       name="newPassword"
+                                       type="password"
+                                       autocomplete="new-password"
+                                       placeholder="Nhập mật khẩu mới" />
+                                <button type="button" data-password-toggle aria-label="Hiện mật khẩu">
+                                    <i class="fa-regular fa-eye"></i>
+                                </button>
+                            </div>
+                            <div class="koc-field-error" data-error-for="newPassword"></div>
+                        </div>
+
+                        <div class="koc-password-field">
+                            <label for="kocConfirmPassword">Xác nhận mật khẩu mới <span>*</span></label>
+                            <div class="koc-password-control">
+                                <i class="fa-solid fa-check-double"></i>
+                                <input id="kocConfirmPassword"
+                                       name="confirmPassword"
+                                       type="password"
+                                       autocomplete="new-password"
+                                       placeholder="Nhập lại mật khẩu mới" />
+                                <button type="button" data-password-toggle aria-label="Hiện mật khẩu">
+                                    <i class="fa-regular fa-eye"></i>
+                                </button>
+                            </div>
+                            <div class="koc-field-error" data-error-for="confirmPassword"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                            <i class="fa-solid fa-xmark me-1"></i>Hủy
+                        </button>
+                        <button type="submit" class="btn koc-security-submit">
+                            <i class="fa-solid fa-shield-halved me-1"></i>Xác nhận đổi
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/select2/select2.min.js" asp-append-version="true"></script>
+    <script src="~/lib/jquery-ui/jquery-ui.min.js" asp-append-version="true"></script>
+    <script src="~/js/shared/form-controls.js" asp-append-version="true"></script>
+    <script src="~/js/shared/notifications.js" asp-append-version="true"></script>
+    <script src="/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/lib/colorbox/jquery.colorbox.min.js"></script>
+    <script src="~/js/koc/koc-gallery.js" asp-append-version="true"></script>
+    <script src="~/js/koc/koc.js" asp-append-version="true"></script>
+    <script src="~/js/shared/file-picker.js" asp-append-version="true"></script>
+    <script src="~/js/shared/lists.js" asp-append-version="true"></script>
+    <script src="~/js/koc/koc-foundation.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

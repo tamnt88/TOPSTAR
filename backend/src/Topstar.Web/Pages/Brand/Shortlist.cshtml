@@ -1,0 +1,229 @@
+@page
+@model Topstar.Web.Pages.Brand.ShortlistModel
+@using Topstar.Application.Campaigns
+@{
+    ViewData["Title"] = "Tuyển chọn KOC";
+    var d = Model.Data;
+}
+@if (d is null)
+{
+    <div class="brand-shortlist-page">
+        <header class="brand-page-heading">
+            <div>
+                <span class="brand-page-eyebrow"><i class="fa-solid fa-users-viewfinder"></i> TUYỂN CHỌN KOC</span>
+                <h1>Danh sách tuyển chọn</h1>
+                <p>Chọn chiến dịch để xem hồ sơ KOC được đề xuất và xác nhận danh sách KOC tham gia chiến dịch.</p>
+            </div>
+            <a asp-page="/Brand/Campaigns" class="btn btn-outline-secondary btn-sm">
+                <i class="fa-solid fa-list"></i> Quản lý chiến dịch
+            </a>
+        </header>
+
+        <section class="brand-shortlist-stats" aria-label="Thống kê tuyển chọn KOC">
+            <article><span class="is-total"><i class="fa-solid fa-bullhorn"></i></span><div><small>Tổng chiến dịch</small><strong id="shortlistTotalCount">0</strong></div></article>
+            <article><span class="is-recruiting"><i class="fa-solid fa-users"></i></span><div><small>Đang tuyển KOC</small><strong id="shortlistRecruitingCount">0</strong></div></article>
+            <article><span class="is-running"><i class="fa-solid fa-play"></i></span><div><small>Đang thực hiện</small><strong id="shortlistRunningCount">0</strong></div></article>
+            <article><span class="is-completed"><i class="fa-solid fa-check"></i></span><div><small>Đã hoàn thành</small><strong id="shortlistCompletedCount">0</strong></div></article>
+        </section>
+
+        <section class="brand-campaign-card">
+            <div class="brand-campaign-filter">
+                <div class="brand-filter-search">
+                    <label for="shortlistKeyword">Từ khóa</label>
+                    <div class="brand-input-icon">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input id="shortlistKeyword" class="form-control" placeholder="Nhập tên chiến dịch" />
+                    </div>
+                </div>
+                <div>
+                    <label for="shortlistStatus">Trạng thái</label>
+                    <select id="shortlistStatus" class="form-select">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="Published">Đang tuyển KOC</option>
+                        <option value="InProgress">Đang thực hiện</option>
+                        <option value="Completed">Đã hoàn thành</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="shortlistPageSize">Hiển thị</label>
+                    <select id="shortlistPageSize" class="form-select">
+                        <option value="10">10 dòng</option>
+                        <option value="20">20 dòng</option>
+                        <option value="50">50 dòng</option>
+                    </select>
+                </div>
+                <button id="shortlistFilterButton" type="button" class="btn btn-brand-primary btn-sm">
+                    <i class="fa-solid fa-filter"></i> Lọc
+                </button>
+            </div>
+
+            <div class="brand-campaign-table-wrap">
+                <table id="brandShortlistTable" class="table brand-data-table w-100">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Chiến dịch</th>
+                            <th>Thời gian</th>
+                            <th>KOC đăng ký</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+}
+@if (d is not null)
+{
+    var remainingKocCount = Math.Max(0, d.DesiredKocCount - d.ConfirmedCount);
+    var pendingProposalCount = d.Items.Count(x => !x.IsConfirmed && x.Status == "Shortlisted");
+    <div class="brand-shortlist-detail">
+        <header class="brand-page-heading">
+            <div>
+                <span class="brand-page-eyebrow"><i class="fa-solid fa-users-viewfinder"></i> TUYỂN CHỌN KOC</span>
+                <h1>@d.CampaignTitle</h1>
+                <p>Xem hồ sơ KOC được TopStar đề xuất và xác nhận danh sách cộng tác phù hợp.</p>
+            </div>
+            <a asp-page="/Brand/Shortlist" class="btn btn-outline-secondary btn-sm">
+                <i class="fa-solid fa-arrow-left"></i> Quay lại danh sách
+            </a>
+        </header>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Message))
+        {
+            <div hidden data-ts-notification="@(Model.MessageType ?? "info")">@Model.Message</div>
+        }
+
+        <section class="brand-shortlist-overview">
+            <article>
+                <span><i class="fa-solid fa-user-group"></i></span>
+                <div><small>Hồ sơ đề xuất</small><strong>@d.Items.Count</strong></div>
+            </article>
+            <article>
+                <span><i class="fa-solid fa-user-check"></i></span>
+                <div><small>KOC đã xác nhận</small><strong>@d.ConfirmedCount/@d.DesiredKocCount</strong></div>
+            </article>
+            <article>
+                <span><i class="fa-solid fa-flag-checkered"></i></span>
+                <div><small>Trạng thái tuyển chọn</small><strong>@(d.IsFinalized ? "Đã xác nhận danh sách" : d.Items.Count == 0 ? "Chờ TopStar đề xuất" : "Chờ doanh nghiệp xác nhận")</strong></div>
+            </article>
+        </section>
+
+        <section class="brand-shortlist-policy">
+            <span class="brand-shortlist-policy-icon"><i class="fa-solid fa-shield-heart"></i></span>
+            <div>
+                <h2>Quy trình tuyển chọn</h2>
+                <p>
+                    @if (d.BrandSelectionEnabled)
+                    {
+                        <text>TopStar đề xuất hồ sơ KOC phù hợp theo từng đợt. Doanh nghiệp có thể xác nhận ngay từng KOC phù hợp; TopStar tiếp tục bổ sung cho đến khi đủ @d.DesiredKocCount KOC.</text>
+                    }
+                    else
+                    {
+                        <text>TopStar tuyển chọn và đề xuất hồ sơ theo từng đợt. Doanh nghiệp xác nhận danh sách hiện có; TopStar tiếp tục bổ sung nếu chiến dịch chưa đủ KOC.</text>
+                    }
+                </p>
+            </div>
+            @if (d.IsFinalized)
+            {
+                <span class="brand-status-pill is-completed"><i class="fa-solid fa-check"></i> Đã xác nhận danh sách</span>
+            }
+        </section>
+
+        @if (d.Items.Count == 0)
+        {
+            <section class="brand-shortlist-empty">
+                <span><i class="fa-solid fa-user-clock"></i></span>
+                <h2>Chưa có hồ sơ KOC đề xuất</h2>
+                <p>Chờ TopStar đề xuất hồ sơ phù hợp với chiến dịch. Doanh nghiệp chưa cần thực hiện thao tác ở bước này.</p>
+            </section>
+        }
+        else
+        {
+            <section class="brand-shortlist-section-heading">
+                <div><h2><i class="fa-solid fa-address-card"></i> Hồ sơ KOC đề xuất</h2><p>Thông tin định danh được bảo mật cho đến khi KOC xác nhận cộng tác.</p></div>
+            </section>
+            <div class="brand-shortlist-grid">
+                @foreach (var item in d.Items)
+                {
+                    <article class="brand-koc-proposal">
+                        <div class="brand-koc-proposal-head">
+                            <span class="brand-koc-avatar"><i class="fa-solid fa-user"></i></span>
+                            <div><h3>@item.AnonymousCode</h3><small>Hồ sơ KOC ẩn danh</small></div>
+                            <span class="brand-status-pill @(item.IsConfirmed ? "is-completed" : "is-published")">
+                                <i class="fa-solid @(item.IsConfirmed ? "fa-check" : "fa-clock")"></i>
+                                @(item.IsConfirmed ? "Đã xác nhận" : "Chờ lựa chọn")
+                            </span>
+                        </div>
+                        <div class="brand-koc-metrics">
+                            <div><small>Người theo dõi</small><strong>@item.Followers.ToString("N0", PortalFormat.Vietnamese)</strong></div>
+                            <div><small>Điểm hồ sơ</small><strong>@item.Score.ToString("N1", PortalFormat.Vietnamese)</strong></div>
+                            <div><small>Độ phù hợp</small><strong>@(item.TargetingMatchScore?.ToString("N0", PortalFormat.Vietnamese) ?? "—")@(item.TargetingMatchScore.HasValue ? "%" : "")</strong></div>
+                        </div>
+                        @if (item.ProposedAmount.HasValue)
+                        {
+                            <div class="brand-koc-note"><i class="fa-solid fa-tag"></i><span>KOC đề xuất: <strong>@PortalFormat.Money(item.ProposedAmount.Value)</strong></span></div>
+                        }
+                        @if (item.UnmatchedCriteria.Count > 0)
+                        {
+                            <div class="brand-koc-note"><i class="fa-solid fa-circle-info"></i><span>Cần cân nhắc: @string.Join(", ", item.UnmatchedCriteria)</span></div>
+                        }
+                        @if (!item.IsConfirmed && !d.IsFinalized && d.BrandSelectionEnabled && item.Status == "Shortlisted")
+                        {
+                            <form method="post" asp-page-handler="Confirm">
+                                <input asp-for="Id" id="confirmCampaign-@item.ApplicationId" type="hidden" />
+                                <input type="hidden" name="applicationId" value="@item.ApplicationId" />
+                                <button class="btn btn-brand-primary btn-sm w-100"><i class="fa-solid fa-user-check"></i> Chọn KOC này</button>
+                            </form>
+                        }
+                        @if (!item.IsConfirmed && !d.IsFinalized && !d.BrandSelectionEnabled && item.Status == "Shortlisted")
+                        {
+                            <button type="button" class="btn btn-outline-danger btn-sm w-100 mt-2 js-reject-proposed-koc" data-application-id="@item.ApplicationId" data-code="@item.AnonymousCode"><i class="fa-solid fa-circle-xmark"></i> Từ chối KOC này</button>
+                        }
+                        @if (item.IsConfirmed && d.Status == CampaignStatuses.Published)
+                        {
+                            <button type="button" class="btn btn-outline-danger btn-sm w-100 mt-2 js-remove-koc" data-application-id="@item.ApplicationId" data-code="@item.AnonymousCode"><i class="fa-solid fa-user-minus"></i> Thay KOC</button>
+                        }
+                    </article>
+                }
+            </div>
+
+            @if (!d.IsFinalized && pendingProposalCount > 0)
+            {
+                <section class="brand-shortlist-finalize">
+                    <div><strong>Xác nhận danh sách đợt này?</strong><span>Đang có @pendingProposalCount hồ sơ chờ xác nhận. Không cần đợi đủ @d.DesiredKocCount KOC.</span></div>
+                    <form method="post" asp-page-handler="Finalize">
+                        <input asp-for="Id" id="finalizeCampaignId" type="hidden" />
+                        <button class="btn btn-brand-primary btn-sm"><i class="fa-solid fa-user-check"></i> @(d.BrandSelectionEnabled ? "Xác nhận KOC đã chọn" : $"Xác nhận {pendingProposalCount} KOC đợt này")</button>
+                    </form>
+                </section>
+            }
+            else if (!d.IsFinalized && remainingKocCount > 0)
+            {
+                <section class="brand-shortlist-finalize">
+                    <div><strong>Đã xác nhận @d.ConfirmedCount/@d.DesiredKocCount KOC</strong><span>TopStar sẽ tiếp tục bổ sung @remainingKocCount KOC còn thiếu.</span></div>
+                    <span class="brand-status-pill is-published"><i class="fa-solid fa-clock"></i> Chờ đề xuất tiếp theo</span>
+                </section>
+            }
+        }
+    </div>
+}
+
+<div class="modal fade" id="removeKocModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><form method="post" asp-page-handler="Remove" class="js-remove-koc-form" novalidate><div class="modal-header"><div><h2 class="modal-title h5"><i class="fa-solid fa-user-minus text-danger"></i> Thay KOC</h2><small class="text-muted" id="removeKocName"></small></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div class="modal-body"><div class="alert alert-info"><i class="fa-solid fa-circle-info"></i> Danh sách sẽ được mở lại để chọn người thay thế. Bảng thù lao nháp phải được lập lại.</div><input asp-for="Id" type="hidden"/><input id="removeKocApplicationId" name="applicationId" type="hidden"/><label class="form-label" for="removalReason">Lý do thay KOC <span class="text-danger">*</span></label><div class="campaign-validation-field"><textarea id="removalReason" name="removalReason" class="form-control" minlength="10" maxlength="500" rows="4" placeholder="Nhập lý do từ 10 đến 500 ký tự"></textarea><i class="fa-solid fa-circle-exclamation"></i></div><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Vui lòng nhập lý do từ 10 đến 500 ký tự.</div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Đóng</button><button class="btn btn-danger"><i class="fa-solid fa-user-minus"></i> Xác nhận thay KOC</button></div></form></div></div></div>
+<div class="modal fade" id="rejectProposedKocModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><form method="post" asp-page-handler="Reject" class="js-reject-proposed-koc-form" novalidate><div class="modal-header"><div><h2 class="modal-title h5"><i class="fa-solid fa-circle-xmark text-danger"></i> Từ chối KOC đề xuất</h2><small class="text-muted" id="rejectProposedKocName"></small></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div class="modal-body"><div class="brand-modal-notice mb-3"><i class="fa-solid fa-circle-info"></i><span>Lý do từ chối được gửi đến TopStar để xem xét và đề xuất hồ sơ thay thế. Hồ sơ bị từ chối vẫn được lưu trong lịch sử tuyển chọn.</span></div><input asp-for="Id" type="hidden"/><input id="rejectProposedKocApplicationId" name="applicationId" type="hidden"/><label class="form-label" for="rejectionReason">Lý do từ chối <span class="text-danger">*</span></label><div class="campaign-validation-field"><textarea id="rejectionReason" name="rejectionReason" class="form-control" minlength="10" maxlength="500" rows="4" placeholder="Nêu rõ tiêu chí chưa phù hợp (10–500 ký tự)"></textarea><i class="fa-solid fa-circle-exclamation"></i></div><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Vui lòng nhập lý do từ chối từ 10 đến 500 ký tự.</div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Đóng</button><button class="btn btn-danger"><i class="fa-solid fa-circle-xmark"></i> Xác nhận từ chối</button></div></form></div></div></div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/lib/datatables/css/dataTables.bootstrap5.min.css?v=2.3.8" />
+}
+
+@section Scripts {
+    <script src="~/lib/datatables/js/dataTables.min.js?v=2.3.8"></script>
+    <script src="~/js/brand/brand-shortlist-detail.js?v=20260801-1"></script>
+    <script src="~/lib/datatables/js/dataTables.bootstrap5.min.js?v=2.3.8"></script>
+    @if (d is null)
+    {
+        <script src="~/js/brand/brand-shortlist.js?v=20260731-1"></script>
+    }
+}

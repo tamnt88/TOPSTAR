@@ -8,6 +8,16 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="9.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Facebook" Version="9.0.0" />
+    <PackageReference Include="MailKit" Version="4.18.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\images\koc\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="App_Data\private-koc-tax\**" />
+    <None Remove="App_Data\private-koc-tax\**" />
   </ItemGroup>
 
   <PropertyGroup>

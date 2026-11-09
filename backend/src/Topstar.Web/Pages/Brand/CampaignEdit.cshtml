@@ -1,0 +1,177 @@
+@page
+@model Topstar.Web.Pages.Brand.CampaignEditModel
+@using Topstar.Application.Campaigns
+@{ ViewData["Title"] = Model.Id.HasValue ? "Thông tin chiến dịch" : "Tạo chiến dịch"; var editable = !Model.Id.HasValue || CampaignTransitions.CanEdit(Model.Status); var deliverableError = ViewData.ModelState.Any(x => x.Key.StartsWith("Input.Deliverables", StringComparison.OrdinalIgnoreCase) && x.Value?.Errors.Count > 0); var statusLabel = Model.Status switch { CampaignStatuses.Draft => "Bản nháp", CampaignStatuses.Submitted => "Chờ duyệt", CampaignStatuses.NeedEdit => "Cần bổ sung thông tin", CampaignStatuses.Published => "Đang tuyển KOC", CampaignStatuses.InProgress => "Đang triển khai", CampaignStatuses.Completed => "Đã hoàn thành", CampaignStatuses.Rejected => "Không được phê duyệt", CampaignStatuses.Cancelled => "Đã hủy", _ => Model.Status }; }
+@section Styles {
+    <link rel="stylesheet" href="~/css/brand/campaign-needs.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/ckeditor5/ckeditor5.css" />
+}
+<div>
+    <div class="d-flex flex-wrap justify-content-between gap-2 brand-campaign-edit-heading"><div><span class="brand-page-eyebrow"><i class="fa-solid fa-bullhorn"></i> THÔNG TIN CHIẾN DỊCH</span><h1 class="section-title mb-0">@(editable ? ViewData["Title"] : Model.Input.Title)</h1>@if(editable){<p class="text-muted mb-0 mt-1">Hoàn thiện đầy đủ thông tin trước khi gửi Topstar xét duyệt.</p>}else{<p class="text-muted mb-0 mt-1">Tổng hợp toàn bộ thông tin và yêu cầu triển khai chiến dịch.</p>}</div><a asp-page="/Brand/Campaigns" class="btn btn-outline-secondary btn-sm align-self-start"><i class="fa-solid fa-arrow-left"></i> Danh sách chiến dịch</a></div>
+    @if (Model.NeedsCheckout && editable)
+    {
+        ViewData["CreationNeedsUrl"] = !Model.Id.HasValue
+            ? Url.Page("/Brand/CampaignNeeds", new { budget = Model.Input.BudgetAmount, kocCount = Model.Input.DesiredKocCount, selfSelect = Model.Input.BrandSelectionRequested })
+            : "#campaign-form";
+        <partial name="_CampaignCreationSteps" model="2" />
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.Message)) { <div hidden data-ts-notification="@(Model.SubmissionFailed ? "error" : "success")">@Model.Message</div> }
+    @if (Model.Id.HasValue && editable && (!Model.NeedsCheckout || Model.Status==CampaignStatuses.NeedEdit))
+    {
+        <form method="post" asp-page-handler="Submit" id="campaign-submit-review" class="mb-3"
+              data-confirm="Gửi chiến dịch cho Topstar xét duyệt? Bạn sẽ tiếp tục theo dõi kết quả tại danh sách chiến dịch."
+              data-confirm-title="Gửi chiến dịch xét duyệt" data-confirm-button="Gửi xét duyệt">
+            <input type="hidden" name="Id" value="@Model.Id" />
+            <button type="submit" class="btn brand-btn-primary"><i class="fa-solid fa-paper-plane"></i> Gửi xét duyệt</button>
+        </form>
+    }
+    @if (Model.Id.HasValue) { <div class="mb-3"><span class="brand-status-pill @(Model.Status == CampaignStatuses.Completed ? "is-completed" : Model.Status == CampaignStatuses.Published ? "is-published" : "is-muted")"><i class="fa-solid fa-circle"></i> @statusLabel</span>@if (!string.IsNullOrWhiteSpace(Model.ReviewNote)) { <div class="alert alert-warning mt-2 mb-0"><strong>Phản hồi từ Topstar:</strong> @Model.ReviewNote</div> }</div> }
+    @if (Model.ReviewFeedbackItems.Count > 0)
+    {
+        <section class="card-x border-warning mb-3"><h2 class="h5">Checklist cần chỉnh sửa</h2><p class="small text-muted">Hoàn tất từng mục trước khi gửi duyệt lại.</p><div class="row g-2">@foreach (var item in Model.ReviewFeedbackItems) { <div class="col-12 col-lg-6"><div class="border rounded-3 p-3 h-100"><div class="fw-semibold">@Model.FeedbackLabel(item.FieldCode)</div><div>@item.Message</div></div></div> }</div></section>
+    }
+    @if (!editable)
+    {
+        var genderLabel = Model.Input.Targeting.Gender switch { "Female" => "Nữ", "Male" => "Nam", _ => "Không giới hạn" };
+        var modeLabel = Model.Input.Execution.Mode switch { CampaignExecutionModes.RemoteProductReview => "Review sản phẩm từ xa", CampaignExecutionModes.FoodReviewOnsite => "Review món ăn tại quán", CampaignExecutionModes.StoreReviewOnsite => "Review cửa hàng", CampaignExecutionModes.ServiceReviewOnsite => "Trải nghiệm dịch vụ", CampaignExecutionModes.EventOnsite => "Tham dự sự kiện", CampaignExecutionModes.LivestreamOnline => "Livestream trực tuyến", _ => "Chưa xác định" };
+        <div class="brand-campaign-readonly">
+            @if (!string.IsNullOrWhiteSpace(Model.CurrentBannerUrl)) { <img class="campaign-published-banner" src="@Model.CurrentBannerUrl" alt="Banner chiến dịch" /> }
+            @if (!string.IsNullOrWhiteSpace(Model.CurrentAvatarUrl)) { <img src="@Model.CurrentAvatarUrl" alt="Ảnh đại diện chiến dịch" style="width:96px;height:96px;object-fit:cover;border-radius:14px;margin-bottom:16px" /> }
+            <section class="brand-campaign-read-summary">
+                <article><span><i class="fa-solid fa-wallet"></i></span><div><small>Ngân sách</small><strong>@Model.Input.BudgetAmount.ToString("N0", PortalFormat.Vietnamese) đ</strong></div></article>
+                <article><span><i class="fa-solid fa-users"></i></span><div><small>KOC mong muốn</small><strong>@Model.Input.DesiredKocCount KOC</strong></div></article>
+                <article><span><i class="fa-regular fa-calendar"></i></span><div><small>Thời gian</small><strong>@Model.Input.StartDate?.ToString("dd/MM/yyyy") – @Model.Input.EndDate?.ToString("dd/MM/yyyy")</strong></div></article>
+                <article><span><i class="fa-solid fa-clapperboard"></i></span><div><small>Hình thức thực hiện</small><strong>@modeLabel</strong></div></article>
+            </section>
+            <section class="brand-campaign-read-section">
+                <h2><i class="fa-solid fa-file-lines"></i> Nội dung chiến dịch</h2>
+                <div class="brand-campaign-brief">@if(string.IsNullOrWhiteSpace(Model.Input.Objective)){<p class="text-muted mb-0">Chưa có nội dung mô tả.</p>}else{@Html.Raw(Model.Input.Objective)}</div>
+            </section>
+            <div class="brand-campaign-read-columns">
+                <section class="brand-campaign-read-section"><h2><i class="fa-solid fa-list-check"></i> Nội dung KOC cần bàn giao</h2><div class="brand-campaign-read-list">@foreach(var item in Model.Input.Deliverables){<div><span><i class="fa-solid fa-photo-film"></i></span><div><strong>@item.DeliverableType</strong><small>Số lượng: @item.Quantity · Hạn nộp: @(item.DueDateUtc?.ToVietnamTime().ToString("dd/MM/yyyy HH:mm") ?? "Chưa xác định")</small></div></div>}</div></section>
+                <section class="brand-campaign-read-section"><h2><i class="fa-solid fa-bullseye"></i> KOC mục tiêu</h2><dl class="brand-campaign-read-facts"><div><dt>Giới tính</dt><dd>@genderLabel</dd></div><div><dt>Người theo dõi</dt><dd>@(Model.Input.Targeting.MinimumFollowers?.ToString("N0", PortalFormat.Vietnamese) ?? "Không giới hạn") – @(Model.Input.Targeting.MaximumFollowers?.ToString("N0", PortalFormat.Vietnamese) ?? "Không giới hạn")</dd></div><div><dt>Tương tác</dt><dd>@(Model.Input.Targeting.MinimumEngagementRate?.ToString("N1", PortalFormat.Vietnamese) ?? "0")% – @(Model.Input.Targeting.MaximumEngagementRate?.ToString("N1", PortalFormat.Vietnamese) ?? "Không giới hạn")%</dd></div></dl></section>
+            </div>
+            <section class="brand-campaign-read-section"><h2><i class="fa-solid fa-clipboard-check"></i> Yêu cầu thực hiện</h2><div class="brand-campaign-read-facts"><div><dt>Khung thời gian</dt><dd>@(Model.Input.Execution.Schedule ?? "Chưa có yêu cầu")</dd></div><div><dt>Địa điểm</dt><dd>@(Model.Input.Execution.VenueName ?? "Không áp dụng") @(string.IsNullOrWhiteSpace(Model.Input.Execution.VenueAddress) ? "" : $"· {Model.Input.Execution.VenueAddress}")</dd></div><div><dt>Sản phẩm dự kiến gửi</dt><dd>@(Model.Input.Execution.ShippingInstructions ?? "Không áp dụng")</dd></div><div><dt>Quyền lợi hỗ trợ</dt><dd>@(Model.Input.Execution.SupportDetails ?? "Chưa có thông tin")</dd></div><div><dt>Lưu ý nội dung</dt><dd>@(Model.Input.Execution.Requirements ?? "Chưa có yêu cầu bổ sung")</dd></div></div></section>
+        </div>
+    }
+    else
+    {
+    <form method="post" enctype="multipart/form-data" class="card-x brand-campaign-edit-form" id="campaign-form" data-today="@CampaignScheduleRules.TodayVietnam.ToString("yyyy-MM-dd")" novalidate>
+        <input asp-for="Input.CheckoutAtCreation" type="hidden"/><input asp-for="Input.BrandSelectionRequested" type="hidden"/><input asp-for="Id" type="hidden" /><div asp-validation-summary="ModelOnly" class="alert alert-danger brand-validation-summary"></div>
+        <fieldset disabled="@(!editable ? "disabled" : null)">
+          <div class="brand-campaign-edit-content">
+            <section id="campaignGeneralTab">
+              <div class="row g-3">
+                <div class="col-md-6"><label asp-for="Input.StartDate" class="form-label">Ngày bắt đầu dự kiến <span class="text-danger">*</span></label><div class="campaign-validation-field"><input asp-for="Input.StartDate" class="form-control" aria-describedby="campaignStartDateError" /><i class="fa-solid fa-circle-exclamation"></i></div><span asp-validation-for="Input.StartDate" id="campaignStartDateError" class="invalid-feedback"></span></div>
+                <div class="col-md-6"><label asp-for="Input.EndDate" class="form-label">Ngày kết thúc dự kiến <span class="text-danger">*</span></label><div class="campaign-validation-field"><input asp-for="Input.EndDate" class="form-control" aria-describedby="campaignEndDateError" /><i class="fa-solid fa-circle-exclamation"></i></div><span asp-validation-for="Input.EndDate" id="campaignEndDateError" class="invalid-feedback"></span></div>
+                <div class="@(Model.NeedsCheckout ? "col-12" : "col-md-8")"><label asp-for="Input.Title" class="form-label">Tên chiến dịch <span class="text-danger">*</span></label><div class="campaign-validation-field"><input asp-for="Input.Title" class="form-control" placeholder="Ví dụ: Ra mắt bộ sưu tập Thu Đông 2026" aria-describedby="campaignTitleError" /><i class="fa-solid fa-circle-exclamation"></i></div><span asp-validation-for="Input.Title" id="campaignTitleError" class="invalid-feedback"></span></div>
+                @if(Model.NeedsCheckout){<input asp-for="Input.BudgetAmount" type="hidden"/>}else{                <div class="col-md-4"><label for="campaignBudgetDisplay" class="form-label">@(Model.NeedsCheckout ? "Ngân sách đã chọn" : "Ngân sách chiến dịch") @if(!Model.NeedsCheckout){<span class="text-danger">*</span>}</label><input asp-for="Input.BudgetAmount" type="hidden" /><div class="campaign-validation-field campaign-money-field @(Model.NeedsCheckout ? "is-selected-budget" : null)"><input id="campaignBudgetDisplay" readonly="@(Model.NeedsCheckout ? "readonly":null)" class="form-control" inputmode="numeric" autocomplete="off" placeholder="Nhập ngân sách dự kiến" aria-describedby="campaignBudgetError" /><span>đ</span><i class="fa-solid fa-circle-exclamation"></i></div><span asp-validation-for="Input.BudgetAmount" id="campaignBudgetError" class="invalid-feedback"></span></div>}
+                <div class="col-12 campaign-brief-field"><label asp-for="Input.Objective" class="form-label">Mô tả yêu cầu</label><textarea asp-for="Input.Objective" class="form-control" rows="4" placeholder="Nêu mục tiêu, thông điệp chính, sản phẩm cần truyền thông, nội dung bắt buộc và những điều cần tránh"></textarea><span asp-validation-for="Input.Objective" class="text-danger"></span></div>
+                <input asp-for="Input.PackagePurchaseId" type="hidden" />
+                <input asp-for="Input.PackageCode" type="hidden" />
+                @if(Model.NeedsCheckout){<input asp-for="Input.AllocationMode" type="hidden"/>}else{                <div class="col-12"><label class="form-label">Cách phân bổ thù lao KOC <span class="text-danger">*</span></label><div class="campaign-allocation-grid"><label class="campaign-execution-choice"><input asp-for="Input.AllocationMode" id="allocation-mode-equal" type="radio" value="Equal"/><span><i class="fa-solid fa-equals"></i><strong>Chia đều ngân sách</strong><small>Ngân sách được chia đều cho danh sách KOC đã chốt.</small></span></label><label class="campaign-execution-choice"><input asp-for="Input.AllocationMode" id="allocation-mode-custom" type="radio" value="Custom"/><span><i class="fa-solid fa-sliders"></i><strong>Thỏa thuận riêng từng KOC</strong><small>Nhập mức thù lao riêng sau khi chốt danh sách cộng tác.</small></span></label></div><span asp-validation-for="Input.AllocationMode" class="invalid-feedback d-block"></span></div>}
+                @if(Model.NeedsCheckout){<input asp-for="Input.DesiredKocCount" type="hidden"/>}else{                <div class="col-md-4"><label asp-for="Input.DesiredKocCount" class="form-label">Số KOC cần tuyển <span class="text-danger">*</span></label><div class="campaign-validation-field"><input asp-for="Input.DesiredKocCount" readonly="@(Model.NeedsCheckout ? "readonly":null)" type="number" min="1" max="@(Model.PackageKocQuota ?? 100)" data-package-quota="@(Model.PackageKocQuota ?? 100)" class="form-control" inputmode="numeric" aria-describedby="campaignDesiredKocCountError campaignDesiredKocCountHelp" /><i class="fa-solid fa-circle-exclamation"></i></div><span asp-validation-for="Input.DesiredKocCount" id="campaignDesiredKocCountError" class="invalid-feedback"></span><small id="campaignDesiredKocCountHelp" class="form-text text-muted"><i class="fa-solid fa-users me-1"></i>Nhập từ 1 đến @(Model.PackageKocQuota ?? 100) KOC.</small></div>}
+              </div>
+            <section id="campaignDeliverablesTab" class="campaign-inline-section">
+              <div class="d-flex flex-wrap justify-content-between gap-2 campaign-section-heading"><div><h2 class="h5 mb-1"><i class="fa-solid fa-list-check"></i> Nội dung bàn giao</h2><p class="small text-muted">Chọn loại nội dung, số lượng và hạn nộp cho mỗi KOC.</p></div>@if(editable){<button type="button" id="add-deliverable" class="btn btn-outline-primary btn-sm align-self-start"><i class="fa-solid fa-plus"></i> Thêm nội dung</button>}</div>
+                <div id="deliverable-list">@for(var i=0;i<Model.Input.Deliverables.Count;i++){var currentType=Model.Input.Deliverables[i].DeliverableType;var knownType=Model.DeliverableTypes.Any(x=>string.Equals(x.Code,currentType,StringComparison.OrdinalIgnoreCase));<div class="deliverable-row border rounded-3 p-3 mb-2"><div class="row g-2 align-items-start"><div class="col-12 col-md-5"><label class="form-label small">Loại nội dung <span class="text-danger">*</span></label><div class="campaign-validation-field"><select asp-for="Input.Deliverables[i].DeliverableType" class="form-select deliverable-type"><option value="">Chọn loại nội dung</option>@if(!knownType&&!string.IsNullOrWhiteSpace(currentType)){<option value="@currentType">@currentType (không còn sử dụng)</option>}@foreach(var type in Model.DeliverableTypes){<option value="@type.Code">@type.Name</option>}</select><i class="fa-solid fa-circle-exclamation"></i></div><span asp-validation-for="Input.Deliverables[i].DeliverableType" class="invalid-feedback campaign-deliverable-type-error"></span></div><div class="col-5 col-md-2"><label class="form-label small">Số lượng <span class="text-danger">*</span></label><div class="campaign-validation-field"><input asp-for="Input.Deliverables[i].Quantity" type="number" min="1" max="100" inputmode="numeric" class="form-control deliverable-quantity" /><i class="fa-solid fa-circle-exclamation"></i></div><span asp-validation-for="Input.Deliverables[i].Quantity" class="invalid-feedback campaign-deliverable-quantity-error"></span></div><div class="col-7 col-md-4"><label class="form-label small">Hạn nộp dự kiến <span class="text-danger">*</span></label><input asp-for="Input.Deliverables[i].DueDateUtc" class="form-control deliverable-due" required /><span asp-validation-for="Input.Deliverables[i].DueDateUtc" class="invalid-feedback campaign-deliverable-due-error"></span></div><div class="col-12 col-md-1 deliverable-action-col">@if(editable){<button type="button" class="btn btn-outline-danger w-100 remove-deliverable" aria-label="Xóa nội dung"><i class="fa-solid fa-trash-can"></i></button>}</div></div></div>}</div>
+            </section>
+            </section>
+            <details class="campaign-additional" id="campaignAdditional">
+              <summary><i class="fa-solid fa-sliders me-2"></i>Thông tin bổ sung <small>Ảnh, yêu cầu thực hiện và tiêu chí KOC</small><i class="fa-solid fa-chevron-down ms-auto"></i></summary>
+              <div class="campaign-additional-content">
+              <section class="campaign-media-grid" aria-label="Hình ảnh chiến dịch">
+                <div class="campaign-media-field">
+                    <label asp-for="AvatarFile" class="form-label">Ảnh đại diện chiến dịch</label>
+                    <div class="campaign-media-preview is-avatar" data-campaign-image-preview="AvatarFile">
+                        @if (!string.IsNullOrWhiteSpace(Model.CurrentAvatarUrl)) { <img src="@Model.CurrentAvatarUrl" alt="Ảnh đại diện chiến dịch" /> }
+                        else { <i class="fa-regular fa-image"></i> }
+                    </div>
+                    <input asp-for="AvatarFile" type="file" class="form-control" accept=".jpg,.jpeg,.png,.webp" />
+                    <span asp-validation-for="AvatarFile" class="text-danger small"></span>
+                    <small class="text-muted">Ảnh vuông, gợi ý 600 × 600 px. JPG, PNG, WEBP; tối đa 5 MB.</small>
+                </div>
+                <div class="campaign-media-field">
+                    <label asp-for="BannerFile" class="form-label">Banner chiến dịch</label>
+                    <div class="campaign-media-preview is-banner" data-campaign-image-preview="BannerFile">
+                        @if (!string.IsNullOrWhiteSpace(Model.CurrentBannerUrl)) { <img src="@Model.CurrentBannerUrl" alt="Banner chiến dịch" /> }
+                        else { <i class="fa-regular fa-image"></i> }
+                    </div>
+                    <input asp-for="BannerFile" type="file" class="form-control" accept=".jpg,.jpeg,.png,.webp" />
+                    <span asp-validation-for="BannerFile" class="text-danger small"></span>
+                    <small class="text-muted">Ảnh ngang, gợi ý 1600 × 600 px. JPG, PNG, WEBP; tối đa 5 MB.</small>
+                </div>
+              </section>
+            <section id="campaignExecutionTab" class="campaign-inline-section" data-campaign-general-section>
+                <div class="mb-3"><h2 class="h5 mb-1"><i class="fa-solid fa-clapperboard"></i> Hình thức KOC thực hiện</h2><p class="small text-muted mb-0">Thông tin này giúp KOC biết rõ cần nhận sản phẩm, đến địa điểm hay tham gia trực tuyến.</p></div>
+                <input asp-for="Input.RequiresBooking" type="hidden" />
+                <input asp-for="Input.RequiresShipment" type="hidden" />
+                <div class="campaign-execution-choice-grid">
+                    <label class="campaign-execution-choice"><input asp-for="Input.Execution.Mode" id="execution-mode-RemoteProductReview" type="radio" value="@CampaignExecutionModes.RemoteProductReview" /><span><i class="fa-solid fa-box"></i><strong>Đánh giá sản phẩm từ xa</strong><small>Doanh nghiệp gửi sản phẩm để KOC trải nghiệm và sản xuất nội dung.</small></span></label>
+                    <label class="campaign-execution-choice"><input asp-for="Input.Execution.Mode" id="execution-mode-FoodReviewOnsite" type="radio" value="@CampaignExecutionModes.FoodReviewOnsite" /><span><i class="fa-solid fa-utensils"></i><strong>Trải nghiệm món ăn tại quán</strong><small>KOC đến nhà hàng để trải nghiệm và sản xuất nội dung.</small></span></label>
+                    <label class="campaign-execution-choice"><input asp-for="Input.Execution.Mode" id="execution-mode-StoreReviewOnsite" type="radio" value="@CampaignExecutionModes.StoreReviewOnsite" /><span><i class="fa-solid fa-store"></i><strong>Trải nghiệm tại cửa hàng</strong><small>KOC đến cửa hàng, ghi hình và sản xuất nội dung.</small></span></label>
+                    <label class="campaign-execution-choice"><input asp-for="Input.Execution.Mode" id="execution-mode-ServiceReviewOnsite" type="radio" value="@CampaignExecutionModes.ServiceReviewOnsite" /><span><i class="fa-solid fa-spa"></i><strong>Trải nghiệm dịch vụ</strong><small>KOC sử dụng dịch vụ tại địa điểm.</small></span></label>
+                    <label class="campaign-execution-choice"><input asp-for="Input.Execution.Mode" id="execution-mode-EventOnsite" type="radio" value="@CampaignExecutionModes.EventOnsite" /><span><i class="fa-solid fa-calendar-day"></i><strong>Tham dự sự kiện</strong><small>KOC đến sự kiện và sản xuất nội dung.</small></span></label>
+                    <label class="campaign-execution-choice"><input asp-for="Input.Execution.Mode" id="execution-mode-LivestreamOnline" type="radio" value="@CampaignExecutionModes.LivestreamOnline" /><span><i class="fa-solid fa-tower-broadcast"></i><strong>Livestream trực tuyến</strong><small>KOC tham gia và phát sóng theo lịch.</small></span></label>
+                </div>
+                <span asp-validation-for="Input.Execution.Mode" class="invalid-feedback d-block"></span>
+
+                <div class="campaign-execution-fields mt-4" data-execution-group="onsite">
+                    <h3 class="h6"><i class="fa-solid fa-location-dot"></i> Địa điểm và liên hệ</h3>
+                    <div class="row g-3">
+                        <div class="col-md-6"><label asp-for="Input.Execution.VenueName" class="form-label">Tên địa điểm @if(!Model.NeedsCheckout){<span class="text-danger">*</span>}</label><div class="campaign-validation-field"><input asp-for="Input.Execution.VenueName" class="form-control" /><i class="fa-solid fa-circle-exclamation"></i></div><span asp-validation-for="Input.Execution.VenueName" class="invalid-feedback"></span></div>
+                        <div class="col-md-6"><label asp-for="Input.Execution.VenueAddress" class="form-label">Địa chỉ thực hiện @if(!Model.NeedsCheckout){<span class="text-danger">*</span>}</label><div class="campaign-validation-field"><input asp-for="Input.Execution.VenueAddress" class="form-control" /><i class="fa-solid fa-circle-exclamation"></i></div><span asp-validation-for="Input.Execution.VenueAddress" class="invalid-feedback"></span></div>
+                        <div class="col-md-6"><label asp-for="Input.Execution.ContactName" class="form-label">Người liên hệ @if(!Model.NeedsCheckout){<span class="text-danger">*</span>}</label><div class="campaign-validation-field"><input asp-for="Input.Execution.ContactName" class="form-control" /><i class="fa-solid fa-circle-exclamation"></i></div><span asp-validation-for="Input.Execution.ContactName" class="invalid-feedback"></span></div>
+                        <div class="col-md-6"><label asp-for="Input.Execution.ContactPhone" class="form-label">Số điện thoại liên hệ @if(!Model.NeedsCheckout){<span class="text-danger">*</span>}</label><div class="campaign-validation-field"><input asp-for="Input.Execution.ContactPhone" class="form-control" inputmode="tel" /><i class="fa-solid fa-circle-exclamation"></i></div><span asp-validation-for="Input.Execution.ContactPhone" class="invalid-feedback"></span></div>
+                        <div class="col-12"><label asp-for="Input.Execution.BookingInstructions" class="form-label">Quy trình đặt lịch/xác nhận</label><textarea asp-for="Input.Execution.BookingInstructions" class="form-control" rows="3" placeholder="Ví dụ: KOC liên hệ trước 24 giờ, cung cấp mã chiến dịch khi đến..."></textarea><span asp-validation-for="Input.Execution.BookingInstructions" class="invalid-feedback"></span></div>
+                    </div>
+                </div>
+
+                <div class="campaign-execution-fields mt-4" data-execution-group="remote">
+                    <h3 class="h6"><i class="fa-solid fa-truck-fast"></i> Giao và nhận sản phẩm</h3>
+                    <label asp-for="Input.Execution.ShippingInstructions" class="form-label">Sản phẩm dự kiến gửi</label><div class="campaign-validation-field"><textarea asp-for="Input.Execution.ShippingInstructions" class="form-control" rows="3" placeholder="Tên sản phẩm, số lượng cho mỗi KOC, quy cách đóng gói và lưu ý bảo quản..."></textarea><i class="fa-solid fa-circle-exclamation"></i></div><span asp-validation-for="Input.Execution.ShippingInstructions" class="invalid-feedback"></span>
+                </div>
+
+                <div class="campaign-execution-fields mt-4" data-execution-group="scheduled">
+                    <label asp-for="Input.Execution.Schedule" class="form-label">Khung thời gian thực hiện @if(!Model.NeedsCheckout){<span class="text-danger">*</span>}</label><div class="campaign-validation-field"><textarea asp-for="Input.Execution.Schedule" class="form-control" rows="3" placeholder="Ngày, giờ hoặc các khung thời gian KOC có thể thực hiện..."></textarea><i class="fa-solid fa-circle-exclamation"></i></div><span asp-validation-for="Input.Execution.Schedule" class="invalid-feedback"></span>
+                </div>
+
+                <div class="campaign-execution-fields mt-4">
+                    <div class="row g-3">
+                        <div class="col-md-6"><label asp-for="Input.Execution.SupportDetails" class="form-label"><i class="fa-solid fa-gift me-1" aria-hidden="true"></i> Quyền lợi/chi phí được hỗ trợ</label><textarea asp-for="Input.Execution.SupportDetails" class="form-control" rows="4" placeholder="Hạn mức món ăn, dịch vụ, vé tham dự, chi phí di chuyển..."></textarea><span asp-validation-for="Input.Execution.SupportDetails" class="invalid-feedback"></span></div>
+                        <div class="col-md-6"><label asp-for="Input.Execution.Requirements" class="form-label"><i class="fa-solid fa-video me-1" aria-hidden="true"></i> Yêu cầu khi quay và đăng nội dung</label><textarea asp-for="Input.Execution.Requirements" class="form-control" rows="4" placeholder="Góc quay bắt buộc, khu vực không được quay, check-in, hashtag..."></textarea><span asp-validation-for="Input.Execution.Requirements" class="invalid-feedback"></span></div>
+                    </div>
+                </div>
+            </section>
+            <section id="campaignTargetingTab" class="campaign-inline-section"><h2 class="h5"><i class="fa-solid fa-bullseye"></i> KOC mục tiêu</h2><p class="small text-muted">Để trống một tiêu chí nếu chiến dịch không giới hạn tiêu chí đó.</p>
+                <div class="row g-3">
+                    <div class="col-md-4"><label class="form-label">Giới tính</label><select asp-for="Input.Targeting.Gender" class="form-select"><option value="Any">Không giới hạn</option><option value="Female">Nữ</option><option value="Male">Nam</option></select></div>
+                    <div class="col-6 col-md-4"><label class="form-label">Người theo dõi tối thiểu</label><input asp-for="Input.Targeting.MinimumFollowers" type="number" min="0" inputmode="numeric" placeholder="Không giới hạn" class="form-control" /></div><div class="col-6 col-md-4"><label class="form-label">Người theo dõi tối đa</label><input asp-for="Input.Targeting.MaximumFollowers" type="number" min="0" inputmode="numeric" placeholder="Không giới hạn" class="form-control" /></div>
+                    <div class="col-6 col-md-4"><label class="form-label">Tỷ lệ tương tác tối thiểu (%)</label><input asp-for="Input.Targeting.MinimumEngagementRate" type="number" min="0" max="100" step="0.01" inputmode="decimal" placeholder="Không giới hạn" class="form-control" /></div><div class="col-6 col-md-4"><label class="form-label">Tỷ lệ tương tác tối đa (%)</label><input asp-for="Input.Targeting.MaximumEngagementRate" type="number" min="0" max="100" step="0.01" inputmode="decimal" placeholder="Không giới hạn" class="form-control" /></div>
+                    <div class="col-md-6"><label class="form-label"><i class="fa-solid fa-location-dot text-muted me-1"></i> Tỉnh/thành</label><select asp-for="Input.Targeting.ProvinceIds" class="form-select brand-search-multiselect" multiple data-placeholder="Tìm và chọn tỉnh/thành">@foreach(var option in Model.TargetingOptions.Provinces){<option value="@option.Id">@option.Name</option>}</select></div>
+                    <div class="col-md-6"><label class="form-label"><i class="fa-solid fa-layer-group text-muted me-1"></i> Nhóm nội dung</label><select asp-for="Input.Targeting.CategoryIds" class="form-select brand-search-multiselect" multiple data-placeholder="Tìm và chọn nhóm nội dung">@foreach(var option in Model.TargetingOptions.Categories){<option value="@option.Id">@option.Name</option>}</select></div>
+                </div>
+            </section>
+              </div>
+            </details>
+          </div>
+        </fieldset>
+        @if(editable){<footer class="campaign-form-actions"><button class="btn brand-btn-primary"><i class="fa-solid @(Model.Id.HasValue ? "fa-floppy-disk" : "fa-circle-plus")"></i> @(Model.NeedsCheckout ? "Tiếp tục thanh toán" : Model.Id.HasValue ? "Lưu" : "Tạo chiến dịch")</button></footer>}
+    </form>
+    }
+</div>
+<partial name="_ValidationScriptsPartial" />
+<datalist id="deliverableTypeOptions">@foreach(var type in Model.DeliverableTypes){<option value="@type.Code">@type.Name</option>}</datalist>
+@section Scripts {
+    @if (Model.OfferSubmission && Model.Id.HasValue && editable)
+    {
+        <script src="~/js/brand/campaign-submit-prompt.js" asp-append-version="true"></script>
+    }
+    <script src="~/js/brand/campaign-deliverable-types.js" asp-append-version="true"></script>
+    @if (editable)
+    {
+        <script src="~/lib/ckeditor5/ckeditor5.umd.js"></script>
+        <script src="~/lib/ckeditor5/translations/vi.umd.js"></script>
+        <script src="~/js/brand/campaign-editor.js" asp-append-version="true"></script>
+    }
+}

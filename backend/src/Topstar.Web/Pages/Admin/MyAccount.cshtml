@@ -1,0 +1,27 @@
+@page
+@model Topstar.Web.Pages.Admin.MyAccountModel
+@{
+    ViewData["Title"] = "Tài khoản Admin";
+    ViewData["AdminHeaderTitle"] = "Tài khoản Admin";
+    ViewData["AdminActivePath"] = "/Admin/Management";
+}
+<main class="admin-my-account">
+    <header class="admin-management-heading">
+        <div><span class="admin-page-eyebrow"><i class="fa-solid fa-user-shield"></i> TÀI KHOẢN ADMIN</span><h1>Bảo mật đăng nhập</h1><p>Cập nhật mật khẩu cho tài khoản quản trị đang đăng nhập.</p></div>
+    </header>
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div class="alert @(Model.MessageSuccess ? "alert-success" : "alert-danger")"><i class="fa-solid @(Model.MessageSuccess ? "fa-circle-check" : "fa-circle-exclamation")"></i> @Model.Message</div>
+    }
+    <section class="admin-my-account-card">
+        <div class="admin-my-account-identity"><span><i class="fa-solid fa-user-shield"></i></span><div><strong>@User.Identity?.Name</strong><small>@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</small></div></div>
+        <form method="post" class="admin-my-account-form" novalidate>
+            <div><label asp-for="Input.CurrentPassword"></label><input asp-for="Input.CurrentPassword" class="form-control" autocomplete="current-password" /><span asp-validation-for="Input.CurrentPassword"></span></div>
+            <div><label asp-for="Input.NewPassword"></label><input asp-for="Input.NewPassword" class="form-control" autocomplete="new-password" /><span asp-validation-for="Input.NewPassword"></span><small>Từ 8–128 ký tự, có chữ hoa, chữ thường và chữ số.</small></div>
+            <div><label asp-for="Input.ConfirmPassword"></label><input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" /><span asp-validation-for="Input.ConfirmPassword"></span></div>
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-key"></i> Đổi mật khẩu</button>
+        </form>
+    </section>
+</main>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

@@ -1,0 +1,37 @@
+@page
+@model Topstar.Web.Pages.Koc.TaxProfileModel
+@{ViewData["Title"]="Thông tin thuế & CCCD";if(Model.IsAdmin){Layout="/Pages/Admin/_AdminLayout.cshtml";}}
+<div class="koc-tax-page">
+<header class="d-flex align-items-center justify-content-between gap-3 mb-4 flex-wrap"><div><h1 class="section-title mb-0"><i class="fa-solid @(Model.IsAdmin?"fa-file-invoice":"fa-user-pen")"></i> @(Model.IsAdmin?"Thông tin thuế & CCCD":"Chỉnh sửa hồ sơ KOC")</h1>@if(Model.IsAdmin){<p class="text-muted mt-2 mb-0">@Model.Name</p>}</div>@if(!Model.IsAdmin){<a asp-page="/Koc/Profile" asp-route-brandPreview="true" class="btn btn-outline-primary btn-sm"><i class="fa-regular fa-eye"></i> Xem thử hồ sơ Brand thấy</a>}</header>
+@if(Model.Message is not null){<div hidden data-ts-notification="success">@Model.Message</div>}
+@if(!Model.Ready){<div class="card-x">Chức năng đang chờ cập nhật dữ liệu.</div>}else{
+<div class="card-x">
+@if(!Model.IsAdmin){
+<nav id="kocEditTabs" class="ts-tabs nav nav-tabs mb-4 tax-profile-tabs" aria-label="Các mục hồ sơ KOC">
+@foreach(var tab in new[]{("basic","fa-regular fa-address-card","Thông tin cơ bản"),("social","fa-solid fa-share-nodes","Mạng xã hội"),("personal","fa-solid fa-person","Thông tin cá nhân"),("gallery","fa-regular fa-images","Thư viện ảnh"),("video","fa-solid fa-video","Video")}){
+<a class="nav-link" asp-page="/Koc/EditProfile" asp-route-activeTab="@tab.Item1"><i class="@tab.Item2"></i> @tab.Item3</a>}
+<a class="nav-link active" asp-page="/Koc/TaxProfile" aria-current="page"><i class="fa-solid fa-file-invoice"></i> Thuế & CCCD</a>
+</nav>}
+<div class="tax-private-note"><i class="fa-solid fa-shield-halved"></i> Chỉ bạn và Admin được xem. Thông tin không hiển thị cho Brand.</div>
+<form method="post" enctype="multipart/form-data" novalidate id="kocTaxForm">
+<input type="hidden" asp-for="Version"/>
+<div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+<div class="tax-number-grid">
+<div><label asp-for="TaxNumber" class="form-label">Mã số thuế <span class="text-danger">*</span></label><input asp-for="TaxNumber" class="form-control" inputmode="numeric" autocomplete="off" readonly="@Model.IsAdmin"/><span asp-validation-for="TaxNumber" class="invalid-feedback d-block"></span></div>
+<div><label asp-for="IdentityNumber" class="form-label">Số CCCD <span class="text-danger">*</span></label><input asp-for="IdentityNumber" class="form-control" inputmode="numeric" autocomplete="off" readonly="@Model.IsAdmin"/><span asp-validation-for="IdentityNumber" class="invalid-feedback d-block"></span></div>
+</div>
+<div class="tax-image-grid">
+@foreach(var side in new[]{("front","Front","CCCD mặt trước",Model.HasFront),("back","Back","CCCD mặt sau",Model.HasBack)}){
+<section class="tax-image-card"><h2><i class="fa-regular fa-id-card"></i> @side.Item3</h2>
+@if(side.Item4){<a asp-page-handler="Image" asp-route-id="@Model.Id" asp-route-side="@side.Item1" target="_blank" rel="noopener noreferrer" class="tax-image-preview"><img src="@Url.Page("/Koc/TaxProfile","Image",new{id=Model.Id,side=side.Item1})" alt="@side.Item3"/><span><i class="fa-solid fa-expand"></i> Xem ảnh</span></a>}
+else{<div class="tax-image-placeholder"><i class="fa-regular fa-id-card"></i><span>Chưa có ảnh</span></div>}
+@if(!Model.IsAdmin){<label class="form-label" for="@side.Item2">@(side.Item4?"Thay ảnh":"Chọn ảnh")</label><input id="@side.Item2" name="@side.Item2" type="file" accept="image/jpeg,image/png,image/webp" class="form-control"/><small class="text-muted">JPG, PNG, WEBP · Tối đa 5 MB</small><div class="invalid-feedback d-block">@Html.ValidationMessage(side.Item2)</div>}
+</section>}
+</div>
+@if(!Model.IsAdmin){<div class="tax-form-footer"><a asp-page="/Koc/Profile" class="btn btn-outline-secondary"><i class="fa-solid fa-xmark me-1"></i>Hủy</a><button type="submit" class="btn btn-warning"><i class="fa-solid fa-floppy-disk me-1"></i>Lưu</button></div>}
+</form>
+@if(Model.IsAdmin&&Model.TaxSetupReady){<form method="post" asp-page-handler="Treatment" class="mt-4 border-top pt-4" novalidate><input type="hidden" asp-for="Id"/><h2 class="h5"><i class="fa-solid fa-stamp"></i> Xác minh thuế</h2><div class="row g-3"><div class="col-md-5"><label asp-for="Treatment" class="form-label">Phân loại</label><select asp-for="Treatment" class="form-select"><option value="Withholding">Cá nhân nhận thù lao — khấu trừ theo chính sách</option><option value="Business">Cá nhân kinh doanh — xử lý thuế riêng</option><option value="Exempt">Không khấu trừ — đã có căn cứ xác minh</option></select></div><div class="col-md-7"><label asp-for="TreatmentReason" class="form-label">Căn cứ xác minh</label><textarea asp-for="TreatmentReason" class="form-control" rows="2"></textarea></div></div><div class="text-end mt-3"><button class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Lưu</button></div></form>}
+</div>}
+</div>
+@section Styles{<link rel="stylesheet" href="~/css/koc/tax-profile.css" asp-append-version="true"/>}
+@section Scripts{<script src="~/js/koc/tax-profile.js" asp-append-version="true"></script>}

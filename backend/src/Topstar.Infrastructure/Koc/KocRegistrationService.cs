@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.SqlClient;
 using Topstar.Application.KocRegistration;
 using Topstar.Infrastructure.Entities;
 using Topstar.Infrastructure.Persistence;
@@ -36,7 +37,9 @@ internal sealed class KocRegistrationService(TopstarDbContext dbContext) : IKocR
     public async Task<IReadOnlyList<KocCategoryOption>> GetCategoriesAsync(CancellationToken cancellationToken = default)
         => await dbContext.KocCategories
             .AsNoTracking()
-            .OrderBy(x => x.Name)
+            .Where(x => x.IsActive)
+            .OrderBy(x => x.SortOrder)
+            .ThenBy(x => x.Name)
             .Select(x => new KocCategoryOption(x.Code, x.Name))
             .ToListAsync(cancellationToken);
 
@@ -92,15 +95,33 @@ internal sealed class KocRegistrationService(TopstarDbContext dbContext) : IKocR
         }
 
         var existingSocial = dbContext.KocSocialAccounts.Where(x => x.KocProfileId == kocProfile.Id);
+        var existingSocialIds = await existingSocial.Select(x => x.Id).ToListAsync(cancellationToken);
+        var useLegacyCategoryTable = false;
+        if (existingSocialIds.Count > 0)
+        {
+            try
+            {
+                var existingSocialCategories = dbContext.KocSocialAccountCategories.Where(x => existingSocialIds.Contains(x.SocialAccountId));
+                dbContext.KocSocialAccountCategories.RemoveRange(existingSocialCategories);
+            }
+            catch (SqlException ex) when (ex.Message.Contains("KocSocialAccountCategories", StringComparison.OrdinalIgnoreCase))
+            {
+                useLegacyCategoryTable = true;
+            }
+        }
         dbContext.KocSocialAccounts.RemoveRange(existingSocial);
-        var existingProfileCategories = dbContext.KocProfileCategories.Where(x => x.KocProfileId == kocProfile.Id);
-        dbContext.KocProfileCategories.RemoveRange(existingProfileCategories);
+        if (useLegacyCategoryTable)
+        {
+            var existingProfileCategories = dbContext.KocProfileCategories.Where(x => x.KocProfileId == kocProfile.Id);
+            dbContext.KocProfileCategories.RemoveRange(existingProfileCategories);
+        }
 
         var categoryMap = await dbContext.KocCategories
             .AsNoTracking()
+            .Where(x => x.IsActive)
             .ToDictionaryAsync(x => x.Code, x => x.Id, StringComparer.OrdinalIgnoreCase, cancellationToken);
 
-        var allCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var allLegacyCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var social in request.SocialAccounts)
         {
             if (string.IsNullOrWhiteSpace(social.ChannelUrl))
@@ -108,9 +129,10 @@ internal sealed class KocRegistrationService(TopstarDbContext dbContext) : IKocR
                 continue;
             }
 
+            var socialId = Guid.NewGuid();
             dbContext.KocSocialAccounts.Add(new KocSocialAccountEntity
             {
-                Id = Guid.NewGuid(),
+                Id = socialId,
                 KocProfileId = kocProfile.Id,
                 Platform = social.Platform,
                 ChannelUrl = social.ChannelUrl.Trim(),
@@ -122,24 +144,48 @@ internal sealed class KocRegistrationService(TopstarDbContext dbContext) : IKocR
                 CreatedAtUtc = DateTime.UtcNow
             });
 
-            foreach (var code in social.SelectedCategoryCodes.Where(x => !string.IsNullOrWhiteSpace(x)))
+            foreach (var code in social.SelectedCategoryCodes.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()).Distinct(StringComparer.OrdinalIgnoreCase))
             {
-                allCodes.Add(code.Trim());
+                if (categoryMap.TryGetValue(code, out var categoryId))
+                {
+                    if (useLegacyCategoryTable)
+                    {
+                        allLegacyCodes.Add(code);
+                    }
+                    else
+                    {
+                        dbContext.KocSocialAccountCategories.Add(new KocSocialAccountCategoryEntity
+                        {
+                            SocialAccountId = socialId,
+                            CategoryId = categoryId,
+                            CreatedAtUtc = DateTime.UtcNow
+                        });
+                    }
+                }
             }
         }
 
-        foreach (var code in allCodes)
+        if (useLegacyCategoryTable)
         {
-            if (categoryMap.TryGetValue(code, out var categoryId))
+            foreach (var code in allLegacyCodes)
             {
-                dbContext.KocProfileCategories.Add(new KocProfileCategoryEntity
+                if (categoryMap.TryGetValue(code, out var categoryId))
                 {
-                    KocProfileId = kocProfile.Id,
-                    CategoryId = categoryId,
-                    CreatedAtUtc = DateTime.UtcNow
-                });
+                    dbContext.KocProfileCategories.Add(new KocProfileCategoryEntity
+                    {
+                        KocProfileId = kocProfile.Id,
+                        CategoryId = categoryId,
+                        CreatedAtUtc = DateTime.UtcNow
+                    });
+                }
             }
         }
+
+        kocProfile.Followers = request.SocialAccounts
+            .Where(x => !string.IsNullOrWhiteSpace(x.ChannelUrl))
+            .Select(x => x.Followers ?? 0)
+            .DefaultIfEmpty(0)
+            .Max();
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return new CompleteKocRegistrationProfileResult(true, "OK");

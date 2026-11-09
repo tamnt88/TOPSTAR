@@ -1,0 +1,12 @@
+@model Topstar.Application.Matching.PackagePolicyItem
+<article class="package-card flow-item h-100 @(Model.IsFeatured?"is-featured":"")">
+ @if(Model.IsFeatured){<span class="package-featured"><i class="fa-solid fa-star"></i> Được lựa chọn nhiều</span>}
+ <div class="package-card-top">@if(!string.IsNullOrWhiteSpace(Model.ImageUrl)){<img src="@Model.ImageUrl" alt="" class="package-cover-image" />}else{<div class="package-icon"><i class="fa-solid @(Model.BrandSelectionEnabled?"fa-user-check":"fa-people-arrows")"></i></div>}<span class="package-type">@(Model.BrandSelectionEnabled?"BRAND TỰ CHỌN":"TOPSTAR PHÂN CÔNG")</span></div>
+ <div class="package-quota"><strong>@(Model.SelectionQuota ?? 0)</strong><span><b>KOC tối đa</b><small>được xác nhận trong 1 chiến dịch</small></span></div>
+ <h3>@Model.Name</h3><p class="package-description">@Model.Description</p>
+ <small class="text-muted">Ngân sách chiến dịch · chưa gồm phí và thuế</small><div class="package-price"><strong>@((Model.ReferenceBudget??0).ToString("N0", PortalFormat.Vietnamese))</strong><span>₫</span></div>
+ <div class="package-facts"><span><i class="fa-solid fa-sliders"></i>Có thể tùy chỉnh khi tạo chiến dịch</span></div>
+ <div class="package-divider"></div><div class="package-benefit-label">Quyền lợi bao gồm</div>
+ <div class="package-meta package-benefits-content">@Html.Raw(Model.Benefits)</div><ul class="package-meta package-policy"><li><i class="fa-solid fa-check"></i>@(Model.BrandSelectionEnabled?"Brand trực tiếp lựa chọn từ shortlist":"Topstar tuyển chọn theo brief")</li><li><i class="fa-solid fa-check"></i>Tối đa @Model.SelectionQuota KOC được xác nhận</li></ul>
+ <a asp-page="/Public/Login" asp-route-returnUrl="/Brand/CampaignNeeds?packageId=@Model.Id" class="package-btn primary">Tạo chiến dịch <i class="fa-solid fa-arrow-right"></i></a>
+</article>

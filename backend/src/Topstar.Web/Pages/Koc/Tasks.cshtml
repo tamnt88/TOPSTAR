@@ -1,0 +1,133 @@
+@page
+@model Topstar.Web.Pages.Koc.TasksModel
+@using Topstar.Application.Deliverables
+@using Topstar.Application.Campaigns
+@{
+    ViewData["Title"] = "Đầu việc của tôi";
+}
+
+<div class="koc-tasks-page">
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div data-koc-flash data-type="@(Model.MessageSuccess ? "success" : "error")" data-message="@Model.Message"></div>
+    }
+
+    <header class="koc-tasks-header">
+        <div>
+            <span class="koc-page-eyebrow"><i class="fa-solid fa-list-check"></i> Tiến độ nội dung</span>
+            <h1>Đầu việc của tôi</h1>
+            <p>Nộp sản phẩm, theo dõi phản hồi và xử lý yêu cầu chỉnh sửa từ Brand tại một nơi.</p>
+        </div>
+        <div>
+            <a asp-page="/Koc/Reviews" class="btn btn-outline-primary btn-sm"><i class="fa-regular fa-star me-1"></i>Đánh giá Brand</a>
+            <a asp-page="/Koc/Jobs" class="btn btn-primary btn-sm"><i class="fa-solid fa-magnifying-glass me-1"></i>Tìm chiến dịch mới</a>
+        </div>
+    </header>
+
+    <section class="koc-task-stats" aria-label="Tổng quan đầu việc">
+        <article class="is-pending"><span><i class="fa-solid fa-upload"></i></span><div><small>Cần nộp</small><strong><span data-task-count="notSubmittedCount">—</span></strong><em>Đầu việc chưa gửi</em></div></article>
+        <article class="is-revision"><span><i class="fa-solid fa-pen-to-square"></i></span><div><small>Cần chỉnh sửa</small><strong><span data-task-count="needRevisionCount">—</span></strong><em>Brand yêu cầu cập nhật</em></div></article>
+        <article class="is-review"><span><i class="fa-regular fa-clock"></i></span><div><small>Chờ duyệt</small><strong><span data-task-count="submittedCount">—</span></strong><em>Đã gửi cho Brand</em></div></article>
+        <article class="is-approved"><span><i class="fa-solid fa-circle-check"></i></span><div><small>Đã duyệt</small><strong><span data-task-count="approvedCount">—</span></strong><em>Nội dung đạt yêu cầu</em></div></article>
+    </section>
+
+        <a class="koc-task-overdue-alert" id="taskOverdue" hidden asp-page="/Koc/Tasks" asp-route-Due="overdue">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span><strong><span data-task-count="overdueCount">0</span> đầu việc đã quá hạn</strong><small>Ưu tiên xử lý để tránh ảnh hưởng điểm uy tín hợp tác.</small></span>
+            <i class="fa-solid fa-chevron-right"></i>
+        </a>
+    <section class="koc-task-workspace">
+        <form method="get" class="koc-task-filters">
+            <div class="is-search"><label asp-for="Search">Từ khóa</label><div><i class="fa-solid fa-magnifying-glass"></i><input asp-for="Search" class="form-control" placeholder="Tên chiến dịch, Brand hoặc đầu việc" maxlength="120"></div></div>
+            <div><label asp-for="Status">Trạng thái</label><select asp-for="Status" class="form-select"><option value="all">Tất cả trạng thái</option><option value="@SubmissionStatuses.NotSubmitted">Cần nộp</option><option value="@SubmissionStatuses.NeedRevision">Cần chỉnh sửa</option><option value="@SubmissionStatuses.Submitted">Chờ duyệt</option><option value="@SubmissionStatuses.Approved">Đã duyệt</option><option value="@SubmissionStatuses.Rejected">Đã từ chối</option></select></div>
+            <div><label asp-for="Due">Thời hạn</label><select asp-for="Due" class="form-select"><option value="all">Tất cả thời hạn</option><option value="overdue">Đã quá hạn</option><option value="seven_days">Trong 7 ngày tới</option><option value="no_due">Chưa đặt hạn</option></select></div>
+            <div><label asp-for="Sort">Sắp xếp</label><select asp-for="Sort" class="form-select"><option value="due">Hạn gần nhất</option><option value="newest">Mới tạo</option><option value="campaign">Theo chiến dịch</option></select></div>
+            <div><label asp-for="PageSize">Hiển thị</label><select asp-for="PageSize" class="form-select"><option value="10">10 dòng</option><option value="20">20 dòng</option><option value="50">50 dòng</option><option value="100">100 dòng</option></select></div>
+            <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-filter me-1"></i>Lọc</button>
+        </form>
+
+        <div class="koc-task-list-header">
+            <div><h2><i class="fa-solid fa-layer-group"></i> Danh sách đầu việc</h2><p>Mở từng dòng để xem nội dung, lịch sử phiên bản và thao tác.</p></div>
+        </div>
+
+        <div class="koc-task-table-wrap">
+            <table id="kocTaskTable" class="table koc-task-table" data-ajax-url="@Url.Page("/Koc/Tasks", "Data")" data-redact-url="@Url.Page("/Koc/Tasks", "RedactSensitiveData")">
+                <thead>
+                    <tr>
+                        <th>STT</th>
+                        <th>Chiến dịch</th>
+                        <th>Đầu việc</th>
+                        <th>Hạn nộp</th>
+                        <th>Phiên bản</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<div class="modal fade koc-task-history-modal koc-task-detail-modal" id="taskDetailModal" tabindex="-1" aria-labelledby="taskDetailModalTitle" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div><span><i class="fa-solid fa-list-check"></i></span><div><h2 class="modal-title" id="taskDetailModalTitle">Chi tiết đầu việc</h2><p data-task-detail-context></p></div></div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <nav class="ts-tabs koc-task-detail-tabs nav nav-tabs" role="tablist" aria-label="Nội dung đầu việc">
+                <button class="nav-link active" type="button" data-bs-toggle="tab" data-bs-target="#taskOverviewPane" data-task-tab="overview" role="tab"><i class="fa-solid fa-chart-simple"></i>Tổng quan</button>
+                <button class="nav-link" type="button" data-bs-toggle="tab" data-bs-target="#taskCampaignPane" data-task-tab="campaign" role="tab"><i class="fa-solid fa-bullhorn"></i>Thông tin chiến dịch</button>
+                <button class="nav-link" type="button" data-bs-toggle="tab" data-bs-target="#taskSubmitPane" data-task-tab="submit" role="tab"><i class="fa-solid fa-cloud-arrow-up"></i>Nộp nội dung</button>
+                <button class="nav-link" type="button" data-bs-toggle="tab" data-bs-target="#taskHistoryPane" data-task-tab="history" role="tab"><i class="fa-solid fa-clock-rotate-left"></i>Lịch sử <span data-history-count>0</span></button>
+            </nav>
+            <div class="modal-body tab-content">
+                <section class="tab-pane fade show active" id="taskOverviewPane" role="tabpanel" data-task-detail-content></section>
+                <section class="tab-pane fade" id="taskCampaignPane" role="tabpanel" data-task-campaign-content></section>
+                <section class="tab-pane fade" id="taskSubmitPane" role="tabpanel">
+                    <form method="post" asp-page-handler="Submit" enctype="multipart/form-data" data-task-form novalidate>
+                        <input type="hidden" name="id">
+                        <div class="koc-task-section-heading"><span><i class="fa-solid fa-cloud-arrow-up"></i></span><div><h3 data-task-form-title>Nộp nội dung</h3><p>Gửi link, tệp và ghi chú trong cùng một phiên bản để Brand kiểm tra.</p></div></div>
+                        <div class="koc-task-submit-grid">
+                            <div class="koc-task-modal-field">
+                                <label for="taskSubmissionUrl"><i class="fa-solid fa-link"></i> Link nội dung</label>
+                                <input id="taskSubmissionUrl" name="submissionUrl" type="url" maxlength="1000" class="form-control" aria-describedby="taskSubmissionUrlError" placeholder="https://tiktok.com/...">
+                                <p id="taskSubmissionUrlError" class="koc-field-error" data-task-url-error role="alert"></p>
+                                <small>Dán link bài đăng/video và bảo đảm Brand có quyền xem.</small>
+                            </div>
+                            <div class="koc-task-modal-field">
+                                <label for="taskAttachment"><i class="fa-solid fa-paperclip"></i> Tệp đính kèm</label>
+                                <input id="taskAttachment" name="attachmentFile" type="file" class="form-control" aria-describedby="taskAttachmentError" accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx,.mp4,.mov">
+                                <p id="taskAttachmentError" class="koc-field-error" data-task-file-error role="alert"></p>
+                                <small>JPG, PNG, WEBP, PDF, DOC, DOCX, MP4 hoặc MOV; tối đa 25 MB.</small>
+                            </div>
+                        </div>
+                        <div class="koc-task-modal-field">
+                            <label for="taskSubmissionNote"><i class="fa-regular fa-note-sticky"></i> Ghi chú cho Brand <span class="text-danger" aria-hidden="true">*</span></label>
+                            <textarea id="taskSubmissionNote" name="note" class="form-control" maxlength="2000" rows="4" aria-required="true" aria-describedby="taskSubmissionNoteError" placeholder="Mô tả nội dung, điểm cần Brand lưu ý hoặc thay đổi trong phiên bản này"></textarea>
+                            <small><span data-note-count>0</span>/2.000 ký tự</small>
+                            <p id="taskSubmissionNoteError" class="koc-field-error" data-task-note-error role="alert"></p>
+                        </div>
+                        <p class="koc-field-error" data-task-error></p>
+                        <div class="koc-task-version-note"><i class="fa-solid fa-clock-rotate-left"></i><span>Mỗi lần nộp được lưu thành một phiên bản gồm link, tệp, ghi chú và thời điểm để đối chiếu lịch sử.</span></div>
+                        <div class="koc-task-inline-actions">
+                            <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-paper-plane me-1"></i><span data-task-submit-label>Gửi Brand duyệt</span></button>
+                        </div>
+                    </form>
+                </section>
+                <section class="tab-pane fade" id="taskHistoryPane" role="tabpanel">
+                    <div class="koc-task-section-heading"><span><i class="fa-solid fa-clock-rotate-left"></i></span><div><h3>Lịch sử nộp bài</h3><p>Toàn bộ phiên bản, phản hồi và dữ liệu đã xử lý của đầu việc.</p></div></div>
+                    <div data-history-content></div>
+                </section>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal"><i class="fa-solid fa-xmark me-1"></i>Đóng</button></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/datatables/js/dataTables.min.js" asp-append-version="true"></script>
+    <script src="~/lib/datatables/js/dataTables.bootstrap5.min.js" asp-append-version="true"></script>
+    <script src="~/js/koc/tasks.js" asp-append-version="true"></script>
+}

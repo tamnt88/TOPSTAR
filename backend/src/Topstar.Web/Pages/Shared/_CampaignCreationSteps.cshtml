@@ -1,0 +1,29 @@
+@model int
+@{
+    var titles = new[] { "Nhu cầu", "Thông tin chiến dịch", "Thanh toán" };
+    var descriptions = new[] { "Gói, ngân sách và KOC", "Nội dung và yêu cầu", "Kiểm tra và xác nhận" };
+    var needsUrl = ViewData["CreationNeedsUrl"] as string;
+    var infoUrl = ViewData["CreationInfoUrl"] as string;
+}
+<ol class="needs-steps" aria-label="Các bước tạo chiến dịch">
+@for (var step = 1; step <= 3; step++)
+{
+    var href = step == 1 ? needsUrl : step == 2 ? infoUrl : null;
+    var submitForm = Model == 1 && step == 2 ? "campaignNeedsForm" : Model == 2 && step == 3 ? "campaign-form" : null;
+    <li class="@(step == Model ? "is-current" : step < Model ? "is-complete" : null)" aria-current="@(step == Model ? "step" : null)">
+        @if(step != Model && href is not null)
+        {
+            <a class="needs-step-action" href="@href"><span>@step</span><span class="needs-step-copy"><strong>@titles[step - 1]</strong><small>@descriptions[step - 1]</small></span></a>
+        }
+        else if(submitForm is not null)
+        {
+            <button class="needs-step-action" type="submit" form="@submitForm" title="@(Model == 2 ? "Lưu thông tin và tiếp tục thanh toán" : "Kiểm tra nhu cầu và tiếp tục")"><span>@step</span><span class="needs-step-copy"><strong>@titles[step - 1]</strong><small>@descriptions[step - 1]</small></span></button>
+        }
+        else
+        {
+            <span class="needs-step-action is-static" title="@(step > Model ? "Hoàn tất thông tin chiến dịch trước khi thanh toán" : null)"><span>@step</span><span class="needs-step-copy"><strong>@titles[step - 1]</strong><small>@descriptions[step - 1]</small></span></span>
+        }
+        @if(step < 3){<i class="fa-solid fa-chevron-right" aria-hidden="true"></i>}
+    </li>
+}
+</ol>

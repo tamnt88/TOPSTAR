@@ -1,21 +1,245 @@
-﻿@page
+@page "/Admin/Accounts/{Type?}"
+@model Topstar.Web.Pages.Admin.BrandsModel
+<link rel="stylesheet" href="~/css/admin/account-management.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/admin/account-management-koc.css" asp-append-version="true" />
 @{
-    ViewData["Title"] = "Admin Brands";
-    ViewData["AdminHeaderTitle"] = "Admin Dashboard";
-    ViewData["AdminHeaderSubtitle"] = "Quản trị thương hiệu";
+    var isKoc = string.Equals(Model.Type, "KOC", StringComparison.OrdinalIgnoreCase);
+    ViewData["Title"] = isKoc ? "Quản lý KOC" : "Quản lý Brand";
+    ViewData["AdminHeaderTitle"] = "Quản lý tài khoản";
+    ViewData["AdminHeaderSubtitle"] = "Tra cứu, kiểm soát trạng thái và xem lịch sử tài khoản KOC/Brand";
+    var dataUrl = Url.Page("/Admin/Brands", "Data", new { Type = Model.Type });
 }
-<div class="page-wrap card-list">
-  <div class="d-flex justify-content-between align-items-end"><div><h1 class="section-title mb-0">Brand Partners</h1><div class="kpi-title">Quan ly toan bo brand dang su dung nen tang</div></div></div>
-  <div class="kpi-grid">
-    <div class="kpi-box"><div class="kpi-title">Tong brand</div><div class="kpi-value">5</div></div>
-    <div class="kpi-box"><div class="kpi-title">Active</div><div class="kpi-value">4</div></div>
-    <div class="kpi-box"><div class="kpi-title">Packages da ban</div><div class="kpi-value">33</div></div>
-    <div class="kpi-box"><div class="kpi-title">Tong doanh thu</div><div class="kpi-value">1.3B</div></div>
-  </div>
-  <div class="card-x">
-    <div class="list-row"><div><b>L'Oreal Paris Vietnam</b><div class="kpi-title">Beauty • ACTIVE • 150tr VND</div></div><button class="btn-x btn-orange">Quan ly Brand</button></div>
-    <div class="list-row"><div><b>Shopee Vietnam</b><div class="kpi-title">E-commerce • ACTIVE • 480tr VND</div></div><button class="btn-x btn-orange">Quan ly Brand</button></div>
-    <div class="list-row"><div><b>Vinamilk Vietnam</b><div class="kpi-title">Food • ACTIVE • 320tr VND</div></div><button class="btn-x btn-orange">Quan ly Brand</button></div>
-    <div class="list-row"><div><b>Samsung Vietnam</b><div class="kpi-title">Technology • ACTIVE • 240tr VND</div></div><button class="btn-x btn-orange">Quan ly Brand</button></div>
-  </div>
+
+<div class="account-crud-page">
+    <header class="account-crud-header">
+        <div>
+            <h1>@(isKoc ? "Quản lý KOC" : "Quản lý Brand")</h1>
+            <p>@(isKoc ? "Danh sách tài khoản KOC, hiệu suất hợp tác, trạng thái hồ sơ và quyền truy cập." : "Danh sách tài khoản Brand, hoạt động chiến dịch, trạng thái hồ sơ và quyền truy cập.")</p>
+        </div>
+    </header>
+
+    <section class="account-summary-grid @(isKoc ? "is-koc" : "")" aria-label="Thống kê tài khoản">
+        <article><span class="is-total"><i class="fa-solid fa-building"></i></span><div><small>Tổng @(isKoc ? "KOC" : "Brand")</small><strong id="accountSummaryTotal">0</strong></div></article>
+        <article><span class="is-active"><i class="fa-solid fa-circle-check"></i></span><div><small>Có thể đăng nhập</small><strong id="accountSummaryActive">0</strong></div></article>
+        <article><span class="is-pending"><i class="fa-solid fa-clock"></i></span><div><small>Chờ duyệt</small><strong id="accountSummaryPending">0</strong></div></article>
+        <article><span class="is-locked"><i class="fa-solid fa-lock"></i></span><div><small>Đã khóa</small><strong id="accountSummaryLocked">0</strong></div></article>
+        <article><span class="is-unverified"><i class="fa-solid fa-envelope-circle-check"></i></span><div><small>Email chưa xác minh</small><strong id="accountSummaryUnverified">0</strong></div></article>
+        <article><span class="is-warning"><i class="fa-solid fa-triangle-exclamation"></i></span><div><small>Có vi phạm</small><strong id="accountSummaryViolations">0</strong></div></article>
+    </section>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div data-admin-flash
+             data-message="@Model.Message"
+             data-type="@(Model.MessageSuccess ? "success" : "error")"
+             hidden></div>
+    }
+
+    <section class="account-crud-card">
+        <div class="account-filter-bar">
+            <div class="account-search-field">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input id="accountSearch" class="form-control" maxlength="120"
+                       placeholder="Tìm theo tên hoặc email" autocomplete="off" />
+            </div>
+            <select id="accountProfileStatus" class="form-select" aria-label="Lọc trạng thái hồ sơ">
+                <option value="">Tất cả hồ sơ</option>
+                <option value="Approved">Đã duyệt</option>
+                <option value="PendingReview">Chờ duyệt</option>
+                <option value="NeedUpdate">Cần bổ sung</option>
+                <option value="Rejected">Đã từ chối</option>
+            </select>
+            <select id="accountUserStatus" class="form-select" aria-label="Lọc trạng thái tài khoản">
+                <option value="">Tất cả tài khoản</option>
+                <option value="Active">Đang hoạt động</option>
+                <option value="Locked">Đã khóa</option>
+            </select>
+            <input id="accountLocation" class="form-control" maxlength="100" placeholder="@(isKoc ? "Khu vực" : "Ngành hàng")" aria-label="@(isKoc ? "Lọc khu vực" : "Lọc ngành hàng")" />
+            <select id="accountViolation" class="form-select" aria-label="Lọc vi phạm">
+                <option value="">Tất cả vi phạm</option><option value="true">Có vi phạm</option><option value="false">Không vi phạm</option>
+            </select>
+            <select id="accountSort" class="form-select" aria-label="Sắp xếp">
+                <option value="newest">Mới nhất</option>
+                <option value="name">Theo tên</option>
+                @if (isKoc) { <option value="score">Theo điểm KOC</option> }
+            </select>
+            <select id="accountPageSize" class="form-select" aria-label="Số dòng mỗi trang">
+                <option value="20">20 dòng</option>
+                <option value="50">50 dòng</option>
+                <option value="100">100 dòng</option>
+            </select>
+            <button id="accountApplyFilter" type="button" class="btn btn-outline-primary">
+                <i class="fa-solid fa-filter"></i> Lọc
+            </button>
+            <button id="accountResetFilter" type="button" class="btn btn-light" title="Xóa bộ lọc">
+                <i class="fa-solid fa-rotate-left"></i>
+            </button>
+        </div>
+
+        <div class="account-table-wrap">
+            @Html.AntiForgeryToken()
+            <table id="accountDataTable"
+                   class="table account-crud-table align-middle mb-0"
+                   data-account-type="@Model.Type"
+                   data-ajax-url="@dataUrl"
+                   data-detail-url="@Url.Page("/Admin/Brands", "Detail")">
+                <thead>
+                    <tr>
+                        <th class="account-col-index">STT</th>
+                        <th>@(isKoc ? "KOC" : "Brand")</th>
+                        <th>@(isKoc ? "Khu vực" : "Ngành hàng")</th>
+                        <th>@(isKoc ? "Hiệu suất" : "Chiến dịch")</th>
+                        <th>Ngày tham gia</th>
+                        <th class="text-center">Truy cập</th>
+                        <th class="text-center">Hồ sơ</th>
+                        <th class="text-center">Vi phạm</th>
+                        <th class="account-col-actions">Trung tâm</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="account-detail-center" id="accountDetailCenter" aria-labelledby="accountDetailModalTitle" hidden>
+        <header class="account-detail-center-header"><div class="account-command-title"><span><i class="fa-solid @(isKoc ? "fa-user" : "fa-building")"></i></span><div><h2 id="accountDetailModalTitle">Chi tiết @(isKoc ? "KOC" : "Brand")</h2><small id="accountDetailEmail"></small></div></div><button type="button" class="account-detail-center-close js-account-center-close" aria-label="Đóng trung tâm"><i class="fa-solid fa-xmark"></i></button></header>
+        <div class="account-detail-center-body"><div id="accountDetailLoading" class="account-detail-loading"><span class="spinner-border spinner-border-sm"></span> Đang tải dữ liệu...</div><div id="accountDetailContent" hidden>
+            <nav class="ts-tabs account-detail-tabs" role="tablist"><button type="button" class="is-active" data-account-tab="overview"><i class="fa-solid fa-chart-pie"></i> Tổng quan</button><button type="button" data-account-tab="profile"><i class="fa-regular fa-id-card"></i> Hồ sơ</button><button type="button" data-account-tab="security"><i class="fa-solid fa-headset"></i> Bảo mật & hỗ trợ</button><button type="button" data-account-tab="violations"><i class="fa-solid fa-triangle-exclamation"></i> Vi phạm</button><button type="button" data-account-tab="history"><i class="fa-solid fa-clock-rotate-left"></i> Lịch sử</button></nav>
+            <section data-account-panel="overview" class="account-detail-panel is-active"></section><section data-account-panel="profile" class="account-detail-panel"></section><section data-account-panel="security" class="account-detail-panel"></section><section data-account-panel="violations" class="account-detail-panel"></section><section data-account-panel="history" class="account-detail-panel"></section>
+        </div></div>
+    </section>
 </div>
+
+@if (isKoc)
+{
+    <div class="modal fade" id="accountActivationModal" tabindex="-1" aria-labelledby="accountActivationModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+            <form method="post" asp-page-handler="Activate" class="js-account-activation-form" novalidate>
+                @Html.AntiForgeryToken()
+                <div class="modal-header"><h2 class="modal-title fs-5" id="accountActivationModalTitle"><i class="fa-solid fa-envelope-circle-check me-2"></i>Xác minh email thay KOC</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div>
+                <div class="modal-body">
+                    <input type="hidden" name="userId" id="accountActivationUserId" />
+                    <div class="account-activation-intro"><i class="fa-solid fa-user-shield"></i><div><strong id="accountActivationDescription"></strong><span>Chỉ thực hiện khi Admin đã đối chiếu đúng chủ tài khoản qua kênh hỗ trợ.</span></div></div>
+                    <div class="account-activation-effects" aria-label="Kết quả sau khi xác minh"><strong>Sau khi xác minh:</strong><span><i class="fa-solid fa-circle-check"></i>KOC có thể đăng nhập bằng email và mật khẩu.</span><span><i class="fa-solid fa-circle-minus"></i>Không duyệt hồ sơ và không thay đổi trạng thái khóa/mở tài khoản.</span></div>
+                    <label for="accountActivationReason" class="form-label fw-semibold">Căn cứ xác minh <span class="text-danger">*</span></label>
+                    <textarea id="accountActivationReason" name="reason" required minlength="10" maxlength="1000" rows="4" class="form-control" placeholder="Ví dụ: Đã đối chiếu email qua cuộc gọi hỗ trợ ngày dd/mm/yyyy."></textarea>
+                    <div id="accountActivationReasonError" class="invalid-feedback">Vui lòng nhập lý do từ 10 đến 1.000 ký tự.</div>
+                    <div class="form-text"><i class="fa-solid fa-clipboard-check"></i> Căn cứ này được lưu vào Nhật ký kiểm toán.</div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Hủy</button><button type="submit" id="accountActivationSubmit" class="btn btn-success"><i class="fa-solid fa-envelope-circle-check"></i> Xác minh thay KOC</button></div>
+            </form>
+        </div></div>
+    </div>
+}
+
+<div class="modal fade" id="accountEditModal" tabindex="-1" aria-labelledby="accountEditModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="Edit">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="accountEditModalTitle">Sửa tài khoản</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="userId" id="accountEditUserId" />
+                    <input type="hidden" name="profileType" value="@Model.Type" />
+                    <input type="hidden" name="Type" value="@Model.Type" />
+                    <div class="mb-3">
+                        <label for="accountEditName" class="form-label fw-semibold">@(isKoc ? "Tên hiển thị" : "Tên Brand")</label>
+                        <input id="accountEditName" name="name" required minlength="2" maxlength="200" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="accountEditEmail" class="form-label fw-semibold">Email</label>
+                        <input id="accountEditEmail" name="email" type="email" required maxlength="255" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="accountEditLocation" class="form-label fw-semibold">@(isKoc ? "Khu vực" : "Ngành hàng")</label>
+                        <input id="accountEditLocation" name="location" maxlength="200" class="form-control" />
+                    </div>
+                    <div>
+                        <label for="accountEditReason" class="form-label fw-semibold">Lý do cập nhật</label>
+                        <textarea id="accountEditReason" name="reason" required minlength="10" maxlength="1000"
+                                  rows="3" class="form-control" placeholder="Nhập tối thiểu 10 ký tự"></textarea>
+                        <div class="form-text">Thông tin trước và sau thay đổi sẽ được ghi vào AuditLog.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="accountStatusModal" tabindex="-1" aria-labelledby="accountStatusModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="ToggleStatus" class="js-account-status-form" novalidate>
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="accountStatusModalTitle"><i class="fa-solid fa-lock me-2"></i>Thay đổi trạng thái tài khoản</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="userId" id="accountStatusUserId" />
+                    <input type="hidden" name="locked" id="accountStatusLocked" />
+                    <input type="hidden" name="Type" value="@Model.Type" />
+                    <p id="accountStatusDescription" class="text-muted"></p>
+                    <label for="accountStatusReason" class="form-label fw-semibold">Lý do và căn cứ xử lý</label>
+                    <textarea id="accountStatusReason" name="reason" required minlength="10" maxlength="1000"
+                              rows="4" class="form-control" placeholder="Nhập tối thiểu 10 ký tự"></textarea>
+                    <div id="accountStatusReasonError" class="invalid-feedback">Vui lòng nhập lý do từ 10 đến 1.000 ký tự, không tính khoảng trắng thừa.</div>
+                    <div class="form-text">Thao tác sẽ được lưu lịch sử, audit và gửi thông báo cho tài khoản.</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal"><i class="fa-solid fa-xmark me-1"></i>Hủy</button>
+                    <button type="submit" id="accountStatusSubmit" class="btn btn-danger"><i class="fa-solid fa-lock me-1"></i>Xác nhận khóa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade admin-action-modal" id="accountDeleteModal" tabindex="-1" aria-labelledby="accountDeleteModalTitle" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+        <form method="post" asp-page-handler="DeleteAccount" class="js-account-delete-form" novalidate>
+            @Html.AntiForgeryToken()
+            <div class="modal-header"><div class="admin-modal-heading"><span><i class="fa-solid fa-user-slash"></i></span><div><h2 id="accountDeleteModalTitle">Xóa tài khoản</h2><small>Vô hiệu hóa và ẩn khỏi hệ thống vận hành</small></div></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div>
+            <div class="modal-body">
+                <input type="hidden" name="userId" id="accountDeleteUserId"/>
+                <p id="accountDeleteDescription" class="text-muted"></p>
+                <div class="alert alert-warning py-2"><i class="fa-solid fa-triangle-exclamation me-1"></i> Lịch sử nghiệp vụ và audit vẫn được giữ để bảo toàn dữ liệu.</div>
+                <label for="accountDeleteReason" class="form-label fw-semibold">Lý do xóa <span class="text-danger">*</span></label>
+                <textarea id="accountDeleteReason" name="reason" class="form-control" rows="3" required minlength="10" maxlength="1000" placeholder="Ví dụ: Tài khoản đăng ký tự động, email không xác minh"></textarea>
+                <div class="invalid-feedback" id="accountDeleteReasonError">Vui lòng nhập lý do từ 10 đến 1.000 ký tự.</div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Hủy</button><button type="submit" id="accountDeleteSubmit" class="btn btn-danger"><i class="fa-solid fa-trash-can"></i> Xác nhận xóa</button></div>
+        </form>
+    </div></div>
+</div>
+
+<div class="modal fade admin-action-modal" id="accountImpersonateModal" tabindex="-1" aria-labelledby="accountImpersonateModalTitle" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+        <form method="post" asp-page-handler="Impersonate" class="js-account-impersonate-form" novalidate>
+            @Html.AntiForgeryToken()
+            <div class="modal-header"><div class="admin-modal-heading"><span><i class="fa-solid fa-user-shield"></i></span><div><h2 id="accountImpersonateModalTitle">Mở phiên hỗ trợ tài khoản</h2><small>Đăng nhập tạm thời để kiểm tra và hỗ trợ người dùng</small></div></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div>
+            <div class="modal-body">
+                <input type="hidden" name="userId" id="accountImpersonateUserId" />
+                <input type="hidden" name="Type" value="@Model.Type" />
+                <p id="accountImpersonateDescription" class="text-muted"></p>
+                <div class="alert alert-warning py-2"><i class="fa-solid fa-shield-halved me-1"></i> Phiên hỗ trợ kéo dài tối đa 2 giờ. Mọi thao tác đều được ghi audit dưới Admin hiện tại.</div>
+                <label for="accountImpersonateReason" class="form-label fw-semibold">Lý do hỗ trợ <span class="text-danger">*</span></label>
+                <textarea id="accountImpersonateReason" name="reason" class="form-control" rows="3" required minlength="10" maxlength="500" placeholder="Ví dụ: Kiểm tra lỗi chiến dịch theo yêu cầu hỗ trợ #1234"></textarea>
+                <div class="invalid-feedback">Vui lòng nhập lý do từ 10 đến 500 ký tự.</div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Hủy</button><button type="submit" id="accountImpersonateSubmit" class="btn btn-primary"><i class="fa-solid fa-right-to-bracket"></i> Bắt đầu hỗ trợ</button></div>
+        </form>
+    </div></div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/datatables/js/dataTables.min.js" asp-append-version="true"></script>
+    <script src="~/lib/datatables/js/dataTables.bootstrap5.min.js" asp-append-version="true"></script>
+    <script src="~/js/admin/account-datatable.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,56 @@
+@page
+@model Topstar.Web.Pages.Admin.Finance.BrandBalancesModel
+@{ViewData["Title"]="Số dư Brand";}
+<div class="admin-funding-page balance-admin">
+<header class="admin-funding-heading"><div><span class="admin-page-eyebrow"><i class="fa-solid fa-wallet"></i> QUẢN LÝ TÀI CHÍNH</span><h1>Số dư Brand</h1><p>Theo dõi số dư, đối soát hoàn tiền và xử lý yêu cầu rút tiền.</p></div><a asp-page="/Admin/Finance/Index" class="btn btn-outline-primary"><i class="fa-solid fa-arrow-left"></i> Tài chính</a></header>
+@if(Model.Message is not null){<div hidden data-ts-notification="@(Model.Success?"success":"error")">@Model.Message</div>}
+@if(!Model.Ready){<div class="alert alert-warning">Cần triển khai script SQL 161 để sử dụng chức năng số dư.</div>}
+else{
+<section class="admin-funding-stats balance-stats" aria-label="Thống kê số dư Brand">
+<article><span class="is-money"><i class="fa-solid fa-wallet"></i></span><div><small>Số dư khả dụng</small><strong data-balance-stat="available">@PortalFormat.Money(Model.Summary.Available)</strong></div></article>
+<article><span class="is-waiting"><i class="fa-solid fa-lock"></i></span><div><small>Đang giữ để rút</small><strong data-balance-stat="reserved">@PortalFormat.Money(Model.Summary.Reserved)</strong></div></article>
+<article><span class="is-waiting"><i class="fa-regular fa-clock"></i></span><div><small>Yêu cầu chờ duyệt</small><strong data-balance-stat="pending">@Model.Summary.Pending</strong></div></article>
+<article><span class="is-funded"><i class="fa-solid fa-money-bill-transfer"></i></span><div><small>Chờ chuyển tiền</small><strong data-balance-stat="approved">@Model.Summary.Approved</strong></div></article>
+<article><span class="is-released"><i class="fa-solid fa-rotate-left"></i></span><div><small>Có thể đối soát hoàn</small><strong data-balance-stat="refundable">@PortalFormat.Money(Model.Summary.Refundable)</strong></div></article>
+</section>
+<nav class="ts-tabs admin-funding-tabs" role="tablist" aria-label="Chức năng số dư">
+@foreach(var tab in new[]{("withdrawals","fa-money-bill-transfer","Yêu cầu rút tiền"),("refunds","fa-rotate-left","Hoàn vào số dư"),("policy","fa-sliders","Chính sách")}){
+<button type="button" role="tab" id="balance-tab-@tab.Item1" aria-controls="balance-@tab.Item1" aria-selected="@(tab.Item1=="withdrawals"?"true":"false")" class="@(tab.Item1=="withdrawals"?"is-active":"")" data-balance-tab="@tab.Item1"><i class="fa-solid @tab.Item2"></i> @tab.Item3</button>}
+</nav>
+@foreach(var tab in new[]{("withdrawals","Danh sách yêu cầu rút tiền","Kiểm tra tài khoản nhận và số tiền thực nhận trước khi duyệt chuyển."),("refunds","Khoản được đối soát hoàn","Chỉ hoàn phần được duyệt; giữ riêng quyền lợi KOC và các khoản phí để đối soát.")}){
+<section class="balance-panel" id="balance-@tab.Item1" data-balance-panel="@tab.Item1" role="tabpanel" aria-labelledby="balance-tab-@tab.Item1" hidden="@(tab.Item1!="withdrawals")">
+<div class="balance-panel-heading"><h2>@tab.Item2</h2><p>@tab.Item3</p></div>
+@if(tab.Item1=="refunds"){<div id="creditApprovals" class="balance-approvals" aria-live="polite"></div>}
+@{var prefix=tab.Item1=="withdrawals"?"withdrawal":"refund";}
+<form class="balance-filters @(prefix=="refund"?"balance-refund-filters":"")" id="@(prefix)Filters" novalidate>
+<div class="balance-search"><label for="@(prefix)Keyword">Từ khóa</label><div class="balance-search-input"><i class="fa-solid fa-magnifying-glass"></i><input id="@(prefix)Keyword" class="form-control" placeholder="@(prefix=="refund"?"Tên Brand, chiến dịch hoặc mã ký quỹ":"Tên Brand, chủ tài khoản, ngân hàng hoặc mã giao dịch")"/></div></div>
+@if(prefix=="withdrawal"){<div><label for="withdrawalStatus">Trạng thái</label><select id="withdrawalStatus" class="form-select"><option value="">Tất cả trạng thái</option><option value="Pending">Chờ duyệt</option><option value="Approved">Chờ chuyển tiền</option><option value="Paid">Đã chuyển tiền</option><option value="Rejected">Đã từ chối</option><option value="Cancelled">Đã hủy</option></select></div>}
+<div><label for="@(prefix)PageLength">Hiển thị</label><select id="@(prefix)PageLength" class="form-select"><option value="20">20 dòng</option></select></div><button class="btn btn-primary"><i class="fa-solid fa-filter"></i> Lọc</button></form>
+<table class="table align-middle w-100 balance-table" id="@(prefix)Table" data-list-actions="false"><thead><tr><th>STT</th><th>@(prefix=="refund"?"Brand":"Brand / Ngày tạo")</th><th>@(prefix=="refund"?"Chiến dịch / Khoản ký quỹ":"Tài khoản nhận")</th><th class="text-end">@(prefix=="refund"?"Có thể hoàn":"Số tiền")</th>@if(prefix=="withdrawal"){<th>Trạng thái</th>}<th>Thao tác</th></tr></thead><tbody></tbody></table>
+</section>}
+<section class="balance-panel" id="balance-policy" role="tabpanel" aria-labelledby="balance-tab-policy" data-balance-panel="policy" hidden>
+<div class="balance-panel-heading"><h2>Chính sách rút tiền</h2><p>Áp dụng cho yêu cầu mới. Yêu cầu đã tạo giữ nguyên phí và điều kiện duyệt.</p></div>
+<form method="post" asp-page-handler="Policy" class="balance-policy-form" data-balance-form novalidate>
+<label class="balance-policy-toggle"><span><strong>Cho phép Brand gửi yêu cầu rút tiền</strong><small>Khi tắt, số dư vẫn được sử dụng để thanh toán ký quỹ.</small></span><input class="form-check-input" type="checkbox" role="switch" name="enabled" value="true" checked="@Model.Policy.WithdrawalsEnabled"/></label>
+<div class="row g-3">
+@foreach(var field in new[]{("minimum","Số tiền rút tối thiểu (đ)",Model.Policy.MinimumWithdrawal,1m),("fee","Phí mỗi yêu cầu (đ)",Model.Policy.WithdrawalFee,0m),("dual","Cần hai quản trị viên duyệt từ (đ)",Model.Policy.DualApprovalThreshold,1m),("days","Thời gian xử lý dự kiến (ngày)",(decimal)Model.Policy.ProcessingDays,1m)}){
+<div class="col-md-6"><label class="form-label" for="policy-@field.Item1">@field.Item2</label><input id="policy-@field.Item1" class="form-control" name="@field.Item1" type="@(field.Item1=="days"?"number":"text")" inputmode="numeric" min="@field.Item4" data-vnd="@(field.Item1=="days"?null:"true")" max="@(field.Item1=="days"?"30":null)" step="1" required value="@field.Item3.ToString(field.Item1=="days"?"0":"N0",PortalFormat.Vietnamese)" data-error="@(field.Item1=="days"?"Nhập thời gian từ 1 đến 30 ngày.":"Nhập số tiền nguyên đồng hợp lệ.")"/></div>}
+</div><div class="balance-form-footer"><span><i class="fa-solid fa-clock-rotate-left"></i> Lưu lịch sử mỗi lần thay đổi.</span><button class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Lưu chính sách</button></div>
+</form></section>
+<div class="modal fade" id="withdrawalModal" tabindex="-1" aria-labelledby="withdrawalTitle" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false"><div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><div class="balance-modal-title"><span><i class="fa-solid fa-money-bill-transfer"></i></span><div><small>XỬ LÝ YÊU CẦU</small><h2 class="modal-title fs-5" id="withdrawalTitle">Rút tiền Brand</h2></div></div><button class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div class="modal-body" id="withdrawalDetail"></div></div></div></div>
+<div class="modal fade" id="creditModal" tabindex="-1" aria-labelledby="creditTitle" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+<form method="post" asp-page-handler="Credit" data-balance-form novalidate>
+<div class="modal-header"><div class="balance-modal-title"><span><i class="fa-solid fa-rotate-left"></i></span><div><small>ĐỐI SOÁT HOÀN TIỀN</small><h2 class="modal-title fs-5" id="creditTitle">Hoàn vào số dư</h2></div></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div>
+<div class="modal-body"><div class="balance-credit-summary"><strong id="creditBrand"></strong><span id="creditCampaign"></span><small>Được đối soát tối đa: <b id="creditMaximum"></b></small></div><input type="hidden" name="fundingId" id="creditFundingId"/><input type="hidden" name="operation" id="creditOperation" value="@Guid.NewGuid()"/><label for="creditAmount" class="form-label">Số tiền hoàn vào số dư (đ)</label><input name="amount" id="creditAmount" class="form-control text-end" inputmode="numeric" required data-money data-error="Nhập số tiền nguyên đồng lớn hơn 0 và không vượt khoản được hoàn."/><p class="small text-muted mt-3 mb-0"><i class="fa-solid fa-shield-halved"></i> Kiểm tra lại số tiền và các khoản đã hoàn. Giao dịch lớn cần hai quản trị viên khác nhau duyệt.</p></div>
+<div class="modal-footer"><button class="btn btn-light" type="button" data-bs-dismiss="modal">Đóng</button><button class="btn btn-primary"><i class="fa-solid fa-check"></i> Duyệt hoàn</button></div>
+</form></div></div></div>
+}
+</div>
+@section Styles{
+
+<link rel="stylesheet" href="~/css/admin/brand-balances.css" asp-append-version="true"/>
+}
+@section Scripts{
+<script src="~/lib/datatables/js/dataTables.min.js"></script><script src="~/lib/datatables/js/dataTables.bootstrap5.min.js"></script>
+<script src="~/js/admin/brand-balances.js" asp-append-version="true"></script>
+}

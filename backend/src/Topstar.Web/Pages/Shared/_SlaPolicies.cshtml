@@ -1,0 +1,61 @@
+@model Topstar.Application.Operations.OperationsAdminDashboard
+@functions {
+    private static string RuleLabel(string code) => code switch
+    {
+        "BRAND_REVIEW_SLA" => "Duyệt nội dung của Brand",
+        "DISPUTE_SLA" => "Xử lý tranh chấp",
+        "SUBMISSION_OVERDUE" => "KOC nộp bài quá hạn",
+        _ => "Quy tắc vận hành"
+    };
+}
+<section class="mb-5 ops-work-panel ops-sla-section" aria-labelledby="sla-policy-title">
+    <div class="d-flex flex-column flex-lg-row justify-content-between gap-2 mb-3">
+        <div>
+            <h2 id="sla-policy-title" class="h4 mb-1">Chính sách SLA vận hành</h2>
+            <p class="small text-muted mb-0">Ngưỡng đang áp dụng cho lần quét tiếp theo. Mỗi thay đổi tạo một phiên bản lịch sử, không sửa quá khứ.</p>
+        </div>
+        <span class="badge bg-light text-dark align-self-lg-start">Đơn vị: giờ</span>
+    </div>
+    @if (Model.SlaPolicies.Count == 0)
+    {
+        <div class="alert alert-warning">Chưa có chính sách SLA. Vui lòng chạy migration 47 trước khi quét.</div>
+    }
+    <div class="row g-3">
+        @foreach (var policy in Model.SlaPolicies)
+        {
+            <div class="col-12 col-xl-6">
+                <article class="card-x h-100">
+                    <div class="d-flex justify-content-between gap-3">
+                        <div><div class="small text-muted">Quy tắc SLA</div><h3 class="h5 mb-1">@RuleLabel(policy.RuleCode)</h3></div>
+                        <span class="badge @(policy.IsActive ? "bg-success" : "bg-secondary") align-self-start">@(policy.IsActive ? "Đang chạy" : "Tạm dừng")</span>
+                    </div>
+                    <div class="row g-2 my-2">
+                        <div class="col-6"><div class="p-3 bg-light rounded"><small class="text-muted d-block">Cảnh báo High</small><strong>@policy.HighAfterHours giờ</strong></div></div>
+                        <div class="col-6"><div class="p-3 bg-light rounded"><small class="text-muted d-block">Chuyển Critical</small><strong>@policy.CriticalAfterHours giờ</strong></div></div>
+                    </div>
+                    <div class="small text-muted mb-3">Hiệu lực từ @policy.EffectiveAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm") · @policy.ActorLabel</div>
+                    <details>
+                        <summary class="small text-primary">Điều chỉnh chính sách</summary>
+                        <form method="post" asp-page-handler="SlaPolicy" class="row g-2 mt-2">
+                            <input type="hidden" name="id" value="@policy.Id" />
+                            <div class="col-sm-6"><label class="form-label small">High sau (giờ)</label><input type="number" name="highAfterHours" value="@policy.HighAfterHours" min="0" max="2160" class="form-control" required /></div>
+                            <div class="col-sm-6"><label class="form-label small">Critical sau (giờ)</label><input type="number" name="criticalAfterHours" value="@policy.CriticalAfterHours" min="1" max="2160" class="form-control" required /></div>
+                            <div class="col-12 form-check ms-2"><input class="form-check-input" type="checkbox" name="isActive" value="true" id="active-@policy.Id" checked="@(policy.IsActive ? "checked" : null)" /><input type="hidden" name="isActive" value="false" /><label class="form-check-label" for="active-@policy.Id">Cho phép quét rule này</label></div>
+                            <div class="col-12"><label class="form-label small">Lý do thay đổi</label><textarea name="note" minlength="5" maxlength="1000" rows="2" class="form-control" placeholder="Nêu căn cứ thay đổi để người vận hành sau đối chiếu" required></textarea></div>
+                            <div class="col-12"><button class="btn btn-primary w-100">Lưu phiên bản SLA mới</button></div>
+                        </form>
+                    </details>
+                    @if (policy.History.Count > 0)
+                    {
+                        <details class="mt-3"><summary class="small text-primary">Lịch sử thay đổi (@policy.History.Count)</summary><div class="border-start ps-3 mt-2">
+                            @foreach (var h in policy.History)
+                            {
+                                <div class="small mb-3"><strong>@(h.ToHighAfterHours)h High / @(h.ToCriticalAfterHours)h Critical</strong> · @(h.ToIsActive ? "Bật" : "Tạm dừng")<div class="text-muted">@h.CreatedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm") · @h.ActorLabel</div><div>@h.Note</div></div>
+                            }
+                        </div></details>
+                    }
+                </article>
+            </div>
+        }
+    </div>
+</section>

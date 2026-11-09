@@ -1,0 +1,20 @@
+/* Repair only the deterministic campaign-funding QA rows. Safe to rerun. */
+SET NOCOUNT ON;
+SET XACT_ABORT ON;
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_PADDING ON;
+SET ANSI_WARNINGS ON;
+SET CONCAT_NULL_YIELDS_NULL ON;
+SET ARITHABORT ON;
+SET NUMERIC_ROUNDABORT OFF;
+BEGIN TRANSACTION;
+UPDATE dbo.Campaigns SET Title=N'[QA Quỹ] Phân bổ thù lao nháp',Objective=N'<p>Dữ liệu QA cho vòng đời thanh toán và thù lao KOC.</p>' WHERE Id='CF000001-2026-4000-8000-000000000001';
+UPDATE dbo.Campaigns SET Title=N'[QA Quỹ] Chờ chuyển khoản',Objective=N'<p>Dữ liệu QA cho vòng đời thanh toán và thù lao KOC.</p>' WHERE Id='CF000002-2026-4000-8000-000000000002';
+UPDATE dbo.Campaigns SET Title=N'[QA Quỹ] Chờ OnePay',Objective=N'<p>Dữ liệu QA cho vòng đời thanh toán và thù lao KOC.</p>' WHERE Id='CF000003-2026-4000-8000-000000000003';
+UPDATE dbo.Campaigns SET Title=N'[QA Quỹ] Đã thanh toán chia đều',Objective=N'<p>Dữ liệu QA cho vòng đời thanh toán và thù lao KOC.</p>' WHERE Id='CF000004-2026-4000-8000-000000000004';
+UPDATE dbo.Campaigns SET Title=N'[QA Quỹ] Đã thanh toán thù lao riêng',Objective=N'<p>Dữ liệu QA cho vòng đời thanh toán và thù lao KOC.</p>' WHERE Id='CF000005-2026-4000-8000-000000000005';
+UPDATE dbo.Campaigns SET Title=N'[QA Quỹ] Đã nghiệm thu và giải ngân',Objective=N'<p>Dữ liệu QA cho vòng đời thanh toán và thù lao KOC.</p>' WHERE Id='CF000006-2026-4000-8000-000000000006';
+UPDATE dbo.CampaignFundings SET RefundPolicySnapshot=N'Hoàn phần ngân sách chưa giải ngân sau khi khấu trừ nghĩa vụ đã nghiệm thu.' WHERE CampaignId IN('CF000001-2026-4000-8000-000000000001','CF000002-2026-4000-8000-000000000002','CF000003-2026-4000-8000-000000000003','CF000004-2026-4000-8000-000000000004','CF000005-2026-4000-8000-000000000005','CF000006-2026-4000-8000-000000000006') AND Status=N'Draft';
+COMMIT;
+SELECT Id,Title FROM dbo.Campaigns WHERE Id LIKE 'CF0000%' ORDER BY Id;

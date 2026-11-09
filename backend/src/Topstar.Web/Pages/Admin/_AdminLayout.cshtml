@@ -25,15 +25,33 @@
     <link rel="canonical" href="@canonicalUrl" />
     <link rel="icon" type="image/png" href="@faviconPath" />
 
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/lib/fontawesome/css/all.min.css" />
-    <link rel="stylesheet" href="~/lib/flaticon/css/uicons-regular-rounded.css" />
-    <link rel="stylesheet" href="~/lib/swiper/swiper-bundle.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" href="/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="/lib/fontawesome/css/all.min.css" />
+    <link rel="stylesheet" href="/lib/flaticon/css/uicons-regular-rounded.css" />
+    <link rel="stylesheet" href="/lib/swiper/swiper-bundle.min.css" />
+    <link rel="stylesheet" href="/lib/datatables/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="/css/site.css" />
     <link rel="stylesheet" href="~/css/admin/admin.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/Topstar.Web.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/shared/portal-footer.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/shared/file-picker.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/shared/notifications.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/select2/select2.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/jquery-ui/jquery-ui.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/shared/form-controls.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/shared/statistics.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
+    @if ((bool?)ViewData["UseCkEditor"] == true)
+    {
+        <link rel="stylesheet" href="/lib/ckeditor5/ckeditor5.css" />
+    }
+    <link rel="stylesheet" href="~/css/shared/lists.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/shared/ui-standard.css" asp-append-version="true" />
 </head>
-<body>
+<body class="admin-portal">
     <partial name="_AdminHeader" />
     <main class="admin-main-content">
         <div class="container">
@@ -42,12 +60,18 @@
     </main>
     <partial name="_AdminFooter" />
 
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/lib/swiper/swiper-bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/select2/select2.min.js" asp-append-version="true"></script>
+    <script src="~/lib/jquery-ui/jquery-ui.min.js" asp-append-version="true"></script>
+    <script src="~/js/shared/form-controls.js" asp-append-version="true"></script>
+    <script src="~/js/shared/notifications.js" asp-append-version="true"></script>
+    <script src="/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/lib/swiper/swiper-bundle.min.js"></script>
+    <script src="/js/site.js"></script>
+    <script src="~/js/shared/file-picker.js" asp-append-version="true"></script>
     <script src="~/js/admin/admin.js" asp-append-version="true"></script>
+    <script src="~/js/admin/email-diagnostics.js" asp-append-version="true"></script>
+    <script src="~/js/shared/lists.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
-

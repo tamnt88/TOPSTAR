@@ -1,0 +1,5 @@
+@page
+@model Topstar.Web.Pages.Admin.Finance.BrandTaxPolicyModel
+@{ ViewData["Title"]="Thuế và phí Brand"; }
+<header class="mb-4"><h1>Thuế và phí Brand</h1><a asp-page="/Admin/Finance/TaxFees">Quay lại cấu hình</a></header>
+@if(Model.Ready){<partial name="_BrandVatEditor" model="Model"/>}

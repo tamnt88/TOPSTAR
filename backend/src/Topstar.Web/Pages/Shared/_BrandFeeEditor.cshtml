@@ -1,0 +1,49 @@
+@model Topstar.Web.Pages.Admin.Finance.CampaignFeePolicyModel
+@{ var p = Model.Policy; }
+<div class="fee-policy-page">    <section>
+        <form asp-page="/Admin/Finance/CampaignFeePolicy" method="post" class="js-campaign-fee-policy" novalidate>
+            <div class="fee-policy-section-head">
+                <span><i class="fa-solid fa-calculator"></i></span>
+                <div><h2>Cấu hình phí</h2><p>Xác định phí nền tảng và chi phí thanh toán áp dụng cho Brand.</p></div>
+            </div>
+            <div class="fee-policy-grid tax-brand-fee-grid">
+                <div class="admin-validation-field"><label for="feePercent">Phí nền tảng (%) <span>*</span></label><input id="feePercent" name="feePercent" value="@((p.FeeRate*100).ToString("0.##"))" type="number" min="0" max="100" step="0.01" class="form-control" required data-validation-message="Vui lòng nhập phí nền tảng từ 0 đến 100%." /></div>
+                <div class="admin-validation-field money-field"><label for="fixedFeeDisplay">Phí cố định <span>*</span></label><input id="fixedFeeDisplay" value="@p.FixedFee.ToString("N0", PortalFormat.Vietnamese)" inputmode="numeric" class="form-control js-money" data-target="fixedFee" required data-validation-message="Vui lòng nhập phí cố định không âm." /><input type="hidden" id="fixedFee" name="fixedFee" value="@p.FixedFee.ToString("0")" /><span>₫</span></div>
+                <div class="admin-validation-field money-field"><label for="minimumFeeDisplay">Phí tối thiểu</label><input id="minimumFeeDisplay" value="@(p.MinimumFee?.ToString("N0", PortalFormat.Vietnamese) ?? "")" inputmode="numeric" class="form-control js-money" data-target="minimumFee" /><input type="hidden" id="minimumFee" name="minimumFee" value="@p.MinimumFee" /><span>₫</span></div>
+                <div class="admin-validation-field money-field"><label for="maximumFeeDisplay">Phí tối đa</label><input id="maximumFeeDisplay" value="@(p.MaximumFee?.ToString("N0", PortalFormat.Vietnamese) ?? "")" inputmode="numeric" class="form-control js-money" data-target="maximumFee" /><input type="hidden" id="maximumFee" name="maximumFee" value="@p.MaximumFee" /><span>₫</span></div>
+                <div class="admin-validation-field"><label for="gatewayFeePercent">Phí cổng thanh toán (%) <span>*</span></label><input id="gatewayFeePercent" name="gatewayFeePercent" value="@((p.GatewayFeeRate*100).ToString("0.##"))" type="number" min="0" max="100" step="0.01" class="form-control" required data-validation-message="Vui lòng nhập phí cổng thanh toán từ 0 đến 100%." /></div>
+                <div class="admin-validation-field"><label for="gatewayFeeBearer">Bên chịu phí <span>*</span></label><select id="gatewayFeeBearer" name="gatewayFeeBearer" class="form-select" required><option value="Brand" selected="@(p.GatewayFeeBearer=="Brand")">Brand chi trả</option><option value="Topstar" selected="@(p.GatewayFeeBearer=="Topstar")">Topstar chi trả</option></select></div>
+            </div>
+
+            <div class="fee-policy-divider"></div>
+            <div class="fee-policy-section-head">
+                <span><i class="fa-solid fa-shield-halved"></i></span>
+                <div><h2>Quy tắc vận hành</h2><p>Kiểm soát thời hạn thanh toán, tranh chấp, hoàn tiền và duyệt hai lớp.</p></div>
+            </div>
+            <div class="fee-policy-grid">
+                <div class="admin-validation-field"><label for="disputeHoldDays">Số ngày giữ tranh chấp <span>*</span></label><input id="disputeHoldDays" name="disputeHoldDays" value="@p.DisputeHoldDays" type="number" min="0" max="90" class="form-control" required data-validation-message="Số ngày giữ tranh chấp phải từ 0 đến 90 ngày." /></div>
+                <div class="admin-validation-field"><label for="paymentDueDays">Hạn thanh toán <span>*</span></label><div class="input-group"><input id="paymentDueDays" name="paymentDueDays" value="@p.PaymentDueDays" type="number" min="1" max="90" class="form-control" required data-validation-message="Hạn thanh toán phải từ 1 đến 90 ngày." /><span class="input-group-text">ngày</span></div></div>
+                <div class="admin-validation-field money-field span-2"><label for="dualApprovalThresholdDisplay">Ngưỡng cần hai quản trị viên duyệt <span>*</span></label><input id="dualApprovalThresholdDisplay" value="@p.DualApprovalThreshold.ToString("N0", PortalFormat.Vietnamese)" inputmode="numeric" class="form-control js-money" data-target="dualApprovalThreshold" required data-validation-message="Vui lòng nhập ngưỡng duyệt hai lớp không âm." /><input type="hidden" id="dualApprovalThreshold" name="dualApprovalThreshold" value="@p.DualApprovalThreshold.ToString("0")" /><span>₫</span></div>
+                <div class="admin-validation-field span-4"><label for="refundPolicy">Chính sách hoàn tiền <span>*</span></label><textarea id="refundPolicy" name="refundPolicy" minlength="10" maxlength="1000" rows="3" class="form-control" required data-validation-message="Vui lòng nhập chính sách hoàn tiền từ 10 đến 1.000 ký tự.">@p.RefundPolicy</textarea></div>
+            </div>
+
+            <div class="fee-policy-divider"></div>
+            <div class="fee-policy-section-head">
+                <span><i class="fa-solid fa-calendar-check"></i></span>
+                <div><h2>Hiệu lực và lưu lịch sử</h2><p>Mỗi lần thay đổi tạo một phiên bản lịch sử mới; không ghi đè snapshot cũ.</p></div>
+            </div>
+            <div class="tax-policy-effective-grid">
+                <div class="admin-validation-field"><label for="effectiveAt">Bắt đầu áp dụng <span>*</span></label><input id="effectiveAt" name="effectiveAt" value="@p.EffectiveAtUtc.ToVietnamTime().ToString("yyyy-MM-ddTHH:mm:ss")" type="datetime-local" step="1" class="form-control" required data-validation-message="Vui lòng chọn thời điểm bắt đầu áp dụng." /></div>
+                <div class="fee-policy-activation"><label>Trạng thái áp dụng</label><label class="fee-policy-toggle"><input type="checkbox" name="isActive" value="true" checked="@(p.IsActive ? "checked" : null)" /><span></span><div><strong>Kích hoạt chính sách</strong></div></label><input type="hidden" name="isActive" value="false" /></div>
+                <div class="tax-inline-save"><button class="btn btn-admin-primary"><i class="fa-solid fa-floppy-disk"></i> Lưu</button></div>
+            </div>
+            <input type="hidden" name="reason" value="Cập nhật cấu hình phí Brand." />
+
+        </form>
+    </section>
+
+    <details class="mt-4"><summary><i class="fa-solid fa-clock-rotate-left"></i> Lịch sử phí Brand</summary>
+        <div class="fee-policy-panel-head"><div><h2>Lịch sử thay đổi</h2><p>Tra cứu các phiên bản chính sách đã được lưu phục vụ audit.</p></div></div>
+        <div class="table-responsive"><table id="feePolicyHistoryTable" class="table fee-policy-history-table"><thead><tr><th>STT</th><th>Thời gian</th><th>Phí nền tảng</th><th>Phí cố định</th><th>Khoảng phí</th><th>Ngưỡng duyệt</th><th>Lý do</th></tr></thead><tbody>@for(var i=0;i<p.History.Count;i++){var h=p.History[i];<tr><td>@(i+1)</td><td data-order="@h.CreatedAtUtc.Ticks"><strong>@h.CreatedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy")</strong><small>@h.CreatedAtUtc.ToVietnamTime().ToString("HH:mm")</small></td><td>@((h.FeeRate*100).ToString("0.##"))%</td><td>@h.FixedFee.ToString("N0", PortalFormat.Vietnamese) ₫</td><td>@(h.MinimumFee?.ToString("N0", PortalFormat.Vietnamese) ?? "0") ₫ – @(h.MaximumFee?.ToString("N0", PortalFormat.Vietnamese) ?? "Không giới hạn")</td><td>@h.DualApprovalThreshold.ToString("N0", PortalFormat.Vietnamese) ₫</td><td>@h.Reason</td></tr>}</tbody></table></div>
+    </details>
+</div>

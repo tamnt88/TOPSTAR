@@ -1,38 +1,58 @@
-﻿@page
+@page
 @model Topstar.Web.Pages.Koc.EditProfileModel
 @{
     ViewData["Title"] = "Chỉnh sửa hồ sơ KOC";
 }
 
-<div class="page-wrap card-list">
-    <h1 class="section-title mb-0">Chỉnh sửa hồ sơ KOC</h1>
+<div class="card-list">
+    <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap"><h1 class="section-title mb-0"><i class="fa-solid fa-user-pen me-2"></i>Chỉnh sửa hồ sơ KOC</h1><a asp-page="/Koc/Profile" asp-route-brandPreview="true" class="btn btn-outline-primary btn-sm"><i class="fa-regular fa-eye me-1"></i>Xem thử hồ sơ Brand thấy</a></div>
     @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
     {
-        <div class="alert alert-success py-2 mt-2">@Model.SuccessMessage</div>
+        <div hidden data-ts-notification="success" data-message="@Model.SuccessMessage"></div>
     }
+    <div class="alert alert-warning py-2 mt-2 d-none" id="koc-unsaved-warning" role="status">
+        <i class="fa-solid fa-triangle-exclamation me-1"></i>Bạn có thay đổi chưa lưu trong mục này.
+    </div>
 
     <div class="card-x">
-        <form method="post" novalidate>
+        <form method="post" enctype="multipart/form-data" novalidate>
+            <input type="hidden" asp-for="ProfileVersionTicks" />
+            <div class="koc-upload-progress d-none" id="koc-upload-progress" role="status" aria-live="polite">
+                <div><span>Đang tải dữ liệu hồ sơ…</span><strong id="koc-upload-percent">0%</strong></div>
+                <progress id="koc-upload-progressbar" max="100" value="0">0%</progress>
+            </div>
             @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
             {
-                <div class="alert alert-danger py-2">@Model.ErrorMessage</div>
+                <div hidden data-ts-notification="error" data-message="@Model.ErrorMessage"></div>
             }
 
-            <ul class="nav nav-tabs mb-4" id="kocEditTabs" role="tablist">
+            <ul class="ts-tabs nav nav-tabs mb-4" id="kocEditTabs" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link @(Model.ActiveTab == "basic" ? "active" : "")" id="tab-basic" data-bs-toggle="tab" data-bs-target="#pane-basic" type="button" role="tab" aria-controls="pane-basic" aria-selected="@(Model.ActiveTab == "basic")">Thông tin cơ bản</button>
+                    <button class="nav-link @(Model.ActiveTab == "basic" ? "active" : "")" id="tab-basic" data-bs-toggle="tab" data-bs-target="#pane-basic" type="button" role="tab" aria-controls="pane-basic" aria-selected="@(Model.ActiveTab == "basic")"><i class="fa-regular fa-address-card"></i>Thông tin cơ bản</button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link @(Model.ActiveTab == "social" ? "active" : "")" id="tab-social" data-bs-toggle="tab" data-bs-target="#pane-social" type="button" role="tab" aria-controls="pane-social" aria-selected="@(Model.ActiveTab == "social")">Mạng xã hội</button>
+                    <button class="nav-link @(Model.ActiveTab == "social" ? "active" : "")" id="tab-social" data-bs-toggle="tab" data-bs-target="#pane-social" type="button" role="tab" aria-controls="pane-social" aria-selected="@(Model.ActiveTab == "social")"><i class="fa-solid fa-share-nodes"></i>Mạng xã hội</button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link @(Model.ActiveTab == "personal" ? "active" : "")" id="tab-personal" data-bs-toggle="tab" data-bs-target="#pane-personal" type="button" role="tab" aria-controls="pane-personal" aria-selected="@(Model.ActiveTab == "personal")">Thông tin cá nhân</button>
+                    <button class="nav-link @(Model.ActiveTab == "personal" ? "active" : "")" id="tab-personal" data-bs-toggle="tab" data-bs-target="#pane-personal" type="button" role="tab" aria-controls="pane-personal" aria-selected="@(Model.ActiveTab == "personal")"><i class="fa-solid fa-person"></i>Thông tin cá nhân</button>
                 </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link @(Model.ActiveTab == "gallery" ? "active" : "")" id="tab-gallery" data-bs-toggle="tab" data-bs-target="#pane-gallery" type="button" role="tab" aria-controls="pane-gallery" aria-selected="@(Model.ActiveTab == "gallery")"><i class="fa-regular fa-images"></i>Thư viện ảnh</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link @(Model.ActiveTab == "video" ? "active" : "")" id="tab-video" data-bs-toggle="tab" data-bs-target="#pane-video" type="button" role="tab" aria-controls="pane-video" aria-selected="@(Model.ActiveTab == "video")"><i class="fa-solid fa-video"></i>Video</button>
+                </li>
+                <li class="nav-item"><a class="nav-link" asp-page="/Koc/TaxProfile"><i class="fa-solid fa-file-invoice"></i> Thuế & CCCD</a></li>
             </ul>
 
             <div class="tab-content" id="kocEditTabsContent">
-                <div class="tab-pane fade @(Model.ActiveTab == "basic" ? "show active" : "")" id="pane-basic" role="tabpanel" aria-labelledby="tab-basic" tabindex="0">
-                    <div class="row g-3">
+                <div class="tab-pane fade koc-basic-pane @(Model.ActiveTab == "basic" ? "show active" : "")" id="pane-basic" role="tabpanel" aria-labelledby="tab-basic" tabindex="0">
+                    <section class="koc-form-section">
+                        <div class="koc-form-section-heading">
+                            <span><i class="fa-regular fa-id-card"></i></span>
+                            <div><h2>Thông tin tài khoản</h2><p>Thông tin dùng để liên hệ và xác định hồ sơ của bạn.</p></div>
+                        </div>
+                        <div class="row g-3">
                         <div class="col-md-6">
                             <label asp-for="Input.FullName" class="form-label">Họ và tên</label>
                             <input asp-for="Input.FullName" class="form-control" />
@@ -63,6 +83,55 @@
                             <input asp-for="Input.DateOfBirth" type="date" class="form-control" />
                             <span asp-validation-for="Input.DateOfBirth" class="text-danger small"></span>
                         </div>
+                        </div>
+                    </section>
+
+                    <section class="koc-form-section">
+                        <div class="koc-form-section-heading">
+                            <span><i class="fa-regular fa-folder-open"></i></span>
+                            <div><h2>Ảnh đại diện & hồ sơ năng lực</h2><p>Cập nhật hình nhận diện và tài liệu giới thiệu năng lực.</p></div>
+                        </div>
+                        <div class="koc-upload-grid">
+                            <div class="koc-avatar-field">
+                                @if (!string.IsNullOrWhiteSpace(Model.Input.CurrentAvatarUrl))
+                                {
+                                    <a href="@Model.Input.CurrentAvatarUrl" data-koc-colorbox data-gallery="koc-profile-avatar" data-caption="Ảnh đại diện hiện tại" title="Xem ảnh đại diện">
+                                        <img src="@Model.Input.CurrentAvatarUrl" alt="Avatar hiện tại" class="koc-avatar-preview" />
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="koc-avatar-preview koc-avatar-empty"><i class="fa-regular fa-user"></i></span>
+                                }
+                                <div class="flex-grow-1">
+                                    <label class="form-label">Ảnh đại diện</label>
+                                    <input asp-for="AvatarFile" type="file" class="form-control" accept=".jpg,.jpeg,.png,.webp" />
+                                    <div class="koc-selected-media" data-upload-preview-for="AvatarFile"></div>
+                                    <small>JPG, PNG hoặc WEBP. Nên dùng ảnh vuông, rõ khuôn mặt.</small>
+                                </div>
+                            </div>
+                            <div class="koc-document-field">
+                                <label class="form-label">Hồ sơ năng lực</label>
+                                <input asp-for="ProfileDocumentFile" type="file" class="form-control" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" />
+                                <div class="koc-selected-media" data-upload-preview-for="ProfileDocumentFile"></div>
+                                <span asp-validation-for="ProfileDocumentFile" class="text-danger small"></span>
+                                <small>Hỗ trợ PDF, Word hoặc hình ảnh.</small>
+                            @if (!string.IsNullOrWhiteSpace(Model.Input.CurrentProfileDocumentUrl))
+                            {
+                                <a href="@Model.Input.CurrentProfileDocumentUrl" target="_blank" rel="noopener" class="btn btn-outline-secondary btn-sm mt-2">
+                                    <i class="fa-regular fa-file-lines me-1"></i>Xem file hồ sơ hiện tại
+                                </a>
+                            }
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="koc-form-section">
+                        <div class="koc-form-section-heading">
+                            <span><i class="fa-solid fa-location-dot"></i></span>
+                            <div><h2>Địa chỉ liên hệ</h2><p>Địa chỉ giúp hệ thống đề xuất công việc phù hợp theo khu vực.</p></div>
+                        </div>
+                        <div class="row g-3">
                         <div class="col-12">
                             <label asp-for="Input.StreetAddress" class="form-label">Số nhà + tên đường</label>
                             <input asp-for="Input.StreetAddress" class="form-control" />
@@ -82,10 +151,11 @@
                             </select>
                             <span asp-validation-for="Input.WardId" class="text-danger small"></span>
                         </div>
-                    </div>
-                    <div class="d-flex justify-content-end gap-2 mt-4">
-                        <a asp-page="/Koc/Profile" class="btn btn-outline-secondary">Hủy</a>
-                        <button type="submit" name="saveSection" value="basic" class="btn btn-warning">Lưu thông tin cơ bản</button>
+                        </div>
+                    </section>
+                    <div class="koc-form-actions">
+                        <a asp-page="/Koc/Profile" class="btn btn-outline-secondary"><i class="fa-solid fa-xmark me-1"></i>Hủy</a>
+                        <button type="submit" name="saveSection" value="basic" class="btn btn-warning"><i class="fa-solid fa-floppy-disk me-1"></i>Lưu</button>
                     </div>
                 </div>
 
@@ -94,43 +164,74 @@
                     @for (var i = 0; i < Model.Platforms.Count; i++)
                     {
                         var platform = Model.Platforms[i];
-                        <div class="card-x mb-3">
+                        var socialInput = Model.Input.Platforms.Count > i ? Model.Input.Platforms[i] : null;
+                        var hasData = socialInput is not null && (!string.IsNullOrWhiteSpace(socialInput.ChannelUrl) || socialInput.Followers.HasValue || socialInput.SelectedCategoryCodes.Count > 0);
+                        var hasError = ViewData.ModelState.Keys.Any(key => key.StartsWith($"Input.Platforms[{i}]", StringComparison.OrdinalIgnoreCase))
+                            && ViewData.ModelState.Any(row => row.Key.StartsWith($"Input.Platforms[{i}]", StringComparison.OrdinalIgnoreCase) && row.Value?.Errors.Count > 0);
+                        var openPlatform = hasData || hasError;
+                        var platformIcon = platform.ToLowerInvariant() switch
+                        {
+                            "tiktok" => "fa-brands fa-tiktok",
+                            "facebook" => "fa-brands fa-facebook-f",
+                            "instagram" => "fa-brands fa-instagram",
+                            "youtube" => "fa-brands fa-youtube",
+                            _ => "fa-solid fa-share-nodes"
+                        };
+                        var platformClass = $"platform-{platform.ToLowerInvariant()}";
+                        <section class="koc-social-editor-card @platformClass @(openPlatform ? "is-open" : "")">
                             <input type="hidden" asp-for="Input.Platforms[i].Platform" value="@platform" />
-                            <h3 class="h6 mb-3">@platform</h3>
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Link kênh</label>
-                                    <input asp-for="Input.Platforms[i].ChannelUrl" class="form-control" />
-                                    <span asp-validation-for="Input.Platforms[i].ChannelUrl" class="text-danger small"></span>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Followers</label>
-                                    <input asp-for="Input.Platforms[i].Followers" type="number" min="0" class="form-control" />
-                                    <span asp-validation-for="Input.Platforms[i].Followers" class="text-danger small"></span>
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label">Ngành hàng</label>
-                                    <div class="d-flex flex-wrap gap-2">
-                                        @foreach (var category in Model.CategoryOptions)
-                                        {
-                                            var selected = Model.Input.Platforms.Count > i && Model.Input.Platforms[i].SelectedCategoryCodes.Contains(category.Value, StringComparer.OrdinalIgnoreCase);
-                                            <label class="btn btn-sm @(selected ? "btn-warning" : "btn-outline-secondary")">
-                                                <input type="checkbox"
-                                                       name="Input.Platforms[@i].SelectedCategoryCodes"
-                                                       value="@category.Value"
-                                                       checked="@selected"
-                                                       class="d-none" /> @category.Text
-                                            </label>
-                                        }
+                            <button type="button" class="koc-social-editor-toggle" aria-expanded="@(openPlatform ? "true" : "false")">
+                                <span class="koc-social-editor-icon"><i class="@platformIcon"></i></span>
+                                <span class="koc-social-editor-heading">
+                                    <strong>@platform</strong>
+                                    <small>@(hasData ? "Đã khai báo kênh" : "Chưa thêm thông tin")</small>
+                                </span>
+                                <span class="koc-social-editor-summary">
+                                    @if (socialInput?.Followers is > 0) { <span><i class="fa-solid fa-users"></i> @socialInput.Followers.Value.ToString("N0", PortalFormat.Vietnamese) followers</span> }
+                                    @if (socialInput?.SelectedCategoryCodes.Count > 0) { <span><i class="fa-solid fa-tags"></i> @socialInput.SelectedCategoryCodes.Count lĩnh vực</span> }
+                                </span>
+                                <i class="fa-solid fa-chevron-down koc-social-editor-chevron"></i>
+                            </button>
+                            <div class="koc-social-editor-body">
+                                <div class="row g-3">
+                                    <div class="col-md-8">
+                                        <label class="form-label"><i class="fa-solid fa-link me-1"></i>Link kênh</label>
+                                        <input asp-for="Input.Platforms[i].ChannelUrl" class="form-control" placeholder="https://..." />
+                                        <span asp-validation-for="Input.Platforms[i].ChannelUrl" class="text-danger small"></span>
                                     </div>
-                                    <span asp-validation-for="Input.Platforms[i].SelectedCategoryCodes" class="text-danger small d-block mt-1"></span>
+                                    <div class="col-md-4">
+                                        <label class="form-label"><i class="fa-solid fa-users me-1"></i>Followers</label>
+                                        <input asp-for="Input.Platforms[i].Followers" type="number" min="0" class="form-control" placeholder="0" />
+                                        <span asp-validation-for="Input.Platforms[i].Followers" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="koc-category-heading">
+                                            <label class="form-label mb-0"><i class="fa-solid fa-tags me-1"></i>Lĩnh vực nội dung</label>
+                                            <small>Chọn các lĩnh vực bạn thực sự có nội dung trên kênh này.</small>
+                                        </div>
+                                        <div class="koc-category-chips">
+                                            @foreach (var category in Model.CategoryOptions)
+                                            {
+                                                var selected = Model.Input.Platforms.Count > i && Model.Input.Platforms[i].SelectedCategoryCodes.Contains(category.Value, StringComparer.OrdinalIgnoreCase);
+                                                <label class="koc-category-chip @(selected ? "is-selected" : "")">
+                                                    <input type="checkbox"
+                                                           name="Input.Platforms[@i].SelectedCategoryCodes"
+                                                           value="@category.Value"
+                                                           checked="@selected" />
+                                                    <i class="fa-solid fa-check"></i>
+                                                    <span>@category.Text</span>
+                                                </label>
+                                            }
+                                        </div>
+                                        <span asp-validation-for="Input.Platforms[i].SelectedCategoryCodes" class="text-danger small d-block mt-1"></span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        </section>
                     }
                     <div class="d-flex justify-content-end gap-2 mt-4">
-                        <a asp-page="/Koc/Profile" class="btn btn-outline-secondary">Hủy</a>
-                        <button type="submit" name="saveSection" value="social" class="btn btn-warning">Lưu mạng xã hội</button>
+                        <a asp-page="/Koc/Profile" class="btn btn-outline-secondary"><i class="fa-solid fa-xmark me-1"></i>Hủy</a>
+                        <button type="submit" name="saveSection" value="social" class="btn btn-warning"><i class="fa-solid fa-floppy-disk me-1"></i>Lưu</button>
                     </div>
                 </div>
 
@@ -138,11 +239,13 @@
                     <div class="row g-3">
                         <div class="col-md-4">
                             <label asp-for="Input.WeightKg" class="form-label">Cân nặng (kg)</label>
-                            <input asp-for="Input.WeightKg" class="form-control" />
+                            <input id="Input_WeightKg" name="Input.WeightKg" value="@(Model.Input.WeightKg?.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))" class="form-control" inputmode="decimal" autocomplete="off" />
+                            <span asp-validation-for="Input.WeightKg" class="text-danger small"></span>
                         </div>
                         <div class="col-md-4">
                             <label asp-for="Input.HeightCm" class="form-label">Chiều cao (cm)</label>
-                            <input asp-for="Input.HeightCm" class="form-control" />
+                            <input id="Input_HeightCm" name="Input.HeightCm" value="@(Model.Input.HeightCm?.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))" class="form-control" inputmode="decimal" autocomplete="off" />
+                            <span asp-validation-for="Input.HeightCm" class="text-danger small"></span>
                         </div>
                         <div class="col-md-4">
                             <label asp-for="Input.MaritalStatus" class="form-label">Tình trạng hôn nhân</label>
@@ -154,18 +257,6 @@
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label asp-for="Input.BustCm" class="form-label">Vòng 1 (cm)</label>
-                            <input asp-for="Input.BustCm" class="form-control" />
-                        </div>
-                        <div class="col-md-4">
-                            <label asp-for="Input.WaistCm" class="form-label">Vòng 2 (cm)</label>
-                            <input asp-for="Input.WaistCm" class="form-control" />
-                        </div>
-                        <div class="col-md-4">
-                            <label asp-for="Input.HipCm" class="form-label">Vòng 3 (cm)</label>
-                            <input asp-for="Input.HipCm" class="form-control" />
-                        </div>
-                        <div class="col-md-4">
                             <label asp-for="Input.HasChildren" class="form-label">Có con chưa?</label>
                             <select asp-for="Input.HasChildren" class="form-select" id="koc-has-children">
                                 <option value="false">Chưa</option>
@@ -174,14 +265,28 @@
                         </div>
                         <div class="col-md-8">
                             <label asp-for="Input.ServicePriceVnd" class="form-label">Bảng giá dịch vụ (VNĐ/post)</label>
-                            <input asp-for="Input.ServicePriceVnd" class="form-control" />
+                            <div class="input-group">
+                                <input id="koc-service-price-display"
+                                       class="form-control"
+                                       inputmode="numeric"
+                                       autocomplete="off"
+                                       value="@(Model.Input.ServicePriceVnd?.ToString("N0", PortalFormat.Vietnamese))"
+                                       placeholder="Ví dụ: 500.000"
+                                       aria-describedby="koc-service-price-unit" />
+                                <span class="input-group-text" id="koc-service-price-unit">₫</span>
+                            </div>
+                            <input type="hidden"
+                                   id="Input_ServicePriceVnd"
+                                   name="Input.ServicePriceVnd"
+                                   value="@(Model.Input.ServicePriceVnd?.ToString("0", System.Globalization.CultureInfo.InvariantCulture))" />
+                            <span asp-validation-for="Input.ServicePriceVnd" class="text-danger small"></span>
                         </div>
                     </div>
 
                     <div class="mt-3" id="koc-children-box">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <label class="form-label mb-0">Thông tin con cái</label>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" id="add-child">Thêm con</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="add-child"><i class="fa-solid fa-plus me-1"></i>Thêm con</button>
                         </div>
                         <div id="children-list">
                             @for (var i = 0; i < Model.Input.Children.Count; i++)
@@ -196,14 +301,92 @@
                                             <option value="Other">Khác</option>
                                         </select>
                                     </div>
-                                    <div class="col-md-2"><button type="button" class="btn btn-outline-danger w-100 remove-child">Xóa</button></div>
+                                    <div class="col-md-2">
+                                        <button type="button" class="btn btn-outline-danger remove-child remove-child-icon" title="Xóa">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             }
                         </div>
                     </div>
                     <div class="d-flex justify-content-end gap-2 mt-4">
-                        <a asp-page="/Koc/Profile" class="btn btn-outline-secondary">Hủy</a>
-                        <button type="submit" name="saveSection" value="personal" class="btn btn-warning">Lưu thông tin cá nhân</button>
+                        <a asp-page="/Koc/Profile" class="btn btn-outline-secondary"><i class="fa-solid fa-xmark me-1"></i>Hủy</a>
+                        <button type="submit" name="saveSection" value="personal" class="btn btn-warning"><i class="fa-solid fa-floppy-disk me-1"></i>Lưu</button>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade @(Model.ActiveTab == "gallery" ? "show active" : "")" id="pane-gallery" role="tabpanel" aria-labelledby="tab-gallery" tabindex="0">
+                    <input type="hidden" asp-for="GalleryOrderCsv" id="gallery-order-csv" />
+                    <input type="hidden" asp-for="GalleryDeleteCsv" id="gallery-delete-csv" />
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Upload ảnh thư viện KOC</label>
+                            <input asp-for="GalleryFiles" type="file" class="form-control" accept=".jpg,.jpeg,.png,.webp" multiple />
+                            <div class="koc-selected-media is-grid" data-upload-preview-for="GalleryFiles"></div>
+                            <span asp-validation-for="GalleryFiles" class="text-danger small"></span>
+                        </div>
+                    </div>
+                    @if (Model.Input.ExistingGalleryItems.Count > 0)
+                    {
+                        <div class="mt-3">
+                            <label class="form-label">Ảnh đã lưu (dùng nút mũi tên để sắp xếp)</label>
+                            <div class="d-flex flex-wrap gap-2" id="gallery-list">
+                                @foreach (var item in Model.Input.ExistingGalleryItems)
+                                {
+                                    <div class="media-item position-relative" data-id="@item.Id">
+                                        <div class="media-order-actions">
+                                            <button type="button" class="btn btn-sm btn-light" data-media-move="up" aria-label="Đưa ảnh lên trước"><i class="fa-solid fa-arrow-left"></i></button>
+                                            <button type="button" class="btn btn-sm btn-light" data-media-move="down" aria-label="Đưa ảnh xuống sau"><i class="fa-solid fa-arrow-right"></i></button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger media-delete-btn" aria-label="Xóa ảnh"><i class="fa-solid fa-trash-can"></i></button>
+                                        </div>
+                                        <a href="@item.FileUrl" class="js-gallery-item" data-koc-colorbox data-gallery="koc-profile-gallery" data-caption="Ảnh hồ sơ KOC" title="Ảnh hồ sơ KOC">
+                                            <img src="@item.FileUrl" alt="Gallery image" class="gallery-thumb" style="width:120px;height:120px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;cursor:zoom-in;" />
+                                        </a>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a asp-page="/Koc/Profile" class="btn btn-outline-secondary"><i class="fa-solid fa-xmark me-1"></i>Hủy</a>
+                        <button type="submit" name="saveSection" value="gallery" class="btn btn-warning"><i class="fa-solid fa-floppy-disk me-1"></i>Lưu</button>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade @(Model.ActiveTab == "video" ? "show active" : "")" id="pane-video" role="tabpanel" aria-labelledby="tab-video" tabindex="0">
+                    <input type="hidden" asp-for="VideoOrderCsv" id="video-order-csv" />
+                    <input type="hidden" asp-for="VideoDeleteCsv" id="video-delete-csv" />
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Upload video KOC</label>
+                            <input asp-for="VideoFiles" type="file" class="form-control" accept="video/*" multiple />
+                            <div class="koc-selected-media is-grid" data-upload-preview-for="VideoFiles"></div>
+                            <span asp-validation-for="VideoFiles" class="text-danger small"></span>
+                        </div>
+                    </div>
+                    @if (Model.Input.ExistingVideoItems.Count > 0)
+                    {
+                        <div class="mt-3">
+                            <label class="form-label">Video đã lưu (dùng nút mũi tên để sắp xếp)</label>
+                            <div class="d-flex flex-wrap gap-2" id="video-list">
+                                @foreach (var item in Model.Input.ExistingVideoItems)
+                                {
+                                    <div class="media-item is-video position-relative" data-id="@item.Id">
+                                        <div class="media-order-actions">
+                                            <button type="button" class="btn btn-sm btn-light" data-media-move="up" aria-label="Đưa video lên trước"><i class="fa-solid fa-arrow-left"></i></button>
+                                            <button type="button" class="btn btn-sm btn-light" data-media-move="down" aria-label="Đưa video xuống sau"><i class="fa-solid fa-arrow-right"></i></button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger media-delete-btn" aria-label="Xóa video"><i class="fa-solid fa-trash-can"></i></button>
+                                        </div>
+                                        <video src="@item.FileUrl" controls style="width:200px;height:120px;border-radius:8px;"></video>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a asp-page="/Koc/Profile" class="btn btn-outline-secondary"><i class="fa-solid fa-xmark me-1"></i>Hủy</a>
+                        <button type="submit" name="saveSection" value="video" class="btn btn-warning" id="save-video-btn"><i class="fa-solid fa-floppy-disk me-1"></i>Lưu</button>
                     </div>
                 </div>
             </div>
@@ -213,77 +396,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        (function () {
-            var $province = $("#koc-edit-province");
-            var $ward = $("#koc-edit-ward");
-            var $hasChildren = $("#koc-has-children");
-            var $childrenBox = $("#koc-children-box");
-            var $childrenList = $("#children-list");
-
-            function toggleChildren() {
-                var show = ($hasChildren.val() || "").toLowerCase() === "true";
-                $childrenBox.toggle(show);
-            }
-
-            function childTemplate(index) {
-                return '' +
-                    '<div class="row g-2 mb-2 child-row">' +
-                    '<div class="col-md-5"><input type="number" class="form-control child-age" name="Input.Children[' + index + '].Age" placeholder="Tuổi" /></div>' +
-                    '<div class="col-md-5"><select class="form-select child-gender" name="Input.Children[' + index + '].Gender">' +
-                    '<option value="">Giới tính</option><option value="Male">Nam</option><option value="Female">Nữ</option><option value="Other">Khác</option>' +
-                    '</select></div>' +
-                    '<div class="col-md-2"><button type="button" class="btn btn-outline-danger w-100 remove-child">Xóa</button></div>' +
-                    '</div>';
-            }
-
-            function reindexChildren() {
-                $childrenList.find('.child-row').each(function (i) {
-                    $(this).find('.child-age').attr('name', 'Input.Children[' + i + '].Age');
-                    $(this).find('.child-gender').attr('name', 'Input.Children[' + i + '].Gender');
-                });
-            }
-
-            $hasChildren.on('change', toggleChildren);
-            toggleChildren();
-
-            $('#add-child').on('click', function () {
-                var index = $childrenList.find('.child-row').length;
-                $childrenList.append(childTemplate(index));
-            });
-
-            $childrenList.on('click', '.remove-child', function () {
-                $(this).closest('.child-row').remove();
-                reindexChildren();
-            });
-
-            $province.on('change', function () {
-                var provinceId = ($province.val() || "").trim();
-                $ward.empty().append($('<option/>', { value: '', text: 'Chọn Phường/Xã' }));
-                if (!provinceId) return;
-
-                $.get('/Koc/EditProfile?handler=WardsByProvince', { provinceId: provinceId })
-                    .done(function (res) {
-                        $.each((res && res.data) ? res.data : [], function (_, ward) {
-                            $ward.append($('<option/>', { value: ward.id, text: ward.name }));
-                        });
-                    });
-            });
-
-            function syncCategoryChipStyle($checkbox) {
-                var $label = $checkbox.closest('label');
-                if (!$label.length) return;
-                $label.toggleClass('btn-warning', $checkbox.is(':checked'));
-                $label.toggleClass('btn-outline-secondary', !$checkbox.is(':checked'));
-            }
-
-            $('input[type="checkbox"][name*="SelectedCategoryCodes"]').each(function () {
-                syncCategoryChipStyle($(this));
-            });
-
-            $(document).on('change', 'input[type="checkbox"][name*="SelectedCategoryCodes"]', function () {
-                syncCategoryChipStyle($(this));
-            });
-        })();
-    </script>
+    <script src="~/js/koc/edit-profile.js" asp-append-version="true"></script>
 }

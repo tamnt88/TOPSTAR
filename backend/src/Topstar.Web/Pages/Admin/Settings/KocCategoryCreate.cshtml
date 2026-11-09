@@ -1,0 +1,13 @@
+@page
+@model Topstar.Web.Pages.Admin.Settings.KocCategoryCreateModel
+@{ ViewData["Title"] = "Thêm lĩnh vực nội dung"; ViewData["AdminHeaderTitle"] = "Thêm lĩnh vực nội dung"; ViewData["AdminActivePath"] = "/Admin/Settings/KocCategories"; }
+@section Styles { <link rel="stylesheet" href="~/css/admin/koc-categories.css" asp-append-version="true" /> }
+<div class="category-editor-page">
+    <nav class="category-breadcrumb"><a asp-page="KocCategories">Lĩnh vực nội dung KOC</a><i class="fa-solid fa-chevron-right"></i><span>Thêm mới</span></nav>
+    <header><span class="category-eyebrow"><i class="fa-solid fa-plus"></i> TẠO DANH MỤC</span><h1>Thêm lĩnh vực nội dung</h1><p>Danh mục mới sẽ xuất hiện trong hồ sơ KOC và lựa chọn targeting của Brand.</p></header>
+    <form method="post" novalidate class="category-editor-card">
+        <partial name="_KocCategoryForm" for="Input" />
+        <footer><a asp-page="KocCategories" class="btn btn-light">Hủy</a><button class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Lưu danh mục</button></footer>
+    </form>
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

@@ -1,9 +1,9 @@
-﻿@page
+@page
 @model Topstar.Web.Pages.Admin.Settings.ShippingModel
 @{
     ViewData["Title"] = "Cài đặt giao nhận";
 }
-<div class="page-wrap card-list admin-page-wrap">
+<div class="card-list admin-page-wrap">
     <div class="card-x">
         <h2 class="section-title mb-2">Cấu hình giao nhận</h2>
         <p class="kpi-title">Quản lý nhà vận chuyển mặc định, token/API key, webhook và môi trường sandbox/live.</p>
@@ -31,7 +31,7 @@
                         <td>@(row.IsActive ? "Hoạt động" : "Tắt")</td>
                         <td class="text-end">
                             <a class="btn btn-sm btn-outline-primary" asp-page="/Admin/Settings/Shipping" asp-route-editId="@row.Id"><i class="fa-solid fa-pen-to-square"></i></a>
-                            <form method="post" asp-page-handler="Delete" class="d-inline" onsubmit="return confirm('Xóa cấu hình giao nhận này?');">
+                            <form method="post" asp-page-handler="Delete" class="d-inline" data-confirm="Xóa cấu hình giao nhận này?" data-confirm-title="Xác nhận xóa cấu hình" data-confirm-button="Xóa cấu hình" data-confirm-tone="danger">
                                 <input type="hidden" name="id" value="@row.Id" />
                                 <button class="btn btn-sm btn-outline-danger" type="submit"><i class="fa-solid fa-trash"></i></button>
                             </form>

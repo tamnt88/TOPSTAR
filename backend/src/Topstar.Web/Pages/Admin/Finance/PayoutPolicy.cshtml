@@ -1,0 +1,45 @@
+@page
+@model Topstar.Web.Pages.Admin.Finance.PayoutPolicyModel
+@{ ViewData["Title"] = "Chính sách rút tiền"; ViewData["AdminHeaderTitle"] = "Chính sách rút tiền"; }
+<div >
+  <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-4">
+    <div><h1 class="section-title mb-1">Chính sách rút tiền KOC</h1><p class="text-muted mb-0">Cấu hình mức tối thiểu, giới hạn và phí. Mỗi lần thay đổi đều được lưu lịch sử.</p></div>
+    <a asp-page="/Admin/Finance/Settlements" class="btn btn-outline-secondary align-self-lg-start">Về đối soát</a>
+  </div>
+  @if (!string.IsNullOrWhiteSpace(Model.Message)) { <div class="alert @(Model.MessageSuccess ? "alert-success" : "alert-danger")">@Model.Message</div> }
+  <div class="row g-4">
+    <div class="col-lg-5">
+      <div class="card-x">
+        <h2 class="h5 mb-3">Cấu hình đang áp dụng</h2>
+        @if (Model.Policy.EffectiveAtUtc == DateTime.MinValue) { <div class="alert alert-warning">Chưa có cấu hình trong database. Hãy chạy migration SQL 58.</div> }
+        <form method="post" data-confirm="Áp dụng chính sách mới và lưu lịch sử?" data-confirm-title="Xác nhận áp dụng chính sách" data-confirm-button="Lưu và áp dụng">
+          <label class="form-label">Số tiền rút tối thiểu</label>
+          <div class="input-group mb-3"><input name="minimumAmount" type="number" min="1" step="1000" value="@Model.Policy.MinimumAmount.ToString("0")" required class="form-control"><span class="input-group-text">₫</span></div>
+          <label class="form-label">Số yêu cầu tối đa mỗi KOC/ngày</label>
+          <input name="dailyRequestLimit" type="number" min="1" max="20" value="@Model.Policy.DailyRequestLimit" required class="form-control mb-3">
+          <div class="row g-2 mb-3">
+            <div class="col-sm-6"><label class="form-label">Phí cố định</label><div class="input-group"><input name="fixedFee" type="number" min="0" step="1000" value="@Model.Policy.FixedFee.ToString("0")" required class="form-control"><span class="input-group-text">₫</span></div></div>
+            <div class="col-sm-6"><label class="form-label">Phí theo tỷ lệ</label><div class="input-group"><input name="feePercent" type="number" min="0" max="20" step="0.01" value="@((Model.Policy.FeeRate * 100).ToString("0.##"))" required class="form-control"><span class="input-group-text">%</span></div></div>
+          </div>
+          <label class="form-label">Lý do thay đổi <span class="text-danger">*</span></label>
+          <textarea name="reason" minlength="5" maxlength="500" required class="form-control" rows="3" placeholder="Ví dụ: Điều chỉnh theo biểu phí ngân hàng tháng 08/2026"></textarea>
+          <div class="form-text mb-3">Phí của yêu cầu đã tạo được giữ nguyên theo snapshot, không hồi tố khi sửa chính sách.</div>
+          <button class="btn btn-primary">Lưu và áp dụng</button>
+        </form>
+      </div>
+    </div>
+    <div class="col-lg-7">
+      <div class="card-x">
+        <h2 class="h5 mb-3">Lịch sử thay đổi</h2>
+        @if (Model.Policy.History.Count == 0) { <div class="text-muted">Chưa có lịch sử.</div> }
+        @foreach (var item in Model.Policy.History) {
+          <div class="border-start border-3 border-primary ps-3 pb-3 mb-3">
+            <div class="fw-semibold">@item.MinimumAmount.ToString("N0", PortalFormat.Vietnamese) ₫ · tối đa @item.DailyRequestLimit lần/ngày</div>
+            <div class="small">Phí @item.FixedFee.ToString("N0", PortalFormat.Vietnamese) ₫ + @((item.FeeRate * 100).ToString("0.##"))%</div>
+            <div class="small text-muted">@item.CreatedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm") · @item.Reason</div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>

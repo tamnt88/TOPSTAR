@@ -1,0 +1,36 @@
+@model Topstar.Web.Pages.Shared.ReviewTableViewModel
+<section class="koc-review-list-panel" data-review-panel="@Model.Kind">
+    <form class="koc-review-dt-filter" data-review-filter="@Model.Kind">
+        <div class="is-keyword">
+            <label for="@Model.Kind-search">Từ khóa</label>
+            <div><i class="fa-solid fa-magnifying-glass"></i><input id="@Model.Kind-search" class="form-control" name="search" placeholder="Tìm @Model.SearchPlaceholder" /></div>
+        </div>
+        <div><label for="@Model.Kind-from">Từ ngày</label><input id="@Model.Kind-from" class="form-control" type="date" name="fromDate" /></div>
+        <div><label for="@Model.Kind-to">Đến ngày</label><input id="@Model.Kind-to" class="form-control" type="date" name="toDate" /></div>
+        <div><label for="@Model.Kind-rating">Số sao</label><select id="@Model.Kind-rating" class="form-select" name="rating"><option value="">Tất cả</option><option value="5">5 sao</option><option value="4">4 sao</option><option value="3">3 sao</option><option value="2">2 sao</option><option value="1">1 sao</option></select></div>
+        <div>
+            <label for="@Model.Kind-state">Trạng thái</label>
+            <select id="@Model.Kind-state" class="form-select" name="state">
+                <option value="">Tất cả</option>
+                @if (Model.Kind == "received")
+                {
+                    <option value="unreplied">Chưa phản hồi</option><option value="replied">Đã phản hồi</option>
+                    <option value="appeal-open">Đang xem xét</option><option value="appeal-closed">Đã xử lý</option>
+                }
+                else
+                {
+                    <option value="pending">Chờ đánh giá</option><option value="completed">Đã đánh giá</option>
+                }
+            </select>
+        </div>
+        <div><label for="@Model.Kind-size">Hiển thị</label><select id="@Model.Kind-size" class="form-select" name="pageSize"><option value="10">10 dòng</option><option value="20">20 dòng</option><option value="50">50 dòng</option></select></div>
+        <button class="btn btn-primary btn-sm" type="submit"><i class="fa-solid fa-filter me-1"></i>Lọc</button>
+    </form>
+    <div class="koc-review-table-heading"><h2><i class="fa-solid fa-table-list"></i> @Model.Title</h2><p>Mở chi tiết để phản hồi, đánh giá hoặc yêu cầu Admin xem xét.</p></div>
+    <div class="koc-review-table-wrap">
+        <table id="@Model.Kind-review-table" class="table koc-review-data-table" data-list-actions="false" data-kind="@Model.Kind" data-ajax-url="@Model.AjaxUrl">
+            <thead><tr><th>STT</th><th>Đối tác</th><th>Chiến dịch</th><th>Đánh giá</th><th>Thời gian</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</section>

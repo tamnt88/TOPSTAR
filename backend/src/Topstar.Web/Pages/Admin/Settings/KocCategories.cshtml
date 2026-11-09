@@ -1,0 +1,73 @@
+@page
+@model Topstar.Web.Pages.Admin.Settings.KocCategoriesModel
+@{
+    ViewData["Title"] = "Lĩnh vực nội dung KOC";
+    ViewData["AdminHeaderTitle"] = "Lĩnh vực nội dung KOC";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin/koc-categories.css" asp-append-version="true" />
+}
+
+<div class="koc-category-admin">
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div class="alert @(Model.Success ? "alert-success" : "alert-danger") category-page-alert" role="alert">@Model.Message</div>
+    }
+    <header class="category-page-head">
+        <div>
+            <h1>Lĩnh vực nội dung KOC</h1>
+            <p>Quản lý lựa chọn xuất hiện trong hồ sơ KOC và tiêu chí tuyển chọn chiến dịch.</p>
+        </div>
+        <div class="category-page-actions">
+            <a asp-page="KocCategoryHistory" class="btn category-history-btn"><i class="fa-solid fa-clock-rotate-left"></i><span>Lịch sử thay đổi</span></a>
+            <a asp-page="KocCategoryCreate" class="btn btn-primary category-add-btn"><i class="fa-solid fa-plus"></i><span>Thêm lĩnh vực</span></a>
+        </div>
+    </header>
+
+    <section class="category-summary" aria-label="Tổng quan danh mục">
+        <article><i class="fa-solid fa-layer-group"></i><div><strong data-total>0</strong><span>Tổng danh mục</span></div></article>
+        <article><i class="fa-solid fa-circle-check"></i><div><strong data-active>0</strong><span>Đang hiển thị</span></div></article>
+        <article><i class="fa-solid fa-eye-slash"></i><div><strong data-inactive>0</strong><span>Đang tạm ẩn</span></div></article>
+    </section>
+
+    <section class="category-table-card">
+        <div class="category-table-head">
+            <div><h2>Danh sách lĩnh vực</h2><p>Danh mục đã được sử dụng chỉ có thể tạm ẩn; danh mục chưa sử dụng có thể xóa.</p></div>
+        </div>
+        <div class="category-table-toolbar" aria-label="Bộ lọc danh sách lĩnh vực">
+            <label class="category-search-field"><span>Tìm kiếm</span><div><i class="fa-solid fa-magnifying-glass"></i><input id="categorySearch" class="form-control" type="search" placeholder="Tên hoặc mã lĩnh vực" autocomplete="off" /></div></label>
+            <label><span>Trạng thái</span>
+                <select id="categoryStatus" class="form-select">
+                    <option value="">Tất cả</option>
+                    <option value="Đang hiển thị">Đang hiển thị</option>
+                    <option value="Tạm ẩn">Tạm ẩn</option>
+                </select>
+            </label>
+            <label><span>Hiển thị</span><select id="categoryLength" class="form-select"><option value="10">10 dòng</option><option value="20">20 dòng</option><option value="50">50 dòng</option></select></label>
+            <button id="categoryApplyFilter" type="button" class="btn btn-primary category-filter-button"><i class="fa-solid fa-filter"></i><span>Lọc</span></button>
+        </div>
+        <div class="table-responsive">
+            <table id="kocCategoryTable" class="table category-data-table align-middle w-100" data-list-actions="false">
+                <thead><tr><th>Thứ tự</th><th>Lĩnh vực</th><th>Mã</th><th>Lượt sử dụng</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+            </table>
+        </div>
+    </section>
+</div>
+
+<div class="modal fade" id="categoryStateModal" tabindex="-1" aria-labelledby="categoryStateTitle" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><form id="categoryStateForm" novalidate>
+        @Html.AntiForgeryToken()<input type="hidden" name="id" /><input type="hidden" name="isActive" />
+        <div class="modal-header"><div><span class="modal-kicker">THAY ĐỔI TRẠNG THÁI</span><h2 class="modal-title" id="categoryStateTitle">Tạm ẩn lĩnh vực</h2></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div>
+        <div class="modal-body"><p class="category-state-copy"></p><div class="category-form-summary" role="alert" hidden></div></div>
+        <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button><button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i><span>Xác nhận</span></button></div>
+    </form></div></div>
+</div>
+
+<div class="category-toast" role="status" aria-live="polite" hidden></div>
+
+@section Scripts {
+    <script src="~/lib/datatables/js/dataTables.min.js"></script>
+    <script src="~/lib/datatables/js/dataTables.bootstrap5.min.js"></script>
+    <script src="~/js/admin/koc-categories.js" asp-append-version="true"></script>
+}

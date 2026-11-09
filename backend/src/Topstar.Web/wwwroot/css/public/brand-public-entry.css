@@ -1,0 +1,4 @@
+/* Entry stylesheet for /danh-cho-brand.
+   Kept separate so the landing page does not depend on a layout-rendered Razor section. */
+@import url("./brand-public.css?v=20260814c");
+@import url("./brand-landing-journey-fix.css?v=20260814c");

@@ -1,0 +1,260 @@
+@page
+@model Topstar.Web.Pages.Brand.BookingsModel
+@using Topstar.Application.Schedules
+@{
+    Layout = "_BrandLayout";
+    ViewData["Title"] = "Lịch làm việc";
+    var first = Model.Calendar.Month;
+    var previous = first.AddMonths(-1);
+    var next = first.AddMonths(1);
+    var offset = ((int)first.DayOfWeek + 6) % 7;
+    var days = DateTime.DaysInMonth(first.Year, first.Month);
+    var cells = ((offset + days + 6) / 7) * 7;
+    string StatusText(string status) => status switch
+    {
+        ScheduleStatuses.Confirmed => "Đã xác nhận",
+        ScheduleStatuses.Rescheduled => "Chờ xác nhận lịch mới",
+        ScheduleStatuses.Cancelled => "Đã hủy",
+        "NotCreated" => "Chưa có lịch",
+        _ => "Chờ xác nhận"
+    };
+    string StatusClass(string status) => status switch
+    {
+        ScheduleStatuses.Confirmed => "is-completed",
+        ScheduleStatuses.Rescheduled => "is-warning",
+        ScheduleStatuses.Cancelled => "is-muted",
+        "NotCreated" => "is-muted",
+        _ => "is-published"
+    };
+    var pendingCount = Model.Window.Counts.GetValueOrDefault(ScheduleStatuses.Proposed);
+    var confirmedCount = Model.Window.Counts.GetValueOrDefault(ScheduleStatuses.Confirmed);
+    var rescheduledCount = Model.Window.Counts.GetValueOrDefault(ScheduleStatuses.Rescheduled);
+    var cancelledCount = Model.Window.Counts.GetValueOrDefault(ScheduleStatuses.Cancelled);
+    var isWorkspace = ViewContext.HttpContext.Request.Headers["X-Topstar-Workspace"] == "native";
+}
+
+<div class="brand-booking-page">
+    @if (!isWorkspace) { <header class="brand-page-heading">
+        <div>
+            <span class="brand-page-eyebrow"><i class="fa-solid fa-calendar-check"></i> LỊCH LÀM VIỆC</span>
+            <h1>Lịch làm việc với KOC</h1>
+            <p>Theo dõi, xác nhận và thống nhất thời gian thực hiện nội dung với từng KOC.</p>
+        </div>
+        <span class="brand-booking-rule"><i class="fa-solid fa-rotate"></i> Mỗi lịch được đổi tối đa @ScheduleTransitions.MaxReschedules lần</span>
+    </header> }
+
+    <section class="brand-booking-stats" aria-label="Thống kê lịch làm việc">
+        <article><span class="is-total"><i class="fa-solid fa-calendar-days"></i></span><div><small>Tổng lịch làm việc</small><strong>@Model.Window.Total</strong></div></article>
+        <article><span class="is-pending"><i class="fa-solid fa-clock"></i></span><div><small>Chờ xác nhận</small><strong>@pendingCount</strong></div></article>
+        <article><span class="is-confirmed"><i class="fa-solid fa-calendar-check"></i></span><div><small>Đã xác nhận</small><strong>@confirmedCount</strong></div></article>
+        <article><span class="is-rescheduled"><i class="fa-solid fa-arrows-rotate"></i></span><div><small>Chờ xác nhận lịch mới</small><strong>@rescheduledCount</strong></div></article>
+        <article><span class="is-cancelled"><i class="fa-solid fa-calendar-xmark"></i></span><div><small>Đã hủy</small><strong>@cancelledCount</strong></div></article>
+    </section>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div class="brand-shortlist-message @(Model.MessageSuccess ? "" : "is-error")">
+            <i class="fa-solid @(Model.MessageSuccess ? "fa-circle-check" : "fa-circle-exclamation")"></i><span>@Model.Message</span>
+        </div>
+    }
+
+    <section class="brand-booking-calendar">
+        <header>
+            <div>
+                <span><i class="fa-regular fa-calendar-days"></i></span>
+                <div><h2>Tháng @first.Month/@first.Year</h2><p>Lịch hiển thị theo giờ Việt Nam</p></div>
+            </div>
+            <nav aria-label="Điều hướng tháng">
+                <a asp-page="/Brand/Bookings" asp-route-Month="@previous.ToString("yyyy-MM-dd")" aria-label="Tháng trước"><i class="fa-solid fa-chevron-left"></i></a>
+                <a asp-page="/Brand/Bookings" asp-route-Month="@DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd")" class="is-today">Hôm nay</a>
+                <a asp-page="/Brand/Bookings" asp-route-Month="@next.ToString("yyyy-MM-dd")" aria-label="Tháng sau"><i class="fa-solid fa-chevron-right"></i></a>
+            </nav>
+        </header>
+        <div class="brand-booking-calendar-legend">
+            <span class="is-proposed"><i></i> Chờ xác nhận</span>
+            <span class="is-confirmed"><i></i> Đã xác nhận</span>
+            <span class="is-rescheduled"><i></i> Đề xuất đổi lịch</span>
+            <span class="is-cancelled"><i></i> Đã hủy</span>
+        </div>
+        <div class="brand-booking-calendar-grid" role="grid">
+            @foreach (var label in new[] { "T2", "T3", "T4", "T5", "T6", "T7", "CN" })
+            {
+                <div class="brand-booking-calendar-weekday">@label</div>
+            }
+            @for (var index = 0; index < cells; index++)
+            {
+                var day = index - offset + 1;
+                if (day < 1 || day > days)
+                {
+                    <div class="brand-booking-calendar-day is-outside"></div>
+                }
+                else
+                {
+                    var date = new DateOnly(first.Year, first.Month, day);
+                    var events = Model.Calendar.Events.Where(x => DateOnly.FromDateTime(x.StartsAtLocal) == date).OrderBy(x => x.StartsAtLocal).ToList();
+                    <div class="brand-booking-calendar-day @(date == DateOnly.FromDateTime(DateTime.Today) ? "is-today" : "")">
+                        <time datetime="@date.ToString("yyyy-MM-dd")">@day</time>
+                        @foreach (var entry in events)
+                        {
+                            var eventClass = entry.Status switch
+                            {
+                                ScheduleStatuses.Confirmed => "is-confirmed",
+                                ScheduleStatuses.Rescheduled => "is-rescheduled",
+                                ScheduleStatuses.Cancelled => "is-cancelled",
+                                _ => "is-proposed"
+                            };
+                            <a href="#booking-@entry.ScheduleId" class="brand-booking-calendar-event @eventClass" title="@entry.CampaignTitle · @entry.KocName">
+                                <strong>@entry.StartsAtLocal.ToString("HH:mm")</strong><span>@entry.CampaignTitle</span>
+                            </a>
+                        }
+                    </div>
+                }
+            }
+        </div>
+        @if (Model.Calendar.Events.Count == 0)
+        {
+            <div class="brand-booking-calendar-empty"><i class="fa-regular fa-calendar-xmark"></i><span><strong>Tháng này chưa có lịch booking</strong><small>Lịch đã đề xuất hoặc xác nhận sẽ tự động xuất hiện tại đây.</small></span></div>
+        }
+    </section>
+
+    <section class="brand-booking-list-heading">
+        <div>
+            <h2><i class="fa-solid fa-calendar-day"></i> Lịch làm việc với KOC</h2>
+            <p>Xác nhận lịch KOC đề xuất hoặc chủ động gửi thời gian phù hợp.</p>
+        </div>
+        <span>@Model.Window.Total lịch</span>
+    </section>
+
+    <partial name="_ListWindow" model='new Topstar.Web.Features.Common.Paging.ListWindowViewModel("brandBookingTable", Model.Window)' />
+    @if (Model.Items.Count == 0)
+    {
+        <section class="brand-deliverable-empty">
+            <span><i class="fa-regular fa-calendar-xmark"></i></span>
+            <h2>Chưa có lịch cần sắp xếp</h2>
+            <p>Các KOC đã xác nhận tham gia chiến dịch có yêu cầu booking sẽ xuất hiện tại đây.</p>
+        </section>
+    }
+    else
+    {
+        <div class="brand-booking-dt-shell"><table id="brandBookingTable" class="table w-100" aria-label="Danh sách lịch làm việc với KOC"><thead><tr><th>Lịch làm việc</th></tr></thead><tbody>
+            @foreach (var item in Model.Items)
+            {
+                <tr><td><article class="brand-booking-card" id="booking-@item.ScheduleId">
+                    <div class="brand-booking-card-head">
+                        <span class="brand-booking-avatar"><i class="fa-solid fa-user"></i></span>
+                        <div>
+                            <small>@item.CampaignTitle</small>
+                            <h3>@item.KocName</h3>
+                        </div>
+                        <span class="brand-status-pill @StatusClass(item.Status)">
+                            <i class="fa-solid @(item.Status == ScheduleStatuses.Confirmed ? "fa-check" : item.Status == ScheduleStatuses.Cancelled ? "fa-ban" : "fa-clock")"></i>
+                            @StatusText(item.Status)
+                        </span>
+                    </div>
+
+                    @if (item.StartsAtUtc.HasValue)
+                    {
+                        <div class="brand-booking-time">
+                            <span><i class="fa-regular fa-calendar"></i></span>
+                            <div><small>Ngày làm việc</small><strong>@item.StartsAtUtc.Value.ToVietnamTime().ToString("dd/MM/yyyy")</strong></div>
+                            <div><small>Khung giờ</small><strong>@item.StartsAtUtc.Value.ToVietnamTime().ToString("HH:mm") – @item.EndsAtUtc!.Value.ToVietnamTime().ToString("HH:mm")</strong></div>
+                            <div><small>Đã đổi lịch</small><strong>@item.RescheduleCount/@ScheduleTransitions.MaxReschedules lần</strong></div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="brand-booking-no-time"><i class="fa-regular fa-calendar-plus"></i><span>Chưa có thời gian đề xuất cho lịch làm việc này.</span></div>
+                    }
+
+                    @if (item.IsLateCancellation)
+                    {
+                        <div class="brand-booking-warning"><i class="fa-solid fa-triangle-exclamation"></i><span>Lịch đã bị hủy trong vòng @item.LateCancellationThresholdHours giờ trước thời điểm bắt đầu và được lưu vào lịch sử.</span></div>
+                    }
+
+                    @if (item.ScheduleId is null)
+                    {
+                        <form method="post" asp-page-handler="Propose" class="brand-booking-form js-brand-booking-form" data-booking-form="schedule" novalidate>
+                            <input type="hidden" name="participationId" value="@item.ParticipationId" />
+                            <div><label>Bắt đầu <span>*</span></label><div class="brand-booking-field"><input type="datetime-local" name="startsAtLocal" class="form-control" /><i class="fa-solid fa-circle-exclamation"></i></div><div class="invalid-feedback" data-error-for="startsAtLocal"></div></div>
+                            <div><label>Kết thúc <span>*</span></label><div class="brand-booking-field"><input type="datetime-local" name="endsAtLocal" class="form-control" /><i class="fa-solid fa-circle-exclamation"></i></div><div class="invalid-feedback" data-error-for="endsAtLocal"></div></div>
+                            <button class="btn btn-brand-primary btn-sm"><i class="fa-solid fa-paper-plane"></i> Gửi lịch đề xuất</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <div class="brand-booking-action-area" id="booking-actions-@item.ScheduleId">
+                        <div class="brand-booking-actions">
+                            @if (item.CanCurrentUserConfirm)
+                            {
+                                <form method="post" asp-page-handler="Confirm">
+                                    <input type="hidden" name="id" value="@item.ScheduleId" />
+                                    <button class="btn btn-success btn-sm"><i class="fa-solid fa-calendar-check"></i> Xác nhận lịch</button>
+                                </form>
+                            }
+                            @if (ScheduleTransitions.CanReschedule(item.Status, item.RescheduleCount))
+                            {
+                                <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#change-@item.ScheduleId">
+                                    <i class="fa-solid fa-rotate"></i> Đề xuất đổi lịch
+                                </button>
+                            }
+                            @if (ScheduleTransitions.CanCancel(item.Status))
+                            {
+                                <button class="btn btn-outline-danger btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#cancel-@item.ScheduleId">
+                                    <i class="fa-solid fa-calendar-xmark"></i> Hủy lịch
+                                </button>
+                            }
+                            @if (item.History.Count > 0)
+                            {
+                                <button class="btn btn-link btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#history-@item.ScheduleId">
+                                    <i class="fa-solid fa-clock-rotate-left"></i> Lịch sử
+                                </button>
+                            }
+                        </div>
+
+                        @if (ScheduleTransitions.CanReschedule(item.Status, item.RescheduleCount))
+                        {
+                            <div class="collapse brand-booking-panel" id="change-@item.ScheduleId" data-bs-parent="#booking-actions-@item.ScheduleId">
+                                <form method="post" asp-page-handler="Reschedule" class="brand-booking-form js-brand-booking-form" data-booking-form="reschedule" novalidate>
+                                    <input type="hidden" name="id" value="@item.ScheduleId" />
+                                    <div><label>Bắt đầu mới <span>*</span></label><div class="brand-booking-field"><input type="datetime-local" name="startsAtLocal" class="form-control" /><i class="fa-solid fa-circle-exclamation"></i></div><div class="invalid-feedback" data-error-for="startsAtLocal"></div></div>
+                                    <div><label>Kết thúc mới <span>*</span></label><div class="brand-booking-field"><input type="datetime-local" name="endsAtLocal" class="form-control" /><i class="fa-solid fa-circle-exclamation"></i></div><div class="invalid-feedback" data-error-for="endsAtLocal"></div></div>
+                                    <div class="is-wide"><label>Lý do đổi lịch <span>*</span></label><div class="brand-booking-field"><textarea name="note" maxlength="1000" class="form-control" rows="2"></textarea><i class="fa-solid fa-circle-exclamation"></i></div><div class="invalid-feedback" data-error-for="note"></div></div>
+                                    <button class="btn btn-brand-primary btn-sm"><i class="fa-solid fa-paper-plane"></i> Gửi đề xuất mới</button>
+                                </form>
+                            </div>
+                        }
+                        @if (ScheduleTransitions.CanCancel(item.Status))
+                        {
+                            <div class="collapse brand-booking-panel is-danger" id="cancel-@item.ScheduleId" data-bs-parent="#booking-actions-@item.ScheduleId">
+                                <form method="post" asp-page-handler="Cancel" class="brand-booking-cancel-form js-brand-booking-form" data-booking-form="cancel" novalidate>
+                                    <input type="hidden" name="id" value="@item.ScheduleId" />
+                                    <div><label>Lý do hủy lịch <span>*</span></label><div class="brand-booking-field"><textarea name="reason" maxlength="1000" class="form-control" rows="2"></textarea><i class="fa-solid fa-circle-exclamation"></i></div><div class="invalid-feedback" data-error-for="reason"></div></div>
+                                    <button class="btn btn-danger btn-sm"><i class="fa-solid fa-calendar-xmark"></i> Xác nhận hủy lịch</button>
+                                </form>
+                            </div>
+                        }
+                        @if (item.History.Count > 0)
+                        {
+                            <div class="collapse brand-booking-panel" id="history-@item.ScheduleId" data-bs-parent="#booking-actions-@item.ScheduleId">
+                                <div class="brand-booking-history">
+                                    @foreach (var history in item.History.OrderByDescending(x => x.CreatedAtUtc))
+                                    {
+                                        <div><i class="fa-solid fa-circle"></i><span><strong>@StatusText(history.ToStatus)</strong><small>@history.CreatedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm")</small>@if (!string.IsNullOrWhiteSpace(history.Note)) { <em>@history.Note</em> }</span></div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                        </div>
+                    }
+                </article></td></tr>
+            }
+        </tbody></table></div>
+    }
+</div>
+
+@section Styles { <link rel="stylesheet" href="~/lib/datatables/css/dataTables.bootstrap5.min.css?v=2.3.8"> }
+@section Scripts {
+    <script src="~/lib/datatables/js/dataTables.min.js?v=2.3.8"></script>
+    <script src="~/lib/datatables/js/dataTables.bootstrap5.min.js?v=2.3.8"></script>
+    <script src="~/js/brand/brand-bookings.js?v=20260801-3"></script>
+}

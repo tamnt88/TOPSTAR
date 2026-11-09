@@ -1,0 +1,143 @@
+@page
+@model Topstar.Web.Pages.Admin.MatchingDetailModel
+@using Topstar.Application.Campaigns
+@{
+    ViewData["Title"] = "Tuyển chọn KOC";
+    ViewData["AdminHeaderTitle"] = "Tuyển chọn KOC";
+    var d = Model.Data;
+}
+
+@if (d is not null)
+{
+    var activeItems = d.Applications.Where(x => x.Status is "Shortlisted" or "Confirmed").ToArray();
+    var availableItems = d.Applications.Where(x => x.Status == ApplicationStatuses.Applied).ToArray();
+    var rejectedItems = d.Applications.Where(x => x.Status == "NotSelected").ToArray();
+    var missingCount = Math.Max(0, d.DesiredKocCount - d.ShortlistedCount);
+
+    <div class="admin-matching-detail">
+        <header class="admin-matching-heading">
+            <div>
+                <span class="admin-page-eyebrow"><i class="fa-solid fa-users-viewfinder"></i> Tuyển chọn KOC</span>
+                <h1 class="section-title">@d.CampaignTitle</h1>
+                <p>@d.BrandName · Quản lý danh sách Topstar đề xuất cho Brand</p>
+            </div>
+            <a asp-page="/Admin/Matching" class="btn btn-outline-secondary"><i class="fa-solid fa-arrow-left"></i> Quay lại danh sách</a>
+        </header>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Message))
+        {
+            <div class="alert alert-success"><i class="fa-solid fa-circle-check me-1"></i> @Model.Message</div>
+        }
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger admin-validation-summary"></div>
+
+        <section class="admin-matching-summary">
+            <article><span><i class="fa-solid fa-users"></i></span><div><small>KOC chiến dịch cần</small><strong>@d.DesiredKocCount</strong></div></article>
+            <article><span><i class="fa-solid fa-paper-plane"></i></span><div><small>Đang gửi Brand</small><strong>@d.ShortlistedCount/@d.DesiredKocCount</strong></div></article>
+            <article><span><i class="fa-solid fa-user-xmark"></i></span><div><small>Brand đã từ chối</small><strong>@rejectedItems.Length</strong></div></article>
+            <article class="@(missingCount > 0 ? "is-warning" : "is-ready")"><span><i class="fa-solid @(missingCount > 0 ? "fa-triangle-exclamation" : "fa-circle-check")"></i></span><div><small>Tiến độ danh sách</small><strong>@(missingCount > 0 ? $"Còn thiếu {missingCount}" : "Đã đủ KOC")</strong></div></article>
+        </section>
+
+        @if (missingCount > 0)
+        {
+            <div class="admin-matching-guidance is-warning">
+                <i class="fa-solid fa-circle-info"></i>
+                <div><strong>Cần bổ sung @missingCount KOC</strong><span>Brand chỉ nhận lại danh sách khi Topstar đã chọn đủ @d.DesiredKocCount KOC theo yêu cầu chiến dịch.</span></div>
+            </div>
+        }
+
+        <section class="card-x admin-matching-section">
+            <div class="admin-matching-section-head">
+                <div><h2><i class="fa-solid fa-paper-plane"></i> Danh sách đang gửi Brand</h2><p>Chỉ gồm các hồ sơ còn hiệu lực trong lần tuyển chọn hiện tại.</p></div>
+                <span class="admin-count-badge">@activeItems.Length KOC</span>
+            </div>
+            @if (activeItems.Length == 0)
+            {
+                <div class="admin-empty-state"><i class="fa-solid fa-user-clock"></i><span>Chưa có KOC nào trong danh sách gửi Brand.</span></div>
+            }
+            else
+            {
+                <div class="admin-shortlist-grid">
+                    @foreach (var item in activeItems)
+                    {
+                        <article class="admin-shortlist-card">
+                            <div class="admin-shortlist-card-title"><span class="admin-koc-avatar"><i class="fa-solid fa-user"></i></span><div><strong>@item.KocName</strong><small>@(item.Status == "Confirmed" ? "Brand đã xác nhận" : "Đang chờ Brand lựa chọn")</small></div><span class="badge @(item.Status == "Confirmed" ? "bg-success" : "bg-primary")">@(item.Status == "Confirmed" ? "Đã xác nhận" : "Đã gửi Brand")</span></div>
+                            <div class="admin-shortlist-metrics"><span>Người theo dõi<strong>@item.Followers.ToString("N0", PortalFormat.Vietnamese)</strong></span><span>Điểm hồ sơ<strong>@item.Score.ToString("N1", PortalFormat.Vietnamese)</strong></span><span>Độ phù hợp<strong>@item.TargetingMatchScore.ToString("N0", PortalFormat.Vietnamese)%</strong></span></div>
+                            @if (item.UnmatchedCriteria.Count > 0) { <p class="admin-match-warning"><i class="fa-solid fa-circle-info"></i> Cần cân nhắc: @string.Join(", ", item.UnmatchedCriteria)</p> }
+                        </article>
+                    }
+                </div>
+            }
+        </section>
+
+        @if (missingCount > 0 && availableItems.Length > 0)
+        {
+            <section class="card-x admin-matching-section">
+                <div class="admin-matching-section-head">
+                    <div><h2><i class="fa-solid fa-user-plus"></i> Hồ sơ ứng tuyển có thể bổ sung</h2><p>Chọn đúng @missingCount hồ sơ để hoàn thiện danh sách gửi Brand.</p></div>
+                    <span class="admin-count-badge">@availableItems.Length hồ sơ</span>
+                </div>
+                <form method="post" class="js-application-koc-form" data-required-count="@missingCount" novalidate>
+                    <input asp-for="Id" type="hidden" />
+                    <div class="admin-application-grid">
+                        @foreach (var item in availableItems)
+                        {
+                            <label class="admin-application-card">
+                                <input type="checkbox" name="SelectedApplicationIds" value="@item.ApplicationId" class="form-check-input js-application-koc-check" />
+                                <span class="flex-grow-1"><strong>@item.KocName</strong><small>@item.Followers.ToString("N0", PortalFormat.Vietnamese) người theo dõi · Điểm @item.Score.ToString("N1", PortalFormat.Vietnamese) · Phù hợp @item.TargetingMatchScore.ToString("N0", PortalFormat.Vietnamese)%</small>@if (item.UnmatchedCriteria.Count > 0) { <em>Cần cân nhắc: @string.Join(", ", item.UnmatchedCriteria)</em> }</span>
+                            </label>
+                        }
+                    </div>
+                    <div class="admin-direct-koc-error js-application-koc-error" role="alert"><i class="fa-solid fa-circle-exclamation"></i> Vui lòng chọn đúng @missingCount KOC.</div>
+                    <label asp-for="Note" class="form-label mt-3">Ghi chú gửi Brand</label>
+                    <textarea asp-for="Note" class="form-control" rows="2" maxlength="500" placeholder="Thông tin Topstar muốn lưu cho lần bổ sung này"></textarea>
+                    <div class="admin-matching-submit"><span>Đã chọn <strong class="js-application-koc-selected">0</strong>/@missingCount</span><button class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Gửi danh sách bổ sung</button></div>
+                </form>
+            </section>
+        }
+
+        @if (missingCount > 0 && availableItems.Length == 0)
+        {
+            <div class="admin-matching-guidance is-danger"><i class="fa-solid fa-user-slash"></i><div><strong>Không còn hồ sơ ứng tuyển mới</strong><span>Tiếp tục tuyển KOC hoặc chọn hồ sơ đã duyệt bằng chức năng phân công của Topstar bên dưới.</span></div></div>
+        }
+
+        @if (!d.BrandSelectionEnabled && missingCount > 0 && d.DirectCandidates.Count > 0)
+        {
+            <section class="card-x admin-direct-koc-action">
+                <div><span class="admin-direct-koc-action-icon"><i class="fa-solid fa-user-plus"></i></span><div><h2>Phân công KOC từ hệ thống</h2><p>Tìm trong hồ sơ KOC đã duyệt; có thể chọn từng đợt, tối đa @missingCount người còn thiếu.</p></div></div>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#assignDirectKocModal"><i class="fa-solid fa-magnifying-glass"></i> Tìm KOC phù hợp</button>
+            </section>
+
+            <div class="modal fade" id="assignDirectKocModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable"><div class="modal-content">
+                    <div class="modal-header"><div><h2 class="modal-title fs-5"><i class="fa-solid fa-users-gear"></i> Phân công KOC từ hệ thống</h2><p class="text-muted small mb-0">Chọn từ 1 đến @missingCount KOC trong lần phân công này.</p></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div>
+                    <form method="post" asp-page-handler="AssignDirect" class="js-direct-koc-form" data-required-count="@missingCount" novalidate>
+                        <div class="modal-body">
+                            <input asp-for="Id" type="hidden" />
+                            <div class="admin-direct-koc-toolbar"><div class="position-relative flex-grow-1"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="form-control js-direct-koc-search" placeholder="Tìm theo tên KOC" /></div><span>Đã chọn <strong class="js-direct-koc-selected">0</strong>/@missingCount</span></div>
+                            <div class="admin-direct-koc-error" role="alert"><i class="fa-solid fa-circle-exclamation"></i> Vui lòng chọn từ 1 đến @missingCount KOC.</div>
+                            <div class="admin-direct-koc-table-wrap"><table class="table admin-direct-koc-table"><thead><tr><th>Chọn</th><th>KOC</th><th>Người theo dõi</th><th>Điểm hồ sơ</th><th>Phù hợp</th><th>Cần cân nhắc</th></tr></thead><tbody>
+                                @foreach (var candidate in d.DirectCandidates)
+                                {
+                                    <tr data-search="@candidate.KocName.ToLowerInvariant()"><td><input type="checkbox" name="SelectedKocProfileIds" value="@candidate.KocProfileId" class="form-check-input js-direct-koc-check" /></td><td><strong>@candidate.KocName</strong></td><td>@candidate.Followers.ToString("N0", PortalFormat.Vietnamese)</td><td>@candidate.Score.ToString("N1", PortalFormat.Vietnamese)</td><td><span class="badge @(candidate.TargetingMatchScore >= 80 ? "bg-success" : candidate.TargetingMatchScore >= 50 ? "bg-warning text-dark" : "bg-danger")">@candidate.TargetingMatchScore.ToString("N0", PortalFormat.Vietnamese)%</span></td><td>@(candidate.UnmatchedCriteria.Count > 0 ? string.Join(", ", candidate.UnmatchedCriteria) : "—")</td></tr>
+                                }
+                            </tbody></table></div>
+                            <label asp-for="Note" class="form-label mt-3">Ghi chú phân công</label><textarea asp-for="Note" class="form-control" rows="2" maxlength="500" placeholder="Thông tin cần lưu cho lần phân công này"></textarea>
+                        </div>
+                        <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Đóng</button><button class="btn btn-primary"><i class="fa-solid fa-user-check"></i> Xác nhận KOC đã chọn</button></div>
+                    </form>
+                </div></div>
+            </div>
+        }
+
+        @if (rejectedItems.Length > 0)
+        {
+            <details class="card-x admin-rejected-history">
+                <summary><span><i class="fa-solid fa-clock-rotate-left"></i> Hồ sơ Brand đã từ chối</span><strong>@rejectedItems.Length</strong></summary>
+                <p>Các hồ sơ này chỉ được lưu để đối chiếu lịch sử, không còn nằm trong danh sách hiện tại.</p>
+                <div class="admin-rejected-list">@foreach (var item in rejectedItems) { <div><span class="admin-koc-avatar"><i class="fa-solid fa-user-xmark"></i></span><div><strong>@item.KocName</strong><small>@item.Followers.ToString("N0", PortalFormat.Vietnamese) người theo dõi · Điểm @item.Score.ToString("N1", PortalFormat.Vietnamese)</small></div><span class="badge bg-secondary">Brand đã từ chối</span></div> }</div>
+            </details>
+        }
+    </div>
+}
+
+@section Scripts { <script src="/js/admin/matching-detail.js?v=20260801-2"></script> }

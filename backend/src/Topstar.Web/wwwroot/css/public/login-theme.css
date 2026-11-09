@@ -1,0 +1,193 @@
+.login-page-theme {
+    --login-navy: #17384a;
+    --login-navy-deep: #102b3a;
+    --login-purple: #7547e8;
+    --login-purple-dark: #5934b2;
+    --login-cyan: #18b8c8;
+    --login-coral: #f36f83;
+    --login-gold: #efb53f;
+    --login-ink: #172033;
+    --login-muted: #667085;
+    --login-border: #d9e1e7;
+    position: relative;
+    margin: -16px;
+    overflow: hidden;
+    color: var(--login-ink);
+    background:
+        radial-gradient(circle at 8% 18%, rgba(24, 184, 200, .16), transparent 25%),
+        radial-gradient(circle at 90% 18%, rgba(243, 111, 131, .13), transparent 24%),
+        radial-gradient(circle at 84% 84%, rgba(117, 71, 232, .15), transparent 29%),
+        linear-gradient(135deg, #fffdf7 0%, #f7fbfd 48%, #f7f2ff 100%);
+    font-family: "BeVietnamPro", Arial, sans-serif;
+}
+
+.login-page-theme h1,
+.login-page-theme h2,
+.login-page-theme button,
+.login-page-theme input {
+    font-family: "BeVietnamPro", Arial, sans-serif !important;
+}
+
+.login-page-theme .login-shell {
+    position: relative;
+    border-color: rgba(71, 96, 119, .2);
+    background: #fff;
+    box-shadow: 0 28px 70px rgba(16, 43, 58, .18), 0 10px 26px rgba(117, 71, 232, .08);
+}
+
+.login-page-theme .login-shell::before {
+    position: absolute;
+    z-index: 3;
+    top: -1px;
+    left: 10%;
+    width: 62%;
+    height: 3px;
+    border-radius: 0 0 8px 8px;
+    background: linear-gradient(90deg, var(--login-cyan), var(--login-purple), var(--login-coral), var(--login-gold));
+    content: "";
+}
+
+.login-page-theme .login-aside {
+    position: relative;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 16% 10%, rgba(255, 255, 255, .15), transparent 27%),
+        radial-gradient(circle at 88% 78%, rgba(117, 71, 232, .34), transparent 30%),
+        radial-gradient(circle at 4% 72%, rgba(243, 111, 131, .17), transparent 26%),
+        linear-gradient(150deg, #0e2938 0%, #173f52 50%, #285c74 76%, #44318b 100%);
+}
+
+.login-page-theme .login-aside::before,
+.login-page-theme .login-aside::after {
+    position: absolute;
+    border: 1px solid rgba(255, 255, 255, .10);
+    border-radius: 50%;
+    content: "";
+}
+
+.login-page-theme .login-aside::before {
+    right: -80px;
+    bottom: -110px;
+    width: 280px;
+    height: 280px;
+}
+
+.login-page-theme .login-aside::after {
+    right: -10px;
+    bottom: -62px;
+    width: 170px;
+    height: 170px;
+}
+
+.login-page-theme .login-aside-content {
+    position: relative;
+    z-index: 1;
+}
+
+.login-page-theme .login-eyebrow {
+    border: 1px solid rgba(243, 199, 95, .28);
+    color: #ffe29a;
+    background: rgba(215, 169, 55, .12);
+}
+
+.login-page-theme .login-aside h1,
+.login-page-theme .login-aside h1 span {
+    color: #fff;
+    font-weight: 800;
+    letter-spacing: -.035em;
+}
+
+.login-page-theme .login-aside h1 span {
+    color: #8cecf1;
+    text-shadow: 0 8px 24px rgba(24, 184, 200, .18);
+}
+
+.login-page-theme .login-aside p,
+.login-page-theme .login-aside li { color: #e1e9ed; }
+
+.login-page-theme .login-aside li i { color: #ffd064; }
+
+.login-page-theme .login-main {
+    background:
+        radial-gradient(circle at 100% 0, rgba(243, 111, 131, .055), transparent 24%),
+        linear-gradient(180deg, #fff 0%, #fff 70%, #faf9ff 100%);
+}
+
+.login-page-theme .login-main-content h2 {
+    color: var(--login-ink);
+    font-weight: 800;
+    letter-spacing: -.025em;
+}
+
+.login-page-theme .login-main-content .text-muted,
+.login-page-theme .social-auth-title { color: var(--login-muted) !important; }
+
+.login-page-theme .login-main .form-label { color: #344054; }
+
+.login-page-theme .login-main .form-control {
+    border-color: #cdd8df;
+    color: var(--login-ink);
+    background: #fbfcff;
+}
+
+.login-page-theme .login-main .form-control:focus {
+    border-color: var(--login-purple);
+    background: #fff;
+    box-shadow: 0 0 0 .2rem rgba(117, 71, 232, .13), 0 8px 18px rgba(24, 184, 200, .07);
+}
+
+.login-page-theme .form-check-input:checked {
+    border-color: var(--login-purple);
+    background-color: var(--login-purple);
+}
+
+.login-page-theme .login-link { color: var(--login-purple-dark); }
+
+.login-page-theme .login-submit-btn {
+    color: #fff;
+    border: 0;
+    background: linear-gradient(110deg, #173f52 0%, #315e83 38%, #6741ce 74%, #9b45c2 100%);
+    box-shadow: 0 12px 26px rgba(32, 62, 91, .24), 0 5px 14px rgba(117, 71, 232, .12);
+    transition: transform .2s ease, background-color .2s ease, box-shadow .2s ease;
+}
+
+.login-page-theme .login-submit-btn:hover,
+.login-page-theme .login-submit-btn:focus {
+    color: #fff;
+    background: linear-gradient(110deg, #123646 0%, #284f70 38%, #5934b2 74%, #8134a5 100%);
+    box-shadow: 0 15px 30px rgba(23, 56, 74, .28), 0 6px 16px rgba(243, 111, 131, .11);
+    transform: translateY(-2px);
+}
+
+.login-page-theme .social-auth-btn {
+    border-color: var(--login-border);
+    color: #344054;
+    background: #f9fafb;
+}
+
+.login-page-theme .social-auth-btn:hover {
+    border-color: rgba(24, 184, 200, .55);
+    color: var(--login-purple-dark);
+    background: linear-gradient(135deg, #f1ffff, #f5f1fc);
+    box-shadow: 0 8px 18px rgba(63, 45, 103, .10);
+}
+
+.login-page-theme .login-divider::before { border-color: var(--login-border); }
+.login-page-theme .login-divider span { color: var(--login-muted); }
+
+.login-page-theme .login-secondary-btn {
+    border-color: #b7c4cc;
+    color: var(--login-navy);
+    background: #fff;
+}
+
+.login-page-theme .login-secondary-btn:hover,
+.login-page-theme .login-secondary-btn:focus {
+    border-color: var(--login-coral);
+    color: var(--login-purple-dark);
+    background: linear-gradient(135deg, #fff8f9, #f7f4fc);
+}
+
+@media (max-width: 991.98px) {
+    .login-page-theme .login-section { align-items: flex-start; }
+}

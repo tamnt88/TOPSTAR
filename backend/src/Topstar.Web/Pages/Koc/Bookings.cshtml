@@ -1,0 +1,165 @@
+@page
+@model Topstar.Web.Pages.Koc.BookingsModel
+@using Topstar.Application.Deliverables
+@using Topstar.Application.Schedules
+@{
+    Layout = "_KocLayout";
+    ViewData["Title"] = "Lịch booking";
+    var now = DateTime.UtcNow;
+    var confirmed = Model.Window.Counts.GetValueOrDefault(ScheduleStatuses.Confirmed);
+    var awaiting = (Model.Window.Counts.GetValueOrDefault(ScheduleStatuses.Proposed) + Model.Window.Counts.GetValueOrDefault(ScheduleStatuses.Rescheduled));
+    var upcoming = Model.Window.AvailableCount;
+    var openDeadlines = Model.OpenDeadlineCount;
+    var first = Model.Calendar.Month;
+    var previous = first.AddMonths(-1);
+    var next = first.AddMonths(1);
+    var offset = ((int)first.DayOfWeek + 6) % 7;
+    var days = DateTime.DaysInMonth(first.Year, first.Month);
+    var cells = ((offset + days + 6) / 7) * 7;
+    string StatusText(string status) => status switch {
+        ScheduleStatuses.Proposed => "Chờ xác nhận",
+        ScheduleStatuses.Confirmed => "Đã xác nhận",
+        ScheduleStatuses.Rescheduled => "Đề xuất lại",
+        ScheduleStatuses.Cancelled => "Đã hủy",
+        _ => status
+    };
+    string StatusClass(string status) => status switch {
+        ScheduleStatuses.Confirmed => "is-confirmed",
+        ScheduleStatuses.Rescheduled => "is-rescheduled",
+        ScheduleStatuses.Cancelled => "is-cancelled",
+        _ => "is-proposed"
+    };
+}
+
+<div class="koc-bookings-page">
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div data-koc-flash data-type="@(Model.MessageSuccess ? "success" : "error")" data-message="@Model.Message"></div>
+    }
+
+    <header class="koc-booking-header">
+        <div>
+            <span class="koc-page-eyebrow"><i class="fa-regular fa-calendar-check"></i> Quản lý thời gian</span>
+            <h1>Lịch làm việc</h1>
+            <p>Theo dõi cả lịch booking do Brand đề xuất và hạn nộp đầu việc của chiến dịch.</p>
+        </div>
+        <a asp-page="/Koc/Tasks" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-list-check me-1"></i>Xem đầu việc</a>
+    </header>
+
+    <section class="koc-booking-stats" aria-label="Tổng quan lịch booking">
+        <article><span class="is-blue"><i class="fa-regular fa-calendar"></i></span><div><small>Booking sắp tới</small><strong>@upcoming</strong><em>Brand đã đặt lịch</em></div></article>
+        <article><span class="is-amber"><i class="fa-regular fa-clock"></i></span><div><small>Cần phản hồi</small><strong>@awaiting</strong><em>Chờ bạn xác nhận</em></div></article>
+        <article><span class="is-green"><i class="fa-solid fa-list-check"></i></span><div><small>Hạn nộp sắp tới</small><strong>@openDeadlines</strong><em>Đầu việc chưa hoàn tất</em></div></article>
+    </section>
+
+    <section class="koc-booking-calendar">
+        <header>
+            <div><span><i class="fa-regular fa-calendar-days"></i></span><div><h2>Tháng @first.Month/@first.Year</h2><p>Lịch hiển thị theo giờ Việt Nam</p></div></div>
+            <nav aria-label="Điều hướng tháng">
+                <a asp-page="/Koc/Bookings" asp-route-Month="@previous.ToString("yyyy-MM-dd")" aria-label="Tháng trước"><i class="fa-solid fa-chevron-left"></i></a>
+                <a asp-page="/Koc/Bookings" asp-route-Month="@DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd")" class="is-today">Hôm nay</a>
+                <a asp-page="/Koc/Bookings" asp-route-Month="@next.ToString("yyyy-MM-dd")" aria-label="Tháng sau"><i class="fa-solid fa-chevron-right"></i></a>
+            </nav>
+        </header>
+        <div class="koc-calendar-legend">
+            <span class="is-deadline"><i></i>Hạn nộp đầu việc</span><span class="is-proposed"><i></i>Booking chờ xác nhận</span><span class="is-confirmed"><i></i>Booking đã xác nhận</span><span class="is-rescheduled"><i></i>Đề xuất lại</span><span class="is-cancelled"><i></i>Đã hủy</span>
+        </div>
+        <div class="koc-calendar-grid" role="grid">
+            @foreach (var label in new[] { "T2", "T3", "T4", "T5", "T6", "T7", "CN" }) { <div class="koc-calendar-weekday">@label</div> }
+            @for (var index = 0; index < cells; index++)
+            {
+                var day = index - offset + 1;
+                if (day < 1 || day > days) { <div class="koc-calendar-day is-outside"></div> }
+                else
+                {
+                    var date = new DateOnly(first.Year, first.Month, day);
+                    var events = Model.Calendar.Events.Where(x => DateOnly.FromDateTime(x.StartsAtLocal) == date).OrderBy(x => x.StartsAtLocal).ToList();
+                    var deadlines = Model.Tasks.Where(x => x.DueDateUtc.HasValue && DateOnly.FromDateTime(x.DueDateUtc.Value.ToVietnamTime()) == date).OrderBy(x => x.DueDateUtc).ToList();
+                    var isToday = date == DateOnly.FromDateTime(DateTime.Today);
+                    <div class="koc-calendar-day @(isToday ? "is-today" : "")">
+                        <time datetime="@date.ToString("yyyy-MM-dd")">@day</time>
+                        @foreach (var entry in events)
+                        {
+                            <button type="button" class="koc-calendar-event @StatusClass(entry.Status)" data-booking-focus="@entry.ScheduleId" title="@entry.CampaignTitle">
+                                <strong>@entry.StartsAtLocal.ToString("HH:mm")</strong><span>@entry.CampaignTitle</span>
+                            </button>
+                        }
+                        @foreach (var task in deadlines)
+                        {
+                            <a asp-page="/Koc/Tasks" asp-route-Search="@task.CampaignTitle" asp-route-focus="@task.SubmissionId" class="koc-calendar-event is-deadline" title="Mở và xử lý đầu việc: @task.CampaignTitle">
+                                <strong>@task.DueDateUtc!.Value.ToVietnamTime().ToString("HH:mm")</strong><span>@task.DeliverableType</span>
+                            </a>
+                        }
+                    </div>
+                }
+            }
+        </div>
+        @if (Model.Calendar.Events.Count == 0 && !Model.Tasks.Any(x => x.DueDateUtc.HasValue && x.DueDateUtc.Value.Year == first.Year && x.DueDateUtc.Value.Month == first.Month))
+        {
+            <div class="koc-calendar-empty"><i class="fa-regular fa-calendar-xmark"></i><span><strong>Tháng này chưa có booking hoặc hạn nộp</strong><small>Booking từ Brand và deadline đầu việc sẽ tự động xuất hiện tại đây.</small></span></div>
+        }
+    </section>
+
+    <section class="koc-booking-list">
+        <header><div><h2><i class="fa-solid fa-calendar-check"></i> Danh sách lịch</h2><p>@Model.Window.Total lịch booking trong hồ sơ của bạn</p></div></header>
+        <partial name="_ListWindow" model='new Topstar.Web.Features.Common.Paging.ListWindowViewModel("kocBookingList", Model.Window)' />
+    @if (Model.Items.Count == 0)
+        {
+            <div class="koc-booking-empty"><span><i class="fa-regular fa-calendar-plus"></i></span><div><strong>Chưa có booking từ Brand</strong><p>Các đầu việc phía trên là hạn nộp nội dung, không phải lịch booking. Booking chỉ xuất hiện khi chiến dịch yêu cầu quay, chụp hoặc gặp theo khung giờ và Brand gửi đề xuất.</p><a asp-page="/Koc/Tasks" class="btn btn-primary btn-sm"><i class="fa-solid fa-list-check me-1"></i>Xem đầu việc</a></div></div>
+        }
+        else
+        {
+            <div class="koc-booking-items">
+                @foreach (var item in Model.Items)
+                {
+                    <article class="koc-booking-item @StatusClass(item.Status)" id="booking-@item.ScheduleId">
+                        <header>
+                            <span class="koc-booking-icon"><i class="fa-regular fa-calendar-check"></i></span>
+                            <div><small>Chiến dịch</small><h3>@item.CampaignTitle</h3></div>
+                            <span class="koc-booking-status @StatusClass(item.Status)"><i class="fa-solid fa-circle"></i>@StatusText(item.Status)</span>
+                        </header>
+                        <div class="koc-booking-time">
+                            <span><i class="fa-regular fa-calendar"></i><small>Ngày</small><strong>@(item.StartsAtUtc?.ToVietnamTime().ToString("dd/MM/yyyy") ?? "Chưa chốt")</strong></span>
+                            <span><i class="fa-regular fa-clock"></i><small>Thời gian</small><strong>@(item.StartsAtUtc?.ToVietnamTime().ToString("HH:mm") ?? "--:--") – @(item.EndsAtUtc?.ToVietnamTime().ToString("HH:mm") ?? "--:--")</strong></span>
+                            <span><i class="fa-solid fa-rotate"></i><small>Điều chỉnh</small><strong>@item.RescheduleCount/@ScheduleTransitions.MaxReschedules lần</strong></span>
+                        </div>
+                        @if (item.IsLateCancellation) { <div class="koc-booking-warning"><i class="fa-solid fa-triangle-exclamation"></i>Lịch bị hủy sát giờ và đã được lưu vào lịch sử hợp tác.</div> }
+                        <footer>
+                            <button type="button" class="btn btn-light btn-sm" data-bs-toggle="collapse" data-bs-target="#history-@item.ScheduleId"><i class="fa-solid fa-clock-rotate-left me-1"></i>Lịch sử (@item.History.Count)</button>
+                            <div>
+                                @if (item.ScheduleId.HasValue && item.CanCurrentUserConfirm) { <form method="post" asp-page-handler="Confirm"><input type="hidden" name="id" value="@item.ScheduleId"><button class="btn btn-success btn-sm"><i class="fa-solid fa-check me-1"></i>Xác nhận</button></form> }
+                                @if (item.ScheduleId.HasValue && ScheduleTransitions.CanReschedule(item.Status, item.RescheduleCount)) { <button type="button" class="btn btn-outline-primary btn-sm" data-booking-reschedule data-id="@item.ScheduleId" data-title="@item.CampaignTitle"><i class="fa-solid fa-calendar-pen me-1"></i>Đề xuất lại</button> }
+                                @if (item.ScheduleId.HasValue && ScheduleTransitions.CanCancel(item.Status)) { <button type="button" class="btn btn-outline-danger btn-sm" data-booking-cancel data-id="@item.ScheduleId" data-title="@item.CampaignTitle"><i class="fa-solid fa-ban me-1"></i>Hủy lịch</button> }
+                            </div>
+                        </footer>
+                        <div class="collapse koc-booking-history" id="history-@item.ScheduleId">
+                            @foreach (var history in item.History.OrderByDescending(x => x.CreatedAtUtc))
+                            {
+                                <div><i class="fa-solid fa-circle"></i><span><strong>@StatusText(history.ToStatus)</strong><time>@history.CreatedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm")</time>@if (history.StartsAtUtc.HasValue) { <small>@history.StartsAtUtc.Value.ToVietnamTime().ToString("dd/MM HH:mm") – @history.EndsAtUtc!.Value.ToVietnamTime().ToString("HH:mm")</small> }@if (!string.IsNullOrWhiteSpace(history.Note)) { <p>@history.Note</p> }</span></div>
+                            }
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    </section>
+</div>
+
+<div class="modal fade" id="bookingActionModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><form method="post" data-booking-action-form novalidate>
+        <div class="modal-header"><h2 class="modal-title"><i class="fa-regular fa-calendar me-2"></i><span data-booking-modal-title></span></h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div>
+        <div class="modal-body">
+            <input type="hidden" name="id">
+            <p class="koc-booking-modal-context" data-booking-modal-context></p>
+            <div data-reschedule-fields>
+                <div class="row g-3"><div class="col-sm-6"><label class="form-label">Bắt đầu</label><input type="datetime-local" name="startsAtLocal" class="form-control"></div><div class="col-sm-6"><label class="form-label">Kết thúc</label><input type="datetime-local" name="endsAtLocal" class="form-control"></div></div>
+                <label class="form-label mt-3">Lý do đề xuất</label><textarea name="note" rows="3" maxlength="1000" class="form-control" placeholder="Nhập tối thiểu 10 ký tự"></textarea>
+            </div>
+            <div data-cancel-fields hidden><label class="form-label">Lý do hủy lịch</label><textarea name="reason" rows="4" maxlength="1000" class="form-control" placeholder="Nhập tối thiểu 10 ký tự"></textarea></div>
+            <p class="koc-field-error" data-booking-error></p>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal"><i class="fa-solid fa-xmark me-1"></i>Đóng</button><button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-paper-plane me-1"></i><span data-booking-submit-label></span></button></div>
+    </form></div></div>
+</div>
+
+@section Scripts { <script src="~/js/koc/bookings.js" asp-append-version="true"></script> }

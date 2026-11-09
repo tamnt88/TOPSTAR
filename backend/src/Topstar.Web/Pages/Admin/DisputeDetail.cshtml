@@ -1,0 +1,4 @@
+@page
+@model Topstar.Web.Pages.Admin.DisputeDetailModel
+@{ViewData["Title"]="Hồ sơ tranh chấp";ViewData["AdminHeaderTitle"]="Hồ sơ tranh chấp";ViewData["DisputeRole"]="ADMIN";ViewData["DisputeBackPage"]="/Admin/Disputes";}
+<div >@if(!string.IsNullOrWhiteSpace(Model.Message)){<div class="alert @(Model.MessageSuccess?"alert-success":"alert-danger")">@Model.Message</div>}<partial name="_DisputeDetail" model="Model.Detail"/></div>

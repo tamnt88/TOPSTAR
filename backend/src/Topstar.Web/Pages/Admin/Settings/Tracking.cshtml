@@ -1,0 +1,15 @@
+@page
+@model Topstar.Web.Pages.Admin.Settings.TrackingModel
+@{ ViewData["Title"] = "Mã tracking website"; }
+<div >
+    <header class="mb-4"><a asp-page="/Admin/Management" class="btn btn-light btn-sm mb-3"><i class="fa-solid fa-arrow-left"></i> Công cụ quản trị</a><h1>Mã tracking website</h1><p class="text-muted">Cấu hình Google Analytics, Google Tag Manager, Meta Pixel và các công cụ đo lường cho website công khai.</p></header>
+    @if (Model.Message is not null) { <div hidden data-ts-notification="success" data-message="@Model.Message"></div> }
+    @if (Model.Error is not null) { <div class="alert alert-warning">@Model.Error</div> }
+    <form method="post" class="card-x p-4">
+        <div asp-validation-summary="All" class="text-danger"></div>
+        <label class="form-check form-switch mb-4"><input asp-for="Input.Enabled" class="form-check-input" /><span class="form-check-label fw-semibold">Bật mã tracking trên website công khai</span></label>
+        <div class="mb-4"><label asp-for="Input.HeadCode" class="form-label fw-semibold">Mã chèn trong &lt;head&gt;</label><p class="text-muted small">Dán nguyên đoạn mã do nhà cung cấp cấp, bao gồm thẻ script nếu có.</p><textarea asp-for="Input.HeadCode" class="form-control font-monospace" rows="12" spellcheck="false" placeholder="&lt;script&gt;…&lt;/script&gt;"></textarea><span asp-validation-for="Input.HeadCode" class="text-danger"></span></div>
+        <div class="mb-4"><label asp-for="Input.BodyCode" class="form-label fw-semibold">Mã chèn ngay sau &lt;body&gt;</label><p class="text-muted small">Dùng cho đoạn noscript của Google Tag Manager hoặc mã theo hướng dẫn của nhà cung cấp.</p><textarea asp-for="Input.BodyCode" class="form-control font-monospace" rows="10" spellcheck="false" placeholder="&lt;noscript&gt;…&lt;/noscript&gt;"></textarea><span asp-validation-for="Input.BodyCode" class="text-danger"></span></div>
+        <footer class="d-flex justify-content-between align-items-center gap-3 flex-wrap border-top pt-3"><span class="text-muted small">Mỗi lần lưu được ghi lại trong lịch sử cấu hình.</span><button class="btn btn-primary"><i class="fa-solid fa-floppy-disk me-1"></i>Lưu</button></footer>
+    </form>
+</div>

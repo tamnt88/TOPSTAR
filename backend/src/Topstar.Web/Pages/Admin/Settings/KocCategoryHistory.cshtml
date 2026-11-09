@@ -1,0 +1,28 @@
+@page
+@model Topstar.Web.Pages.Admin.Settings.KocCategoryHistoryModel
+@{ ViewData["Title"] = "Lịch sử lĩnh vực nội dung"; ViewData["AdminHeaderTitle"] = "Lịch sử lĩnh vực nội dung"; ViewData["AdminActivePath"] = "/Admin/Settings/KocCategories"; }
+@section Styles { <link rel="stylesheet" href="~/css/admin/koc-categories.css" asp-append-version="true" /> }
+<div class="category-history-page">
+    <header class="category-history-head">
+        <div><h1>Lịch sử thay đổi</h1><p>Theo dõi toàn bộ thao tác và lý do thay đổi lĩnh vực nội dung KOC.</p></div>
+        <a asp-page="KocCategories" class="btn btn-light"><i class="fa-solid fa-arrow-left"></i><span>Quay lại danh sách</span></a>
+    </header>
+    <section class="category-history-card">
+        <div class="category-history-toolbar" aria-label="Bộ lọc lịch sử thay đổi">
+            <label class="category-search-field"><span>Tìm kiếm</span><div><i class="fa-solid fa-magnifying-glass"></i><input id="historySearch" class="form-control" type="search" placeholder="Lĩnh vực, lý do hoặc người thao tác" autocomplete="off" /></div></label>
+            <label><span>Hành động</span><select id="historyAction" class="form-select"><option value="">Tất cả</option><option>Thêm mới</option><option>Cập nhật</option><option>Tạm ẩn</option><option>Hiển thị lại</option><option>Xóa</option></select></label>
+            <label><span>Hiển thị</span><select id="historyLength" class="form-select"><option value="10">10 dòng</option><option value="20">20 dòng</option><option value="50">50 dòng</option></select></label>
+            <button id="historyApplyFilter" type="button" class="btn btn-primary category-filter-button"><i class="fa-solid fa-filter"></i><span>Lọc</span></button>
+        </div>
+        <div class="table-responsive">
+            <table id="kocCategoryHistoryTable" class="table category-history-table align-middle w-100" data-list-actions="false">
+                <thead><tr><th>Thời gian</th><th>Lĩnh vực</th><th>Hành động</th><th>Nội dung thay đổi</th><th>Lý do</th><th>Người thao tác</th></tr></thead>
+                <tbody>@foreach (var item in Model.Items) { <tr><td data-order="@item.CreatedAtUtc.ToString("O")"><time>@item.CreatedAtUtc.AddHours(7).ToString("dd/MM/yyyy HH:mm")</time></td><td><strong>@item.CategoryName</strong><code>@item.CategoryCode</code></td><td><span class="history-action history-action-@item.Action.ToLowerInvariant()">@item.ActionLabel</span></td><td><div class="history-change"><small>Trước: @item.PreviousSummary</small><small>Sau: @item.CurrentSummary</small></div></td><td class="history-reason">@item.Reason</td><td>@item.Actor</td></tr> }</tbody>
+            </table>
+        </div>
+    </section>
+</div>
+@section Scripts {
+    <script src="~/lib/datatables/js/dataTables.min.js"></script><script src="~/lib/datatables/js/dataTables.bootstrap5.min.js"></script>
+    <script src="~/js/admin/koc-category-history.js" asp-append-version="true"></script>
+}

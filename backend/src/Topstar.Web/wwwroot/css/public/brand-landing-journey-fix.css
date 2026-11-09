@@ -1,0 +1,88 @@
+/* Keep the Brand journey visually continuous and isolated from older landing overrides. */
+@media (min-width: 768px) {
+    .brand-landing__steps {
+        --journey-track-top: 66px;
+        position: relative;
+        isolation: isolate;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        overflow: hidden;
+        background:
+            radial-gradient(circle at 12% 18%, rgba(124, 58, 237, .07), transparent 27%),
+            radial-gradient(circle at 88% 82%, rgba(20, 184, 166, .07), transparent 29%),
+            #fff;
+    }
+
+    .brand-landing__steps::before {
+        content: "";
+        position: absolute;
+        z-index: 1;
+        top: var(--journey-track-top);
+        left: 12.5%;
+        right: 12.5%;
+        width: auto;
+        height: 4px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #7c3aed 0%, #a855f7 30%, #ec4899 54%, #f59e0b 76%, #14b8a6 100%);
+        background-size: 220% 100%;
+        box-shadow: 0 0 14px rgba(139, 92, 246, .2);
+        animation: brand-journey-flow 4s linear infinite;
+        pointer-events: none;
+    }
+
+    .brand-landing__steps::after {
+        content: "";
+        position: absolute;
+        z-index: 2;
+        top: calc(var(--journey-track-top) - 5px);
+        left: 12.5%;
+        width: 14px;
+        height: 14px;
+        border: 3px solid #fff;
+        border-radius: 50%;
+        background: #7c3aed;
+        box-shadow: 0 0 0 5px rgba(139, 92, 246, .14), 0 0 18px rgba(139, 92, 246, .5);
+        transform: translateX(-50%);
+        animation: brand-journey-dot 4s ease-in-out infinite;
+        pointer-events: none;
+    }
+
+    .brand-landing__steps > li,
+    .brand-landing__steps > li:nth-child(2),
+    .brand-landing__steps > li:nth-child(3),
+    .brand-landing__steps > li:nth-child(4) {
+        position: relative;
+        z-index: 3;
+        background: transparent !important;
+    }
+
+.brand-landing__steps > li::before,
+.brand-landing__steps > li::after {
+    display: none !important;
+    content: none !important;
+}
+
+    .brand-landing__steps > li > b {
+        position: relative;
+        z-index: 4;
+    }
+}
+
+@keyframes brand-journey-flow {
+    from { background-position: 100% 0; }
+    to { background-position: -120% 0; }
+}
+
+@keyframes brand-journey-dot {
+    0%, 8% { left: 12.5%; background: #7c3aed; }
+    31% { left: 37.5%; background: #a855f7; }
+    56% { left: 62.5%; background: #ec4899; }
+    82%, 100% { left: 87.5%; background: #14b8a6; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .brand-landing__steps::before,
+    .brand-landing__steps::after {
+        animation: none !important;
+    }
+}

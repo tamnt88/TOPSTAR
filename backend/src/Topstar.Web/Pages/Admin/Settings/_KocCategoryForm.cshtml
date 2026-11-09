@@ -1,0 +1,20 @@
+@model Topstar.Web.Pages.Admin.Settings.KocCategoryFormInput
+<div asp-validation-summary="ModelOnly" class="category-form-summary" role="alert"></div>
+<div class="category-form-grid">
+    <div class="category-form-field category-form-field-wide">
+        <label asp-for="Name">Tên lĩnh vực <span>*</span></label>
+        <input asp-for="Name" class="form-control" autocomplete="off" autofocus />
+        <span asp-validation-for="Name" class="field-validation-error"></span>
+    </div>
+    <div class="category-form-field">
+        <label asp-for="Code">Mã danh mục <span>*</span></label>
+        <input asp-for="Code" class="form-control" autocomplete="off" placeholder="Ví dụ: lam-dep" />
+        <small>Dùng chữ không dấu, số và dấu gạch ngang.</small>
+        <span asp-validation-for="Code" class="field-validation-error"></span>
+    </div>
+    <div class="category-form-field">
+        <label asp-for="SortOrder">Thứ tự hiển thị <span>*</span></label>
+        <input asp-for="SortOrder" type="number" min="0" max="9999" class="form-control" />
+        <span asp-validation-for="SortOrder" class="field-validation-error"></span>
+    </div>
+</div>

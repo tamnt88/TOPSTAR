@@ -1,0 +1,75 @@
+@page
+@model Topstar.Web.Pages.Brand.CampaignNeedsModel
+@{ ViewData["Title"] = "Nhu cầu chiến dịch"; }
+@section Styles {
+    <link rel="stylesheet" href="~/css/brand/campaign-needs.css" asp-append-version="true" />
+}
+<div class="campaign-needs-page">
+    <header class="brand-page-heading needs-heading">
+        <div><span class="brand-page-eyebrow"><i class="fa-solid fa-bullseye"></i> TẠO CHIẾN DỊCH</span><h1>Xác định nhu cầu</h1><p>Chọn gói KOC phù hợp hoặc tùy chỉnh theo kế hoạch của bạn.</p></div>
+        <a asp-page="/Brand/Campaigns" class="btn btn-outline-secondary"><i class="fa-solid fa-arrow-left"></i> Danh sách chiến dịch</a>
+    </header>
+    <partial name="_CampaignCreationSteps" model="1" />
+    @if(Model.Policy is not {} policy)
+    {
+        <section class="needs-panel needs-empty"><i class="fa-solid fa-circle-info"></i><p>Cấu hình tạo chiến dịch đang được cập nhật.</p></section>
+    }
+    else
+    {
+        <form method="post" id="campaignNeedsForm" class="needs-workspace" novalidate data-self-min="@policy.SelfSelectionMinimumBudget.ToString("0",System.Globalization.CultureInfo.InvariantCulture)" data-min-budget="@policy.MinimumBudget.ToString("0",System.Globalization.CultureInfo.InvariantCulture)" data-per-koc="@policy.MinimumBudgetPerKoc.ToString("0",System.Globalization.CultureInfo.InvariantCulture)" data-max-koc="@policy.MaximumKocCount">
+            <input asp-for="Budget" type="hidden" />
+            <input asp-for="PackageId" type="hidden" />
+            <div class="needs-main">
+                <section class="needs-panel" id="needsPackages">
+                    <div class="needs-section-heading"><span class="needs-section-icon"><i class="fa-solid fa-box-open"></i></span><div><h2>Chọn gói KOC</h2><p>Chọn gói để điền sẵn ngân sách, số KOC và cách tuyển.</p></div></div>
+                    <div class="needs-mode-switch" aria-label="Cách xác định nhu cầu"><button type="button" data-needs-mode="package"><i class="fa-solid fa-box-open"></i> Chọn gói</button><button type="button" data-needs-mode="custom"><i class="fa-solid fa-sliders"></i> Tùy chỉnh</button></div>
+                    @if(Model.Templates.Count==0)
+                    {
+                        <div class="needs-empty"><i class="fa-solid fa-box-open"></i><div><strong>Gói KOC đang được cập nhật</strong><p>Chọn Tùy chỉnh để tạo chiến dịch theo ngân sách của bạn.</p></div></div>
+                    }
+                    else
+                    {
+                        <div class="needs-carousel-toolbar"><button type="button" class="btn btn-outline-secondary" data-needs-scroll="-1" aria-label="Gói trước"><i class="fa-solid fa-chevron-left"></i></button><button type="button" class="btn btn-outline-secondary" data-needs-scroll="1" aria-label="Gói tiếp theo"><i class="fa-solid fa-chevron-right"></i></button></div>
+                        <div class="needs-package-grid" tabindex="0" aria-label="Các gói KOC">
+                            @foreach(var package in Model.Templates)
+                            {
+                                var selected=Model.PackageId==package.Id;
+                                <button type="button" class="needs-package @(selected?"is-selected":"")" data-needs-package="@package.Id" data-budget="@((package.ReferenceBudget??0).ToString("0",System.Globalization.CultureInfo.InvariantCulture))" data-count="@(package.SelectionQuota??1)" data-self="@(package.BrandSelectionEnabled?"true":"false")" data-name="@package.Name" aria-pressed="@(selected?"true":"false")">
+                                    <span class="needs-package-top"><span class="needs-package-icon"><i class="fa-solid @(package.BrandSelectionEnabled?"fa-user-check":"fa-users-gear")"></i></span><span class="needs-package-tick"><i class="fa-solid fa-check"></i></span></span>
+                                    <strong class="needs-package-name">@package.Name</strong>
+                                    <span class="needs-package-budget">@PortalFormat.Money(package.ReferenceBudget??0)</span>
+                                    <span class="needs-package-facts"><span><i class="fa-solid fa-users"></i> @(package.SelectionQuota??1) KOC</span><span><i class="fa-solid @(package.BrandSelectionEnabled?"fa-hand-pointer":"fa-wand-magic-sparkles")"></i> @(package.BrandSelectionEnabled?"Brand tự chọn":"TopStar phân bổ")</span></span>
+                                    <span class="needs-package-caption">Ngân sách chiến dịch · chưa gồm phí và thuế</span>
+                                </button>
+                            }
+                        </div>
+                    }
+                </section>
+                <p id="needsCustomSummary" class="needs-custom-summary" hidden></p>
+                <div class="modal fade" id="needsCustomModal" tabindex="-1" aria-labelledby="needsCustomTitle" aria-hidden="true"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content">
+                <div class="modal-header"><h2 class="modal-title fs-5" id="needsCustomTitle">Tùy chỉnh chiến dịch</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div>
+                <section class="modal-body" id="needsDetails">
+                    <div class="needs-section-heading"><span class="needs-section-icon"><i class="fa-solid fa-sliders"></i></span><div><h2>Nhu cầu của bạn</h2><p id="needsSelectionLabel">Nhập ngân sách, số KOC và cách tuyển.</p></div></div>
+                    <div asp-validation-summary="ModelOnly" class="text-danger needs-server-errors"></div>
+                    <div class="needs-fields">
+                        <div><label for="needsBudgetDisplay">Ngân sách chiến dịch <span>*</span></label><div class="needs-money-field"><input id="needsBudgetDisplay" class="form-control" inputmode="numeric" autocomplete="off" value="@(Model.Budget>0?Model.Budget.ToString("N0",PortalFormat.Vietnamese):"")" placeholder="Ví dụ: 7.000.000" aria-describedby="needsBudgetError" /><span>đ</span></div><span id="needsBudgetError" class="needs-field-error"></span><span asp-validation-for="Budget" class="text-danger"></span></div>
+                        <div><label asp-for="KocCount">Số KOC <span>*</span></label><input asp-for="KocCount" class="form-control" type="number" min="1" max="@policy.MaximumKocCount" inputmode="numeric" aria-describedby="needsCountError"/><span id="needsCountError" class="needs-field-error"></span><span asp-validation-for="KocCount" class="text-danger"></span></div>
+                        <div><label asp-for="SelfSelect">Cách tuyển KOC</label><select asp-for="SelfSelect" class="form-select" aria-describedby="needsSelectionError"><option value="false">TopStar phân bổ KOC</option><option value="true">Brand tự chọn KOC</option></select><span id="needsSelectionError" class="needs-field-error"></span></div>
+                    </div>
+                    <div class="needs-rule-note"><i class="fa-solid fa-circle-info"></i><span>Từ <strong>@PortalFormat.Money(policy.SelfSelectionMinimumBudget)</strong> để tự chọn KOC. Ngân sách tối thiểu bình quân <strong>@PortalFormat.Money(policy.MinimumBudgetPerKoc)/KOC.</strong></span></div>
+                </section>
+                <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button><button type="button" class="btn brand-btn-primary" id="needsApplyCustom"><i class="fa-solid fa-check"></i> Áp dụng</button></div>
+                </div></div></div>
+            </div>
+            <aside class="needs-panel needs-summary">
+                <div class="needs-section-heading"><span class="needs-section-icon"><i class="fa-solid fa-receipt"></i></span><div><h2>Chi phí dự kiến</h2><p>Cho nhu cầu bạn đã chọn</p></div></div>
+                <div id="needs-quote" aria-live="polite"><div class="needs-quote-empty"><i class="fa-solid fa-calculator"></i><p>Chọn gói hoặc nhập ngân sách để xem chi phí.</p></div></div>
+                <div class="needs-summary-note"><i class="fa-solid fa-shield-halved"></i><span>Kiểm tra tổng cuối cùng và chọn phương thức thanh toán ở bước 3.</span></div>
+                <button class="btn brand-btn-primary needs-continue" type="submit">Tiếp tục <i class="fa-solid fa-arrow-right"></i></button>
+            </aside>
+        </form>
+    }
+</div>
+@section Scripts {
+    <script src="~/js/brand/campaign-needs.js" asp-append-version="true"></script>
+}

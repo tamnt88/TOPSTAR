@@ -1,0 +1,33 @@
+@page
+@model Topstar.Web.Pages.Brand.VnPayReturnModel
+@{ViewData["Title"]="Kết quả thanh toán online";}
+@section Styles {<link rel="stylesheet" href="~/css/brand/payment-result.css" asp-append-version="true"/>}
+<div class="payment-outcome-page">
+    <section class="payment-outcome @(Model.Result.Success?"is-success":"is-error")" aria-labelledby="paymentOutcomeTitle">
+        <div class="payment-outcome-top">
+            <span class="payment-outcome-icon"><i class="fa-solid @(Model.Result.Success?"fa-check":"fa-exclamation")" aria-hidden="true"></i></span>
+            <span class="payment-outcome-badge"><i class="fa-solid fa-shield-halved"></i> @(Model.Result.Success?"Đã xác nhận thanh toán":"Kết quả giao dịch")</span>
+            <h1 id="paymentOutcomeTitle">@(Model.Result.Success?"Thanh toán thành công":"Chưa hoàn tất thanh toán")</h1>
+            <p>@Model.Result.Message</p>
+        </div>
+        @if(Model.Result.Success && Model.Result.Amount.HasValue)
+        {
+            <div class="payment-outcome-details">
+                <div class="payment-outcome-amount"><span>Số tiền đã thanh toán</span><strong>@Model.Result.Amount.Value.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN")) <small>₫</small></strong></div>
+                <dl><div><dt>Mã đơn / yêu cầu</dt><dd>@Model.Result.OrderNumber</dd></div><div><dt>Mã giao dịch</dt><dd>@Model.Result.TransactionNo</dd></div><div><dt>Phương thức</dt><dd>Thanh toán online</dd></div></dl>
+            </div>
+        }
+        <div class="payment-outcome-actions">
+            @if(Model.Result.Success && Model.Result.TargetUrl is not null)
+            {
+                <a href="@Model.Result.TargetUrl" class="btn brand-btn-primary"><i class="fa-solid fa-arrow-right"></i> @Model.Result.TargetLabel</a>
+            }
+            else
+            {
+                <a asp-page="/Brand/Billing" class="btn brand-btn-primary"><i class="fa-solid fa-wallet"></i> Kiểm tra giao dịch</a>
+            }
+            <a asp-page="/Brand/Dashboard" class="payment-outcome-back"><i class="fa-solid fa-arrow-left"></i> Về tổng quan</a>
+        </div>
+        <p class="payment-outcome-note"><i class="fa-solid fa-lock"></i> Thông tin giao dịch được bảo mật và lưu trong lịch sử thanh toán.</p>
+    </section>
+</div>

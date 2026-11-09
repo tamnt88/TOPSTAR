@@ -1,32 +1,181 @@
-﻿@page
+@page
 @model Topstar.Web.Pages.Brand.DashboardModel
 @{
-  ViewData["Title"] = "Brand Overview";
+    ViewData["Title"] = "Tổng quan Brand";
+
+    static (string Label, string CssClass, string Icon) CampaignStatus(string? status) => status switch
+    {
+        "Draft" => ("Bản nháp", "is-neutral", "fa-pen"),
+        "PendingReview" => ("Chờ duyệt", "is-warning", "fa-clock"),
+        "NeedEdit" => ("Cần chỉnh sửa", "is-danger", "fa-pen-to-square"),
+        "Approved" => ("Đã duyệt", "is-info", "fa-circle-check"),
+        "InProgress" => ("Đang chạy", "is-running", "fa-play"),
+        "Completed" => ("Hoàn tất", "is-success", "fa-check"),
+        "Rejected" => ("Từ chối", "is-danger", "fa-circle-xmark"),
+        "Cancelled" => ("Đã hủy", "is-neutral", "fa-ban"),
+        _ => ("Đang cập nhật", "is-neutral", "fa-circle-info")
+    };
 }
-<div class="page-wrap card-list">
-  <div><h1 class="section-title mb-0">Brand Dashboard</h1><div class="kpi-title">@Model.Data.BrandName</div></div>
-  @if (Model.Data.NeedsProfileCompletion || (Request.Query["completeProfile"] == "1"))
-  {
-    <div class="alert alert-warning mb-0">Tài khoản đã tạo nhanh. Vui lòng cập nhật đầy đủ hồ sơ Brand để sử dụng đầy đủ tính năng.</div>
-  }
-  <div class="kpi-grid">
-    <div class="kpi-box"><div class="kpi-title">Tong chien dich</div><div class="kpi-value">@Model.Data.TotalCampaigns</div></div>
-    <div class="kpi-box"><div class="kpi-title">KOCs dang hop tac</div><div class="kpi-value">@Model.Data.TotalKocsInCampaigns</div></div>
-    <div class="kpi-box"><div class="kpi-title">Tong Impressions</div><div class="kpi-value">@Model.Data.TotalImpressions.ToString("N0")</div></div>
-    <div class="kpi-box"><div class="kpi-title">Tong budget</div><div class="kpi-value">@Model.Data.TotalBudget.ToString("N0")</div></div>
-  </div>
-  <div class="card-x">
-    <h2 class="h5">Chien dich gan day</h2>
-    @if (Model.Data.RecentCampaigns.Count == 0)
+
+<div class="brand-dashboard">
+    <section class="brand-dashboard-hero">
+        <div>
+            <span class="brand-dashboard-eyebrow"><i class="fa-solid fa-chart-line"></i> Trung tâm điều hành Brand</span>
+            <h1>Chào mừng, @Model.Data.BrandName!</h1>
+            <p>Theo dõi chiến dịch, đội ngũ KOC và hiệu quả truyền thông tại một nơi.</p>
+        </div>
+        <div class="brand-dashboard-hero-actions">
+            <a asp-page="/Brand/CampaignNeeds" class="btn brand-btn-primary">
+                <i class="fa-solid fa-plus"></i> Tạo chiến dịch
+            </a>
+            <a asp-page="/Brand/Campaigns" class="btn btn-light">
+                <i class="fa-solid fa-list-check"></i> Quản lý chiến dịch
+            </a>
+        </div>
+    </section>
+
+    @if (Model.Data.NeedsProfileCompletion || Request.Query["completeProfile"] == "1")
     {
-      <div class="list-row"><div><b>Chua co du lieu campaign</b></div></div>
+        <section class="brand-dashboard-profile-alert">
+            <span><i class="fa-solid fa-triangle-exclamation"></i></span>
+            <div>
+                <strong>Hồ sơ doanh nghiệp chưa hoàn thiện</strong>
+                <p>Hoàn tất thông tin liên hệ, thuế và pháp lý để mở đầy đủ tính năng vận hành.</p>
+            </div>
+            <a asp-page="/Brand/EditProfile" class="btn btn-sm brand-btn-primary">
+                Cập nhật hồ sơ <i class="fa-solid fa-arrow-right"></i>
+            </a>
+        </section>
     }
-    else
-    {
-      foreach (var row in Model.Data.RecentCampaigns)
-      {
-        <div class="list-row"><div><b>@row.Title</b><div class="kpi-title">KOCs @row.KocCount • Impressions @row.Impressions.ToString("N0") • Budget @row.Budget.ToString("N0")</div></div><span class="badge-x badge-blue">@row.Status</span></div>
-      }
-    }
-  </div>
+
+    <section class="brand-dashboard-kpis" aria-label="Chỉ số tổng quan">
+        <article>
+            <span class="brand-kpi-icon is-teal"><i class="fa-solid fa-bullhorn"></i></span>
+            <div>
+                <small>Tổng chiến dịch</small>
+                <strong>@Model.Data.TotalCampaigns.ToString("N0", PortalFormat.Vietnamese)</strong>
+                <p>Toàn bộ chiến dịch đã tạo</p>
+            </div>
+        </article>
+        <article>
+            <span class="brand-kpi-icon is-blue"><i class="fa-solid fa-users"></i></span>
+            <div>
+                <small>Lượt KOC hợp tác</small>
+                <strong>@Model.Data.TotalKocsInCampaigns.ToString("N0", PortalFormat.Vietnamese)</strong>
+                <p>Tính theo các lượt tham gia</p>
+            </div>
+        </article>
+        <article>
+            <span class="brand-kpi-icon is-gold"><i class="fa-solid fa-eye"></i></span>
+            <div>
+                <small>Tổng lượt hiển thị</small>
+                <strong>@Model.Data.TotalImpressions.ToString("N0", PortalFormat.Vietnamese)</strong>
+                <p>Dữ liệu hiệu quả đã ghi nhận</p>
+            </div>
+        </article>
+        <article>
+            <span class="brand-kpi-icon is-purple"><i class="fa-solid fa-wallet"></i></span>
+            <div>
+                <small>Tổng ngân sách dự kiến</small>
+                <strong>@Model.Data.TotalBudget.ToString("N0", PortalFormat.Vietnamese) <em>đ</em></strong>
+                <p>Ngân sách của toàn bộ chiến dịch</p>
+            </div>
+        </article>
+    </section>
+
+    <section class="brand-dashboard-panel brand-action-inbox" id="brand-action-inbox">
+        <header class="brand-dashboard-panel-head">
+            <div><span class="brand-panel-icon"><i class="fa-solid fa-inbox"></i></span><div><h2>Việc cần xử lý</h2><p>Một hàng đợi chung, ưu tiên việc quá hạn và việc đang chờ Brand.</p></div></div>
+            <span class="brand-action-inbox-count">@Model.Data.ActionInbox.Count việc</span>
+        </header>
+        @if (Model.Data.ActionInbox.Count == 0)
+        {
+            <div class="brand-dashboard-empty"><span><i class="fa-solid fa-circle-check"></i></span><strong>Không có việc tồn đọng</strong><p>Các chiến dịch hiện không có hành động khẩn cấp cần Brand xử lý.</p></div>
+        }
+        else
+        {
+            <div class="brand-action-inbox-list">
+                @foreach (var item in Model.Data.ActionInbox)
+                {
+                    var overdue = item.DueAtUtc.HasValue && item.DueAtUtc.Value < DateTime.UtcNow;
+                    <article class="@(overdue ? "is-overdue" : item.WaitingFor == "Brand" ? "is-brand" : "")">
+                        <span><i class="fa-solid @(overdue ? "fa-triangle-exclamation" : item.WaitingFor == "Brand" ? "fa-bolt" : "fa-hourglass-half")"></i></span>
+                        <div><small>@item.CampaignTitle</small><strong>@item.Title</strong><p>Đang chờ: <b>@item.WaitingFor</b> · @(item.DueAtUtc?.ToVietnamTime().ToString("dd/MM/yyyy HH:mm") ?? "Chưa có deadline")</p></div>
+                        <em>@item.Priority</em>
+                        <a href="@item.TargetUrl" class="btn btn-sm brand-btn-primary">Xử lý ngay <i class="fa-solid fa-arrow-right"></i></a>
+                    </article>
+                }
+            </div>
+        }
+    </section>
+
+    <div class="brand-dashboard-grid">
+        <section class="brand-dashboard-panel">
+            <header class="brand-dashboard-panel-head">
+                <div>
+                    <span class="brand-panel-icon"><i class="fa-solid fa-clock-rotate-left"></i></span>
+                    <div>
+                        <h2>Chiến dịch gần đây</h2>
+                        <p>Ưu tiên kiểm tra trạng thái và kết quả của các chiến dịch mới nhất.</p>
+                    </div>
+                </div>
+                <a asp-page="/Brand/Campaigns">Tất cả <i class="fa-solid fa-arrow-right"></i></a>
+            </header>
+
+            @if (Model.Data.RecentCampaigns.Count == 0)
+            {
+                <div class="brand-dashboard-empty">
+                    <span><i class="fa-solid fa-folder-open"></i></span>
+                    <strong>Chưa có chiến dịch</strong>
+                    <p>Tạo chiến dịch đầu tiên để bắt đầu kết nối với KOC phù hợp.</p>
+                    <a asp-page="/Brand/CampaignNeeds" class="btn btn-sm brand-btn-primary">
+                        <i class="fa-solid fa-plus"></i> Tạo chiến dịch
+                    </a>
+                </div>
+            }
+            else
+            {
+                <div class="brand-campaign-list">
+                    @foreach (var row in Model.Data.RecentCampaigns)
+                    {
+                        var campaignStatus = CampaignStatus(row.Status);
+                        <article class="brand-campaign-row">
+                            <span class="brand-campaign-avatar"><i class="fa-solid fa-bullhorn"></i></span>
+                            <div class="brand-campaign-main">
+                                <strong title="@row.Title">@row.Title</strong>
+                                <div>
+                                    <span><i class="fa-solid fa-users"></i> @row.KocCount.ToString("N0", PortalFormat.Vietnamese) KOC</span>
+                                    <span><i class="fa-solid fa-eye"></i> @row.Impressions.ToString("N0", PortalFormat.Vietnamese) lượt hiển thị</span>
+                                </div>
+                            </div>
+                            <div class="brand-campaign-budget">
+                                <small>Ngân sách dự kiến</small>
+                                <strong>@row.Budget.ToString("N0", PortalFormat.Vietnamese) đ</strong>
+                            </div>
+                            <span class="brand-status @campaignStatus.CssClass">
+                                <i class="fa-solid @campaignStatus.Icon"></i> @campaignStatus.Label
+                            </span>
+                        </article>
+                    }
+                </div>
+            }
+        </section>
+
+        <aside class="brand-dashboard-side">
+            <section class="brand-dashboard-panel brand-action-panel">
+                <header class="brand-dashboard-panel-head">
+                    <div>
+                        <span class="brand-panel-icon"><i class="fa-solid fa-bolt"></i></span>
+                        <div><h2>Truy cập nhanh</h2><p>Các tác vụ vận hành thường dùng.</p></div>
+                    </div>
+                </header>
+                <nav class="brand-quick-actions" aria-label="Tác vụ Brand">
+                    <a asp-page="/Brand/Deliverables"><span><i class="fa-solid fa-clipboard-check"></i></span><div><strong>Duyệt nội dung</strong><small>Kiểm tra bài KOC đã nộp</small></div><i class="fa-solid fa-chevron-right"></i></a>
+                    <a asp-page="/Brand/Shortlist"><span><i class="fa-solid fa-user-check"></i></span><div><strong>Chọn KOC</strong><small>Quản lý danh sách đề xuất</small></div><i class="fa-solid fa-chevron-right"></i></a>
+                    <a asp-page="/Brand/Bookings"><span><i class="fa-solid fa-calendar-days"></i></span><div><strong>Lịch booking</strong><small>Theo dõi lịch làm việc</small></div><i class="fa-solid fa-chevron-right"></i></a>
+                    <a asp-page="/Brand/Reports"><span><i class="fa-solid fa-chart-column"></i></span><div><strong>Báo cáo hiệu quả</strong><small>Xem số liệu chiến dịch</small></div><i class="fa-solid fa-chevron-right"></i></a>
+                </nav>
+            </section>
+        </aside>
+    </div>
 </div>

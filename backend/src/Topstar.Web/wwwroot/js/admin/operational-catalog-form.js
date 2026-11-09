@@ -1,0 +1,15 @@
+document.addEventListener('DOMContentLoaded',()=>{
+ const form=document.querySelector('.ops-catalog-form'),type=document.querySelector('[name="Input.CatalogType"]:not([type="hidden"])'),box=document.querySelector('[data-violation-fields]'),back=document.getElementById('catalogBackLink');
+ if(!form||!type||!box)return;
+ const sync=()=>{
+  const violation=type.value==='VIOLATION_CATEGORY';box.hidden=!violation;
+  box.querySelectorAll('select,input').forEach(field=>{field.disabled=!violation;field.required=false;});
+  const key=violation?'violation':type.value==='DELIVERABLE_TYPE'?'deliverable':'checkpoint';
+  if(back)back.href=`/Admin/Settings/OperationalSetup#${key}`;document.querySelector('.ops-form-actions .btn-light').href=`/Admin/Settings/OperationalSetup#${key}`;
+ };
+ type.addEventListener('change',sync);sync();
+ const showViolationRequired=()=>{let invalid=false;if(type.value!=='VIOLATION_CATEGORY')return invalid;[['Input.DefaultSeverity','Vui lòng chọn mức độ mặc định.'],['Input.DefaultPenaltyPoints','Vui lòng nhập điểm phạt mặc định.']].forEach(([name,text])=>{const field=form.elements[name],message=form.querySelector(`[data-valmsg-for="${name}"]`);if(!field.value){invalid=true;field.classList.add('input-validation-error');if(message){message.textContent=text;message.classList.remove('field-validation-valid');message.classList.add('field-validation-error');}}});return invalid;};
+ form.querySelector('[type="submit"],button:not([type])')?.addEventListener('click',()=>{showViolationRequired();setTimeout(()=>{showViolationRequired();form.querySelector('.input-validation-error,.is-invalid')?.focus();},0);},true);
+ form.addEventListener('submit',event=>{const requiredViolation=[['Input.DefaultSeverity','Vui lòng chọn mức độ mặc định.'],['Input.DefaultPenaltyPoints','Vui lòng nhập điểm phạt mặc định.']];if(type.value==='VIOLATION_CATEGORY'){let invalid=false;requiredViolation.forEach(([name,text])=>{const field=form.elements[name],message=form.querySelector(`[data-valmsg-for="${name}"]`);if(!field.value){invalid=true;field.classList.add('input-validation-error');if(message){message.textContent=text;message.classList.remove('field-validation-valid');message.classList.add('field-validation-error');}}});if(invalid)event.preventDefault();}setTimeout(()=>{requiredViolation.forEach(([name,text])=>{const field=form.elements[name],message=form.querySelector(`[data-valmsg-for="${name}"]`);if(type.value==='VIOLATION_CATEGORY'&&!field.value&&message)message.textContent=text;});form.querySelector('.input-validation-error,.is-invalid')?.focus();},0);},true);
+ form.addEventListener('input',event=>{const field=event.target;if(!field.matches('.input-validation-error,.is-invalid'))return;field.classList.remove('input-validation-error','is-invalid');const message=form.querySelector(`[data-valmsg-for="${CSS.escape(field.name)}"]`);if(message){message.textContent='';message.classList.remove('field-validation-error');message.classList.add('field-validation-valid');}});
+});

@@ -25,7 +25,8 @@ public sealed record BrandDashboardData(
     int TotalKocsInCampaigns,
     long TotalImpressions,
     decimal TotalBudget,
-    IReadOnlyList<BrandCampaignItem> RecentCampaigns);
+    IReadOnlyList<BrandCampaignItem> RecentCampaigns,
+    IReadOnlyList<BrandActionItem> ActionInbox);
 
 public sealed record KocDashboardData(
     string DisplayName,
@@ -34,9 +35,21 @@ public sealed record KocDashboardData(
     int ActiveJobs,
     decimal EstimatedIncome,
     decimal AverageRating,
-    IReadOnlyList<KocJobItem> TodoJobs);
+    IReadOnlyList<KocJobItem> TodoJobs,
+    decimal AvailableBalance,
+    int UpcomingBookingCount,
+    int RevisionRequiredCount,
+    int UnreadNotificationCount,
+    int Followers,
+    decimal ProfileScore,
+    string ProfileStatus,
+    IReadOnlyList<KocScheduleItem> UpcomingSchedules,
+    IReadOnlyList<KocNotificationItem> RecentNotifications);
 
 public sealed record CampaignStatusItem(string Label, int Count);
 public sealed record ActivityItem(string Title, DateTime CreatedAtUtc);
 public sealed record BrandCampaignItem(string Title, string Status, int KocCount, long Impressions, decimal Budget);
-public sealed record KocJobItem(string CampaignTitle, decimal Budget, string Status);
+public sealed record BrandActionItem(Guid CampaignId,string CampaignTitle,string Title,string WaitingFor,string Priority,DateTime? DueAtUtc,string TargetUrl);
+public sealed record KocJobItem(string CampaignTitle, string BrandName, string Status, string TargetUrl, string ActionLabel, DateTime? DueAtUtc);
+public sealed record KocScheduleItem(Guid ScheduleId, string CampaignTitle, string BrandName, string Status, DateTime StartsAtUtc);
+public sealed record KocNotificationItem(string Title, string Body, bool IsRead, string? TargetUrl, DateTime CreatedAtUtc);

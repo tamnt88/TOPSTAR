@@ -1,0 +1,85 @@
+@page
+@model Topstar.Web.Pages.Admin.Settings.SocialSyncModel
+@{ViewData["Title"]="Đồng bộ mạng xã hội";var syncFailed=Model.SyncJobs.Count(x=>x.Status=="Failed");var syncProcessing=Model.SyncJobs.Count(x=>x.Status is "Pending" or "Running");}
+<section class="ops-dashboard"><header class="ops-dashboard-heading"><div><h1>Đồng bộ mạng xã hội</h1><p>Kiểm tra kết nối và yêu cầu cập nhật dữ liệu KOC.</p></div><a asp-page="/Admin/Management" class="btn btn-light">Công cụ quản trị</a></header>
+@if(Model.SyncMessage is not null){<div hidden data-ts-notification="info">@Model.SyncMessage</div>}
+    <details class="ops-panel ops-tools-panel" open>
+        <summary>
+            <span class="ops-tools-summary">
+                <span class="ops-tools-icon"><i class="fa-solid fa-arrows-rotate"></i></span>
+                <span><strong>Giám sát đồng bộ social</strong><small>Công cụ kỹ thuật và các job gần nhất</small></span>
+            </span>
+            <span class="ops-tools-stats">
+                @if (syncFailed > 0) { <span class="badge text-bg-danger">@syncFailed lỗi</span> }
+                @if (syncProcessing > 0) { <span class="badge text-bg-warning">@syncProcessing đang xử lý</span> }
+                <span class="badge text-bg-light">@Model.SyncJobs.Count job</span>
+                <i class="fa-solid fa-plus ops-summary-toggle"></i>
+            </span>
+        </summary>
+        <div class="ops-tools-body">
+            <div class="ops-sync-controls">
+                <div>
+                    <h3>Yêu cầu đồng bộ</h3>
+                    <p>Job Pending/Running hiện có sẽ không được tạo trùng.</p>
+                </div>
+                <form method="post" asp-page-handler="SyncOneKoc" class="ops-sync-form">
+                    <div>
+                        <label asp-for="KocProfileId" class="visually-hidden">Chọn KOC đã kết nối social</label>
+                        <select asp-for="KocProfileId" class="form-select" required>
+                            <option value="">-- Chọn KOC đã kết nối social --</option>
+                            @foreach (var koc in Model.SyncKocs)
+                            {
+                                <option value="@koc.KocProfileId">@koc.DisplayName · @koc.Platforms</option>
+                            }
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-outline-primary"><i class="fa-solid fa-user-gear"></i> Đồng bộ KOC</button>
+                </form>
+                <form method="post" asp-page-handler="SyncAllKoc">
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-rotate"></i> Đồng bộ toàn bộ</button>
+                </form>
+            </div>
+
+            @if (Model.SyncJobs.Count == 0)
+            {
+                <div class="ops-empty">Chưa có yêu cầu đồng bộ.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table ops-sync-table align-middle mb-0">
+                        <thead><tr><th>KOC</th><th>Phạm vi</th><th>Trạng thái</th><th>Thời điểm</th><th>Kết quả</th></tr></thead>
+                        <tbody>
+                        @foreach (var job in Model.SyncJobs.Take(6))
+                        {
+                            var badge = job.Status == "Succeeded" ? "text-bg-success" : job.Status == "Failed" ? "text-bg-danger" : job.Status == "Running" ? "text-bg-primary" : "text-bg-warning";
+                            var status = job.Status == "Succeeded" ? "Thành công" : job.Status == "Failed" ? "Thất bại" : job.Status == "Running" ? "Đang chạy" : "Đang chờ";
+                            <tr>
+                                <td><strong>@job.KocName</strong><small>@job.RequestedByRole</small></td>
+                                <td>@job.Scope</td>
+                                <td><span class="badge @badge">@status</span></td>
+                                <td>@job.RequestedAtUtc.ToVietnamTime().ToString("dd/MM · HH:mm")</td>
+                                <td>
+                                    @if (!string.IsNullOrWhiteSpace(job.ErrorMessage))
+                                    {
+                                        <span class="text-danger text-break">@(job.ErrorMessage.Contains("key ring",StringComparison.OrdinalIgnoreCase)?"Kết nối đã hết hiệu lực. Vui lòng kết nối lại tài khoản mạng xã hội.":"Đồng bộ chưa thành công. Kiểm tra kết nối hoặc nhật ký hệ thống.")</span>
+                                    }
+                                    else if (job.Status == "Succeeded")
+                                    {
+                                        <span class="text-success">Hoàn tất</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Chờ kết quả</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </details>
+
+</section>

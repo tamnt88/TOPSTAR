@@ -1,110 +1,27 @@
 @page "/goi-koc"
-@{
-    ViewData["Title"] = "Các gói KOC";
-    ViewData["Description"] = "Chọn gói KOC phù hợp cho từng mục tiêu chiến dịch của Brand từ Starter đến Enterprise.";
-    ViewData["Keywords"] = "gói KOC, pricing KOC, brand packages, TopStar";
+@model Topstar.Web.Pages.Public.BrandPackagesModel
+@{ViewData["Title"]="Các gói KOC";ViewData["Description"]="Các gói dịch vụ KOC dành cho Brand.";}
+@section Styles {
+ <link rel="stylesheet" href="~/css/public/brand-packages.css" asp-append-version="true" />
 }
-
 <div class="brand-package-page">
-    <section class="brand-package-head section-flow reveal-up py-4">
-        <div class="container">
-            <a asp-page="/Public/BrandPublic" class="brand-package-back flow-item"><i class="fa-solid fa-arrow-left"></i> Quay lại</a>
-            <h1 class="text-center flow-item">Chọn gói KOC phù hợp</h1>
-            <p class="text-center flow-item">Mỗi gói bao gồm: KOC + Nội dung + Thời gian triển khai</p>
-            <p class="text-center flow-item brand-package-tip"><i class="fa-solid fa-lightbulb"></i> Mẹo: Gói “Growth” phù hợp nhất cho các chiến dịch ra mắt sản phẩm mới</p>
-        </div>
-    </section>
-
-    <section class="brand-package-grid section-flow reveal-up pb-4">
-        <div class="container">
-            <div class="row g-4">
-                <div class="col-lg-6 col-xl-3">
-                    <article class="package-card flow-item">
-                        <div class="package-icon dark"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
-                        <h3>Starter Pack</h3>
-                        <div class="package-price">8tr</div>
-                        <ul class="package-meta">
-                            <li>10 KOC (Nano KOC)</li>
-                            <li>10 nội dung</li>
-                            <li>14 ngày triển khai</li>
-                            <li>Hệ thống gán</li>
-                        </ul>
-                        <a asp-page="/Public/RegisterKocStep1" class="package-btn">Mua gói ngay</a>
-                    </article>
-                </div>
-                <div class="col-lg-6 col-xl-3">
-                    <article class="package-card featured flow-item">
-                        <div class="package-badge">Phổ biến nhất</div>
-                        <div class="package-icon blue"><i class="fa-solid fa-bolt"></i></div>
-                        <h3>Growth Pack</h3>
-                        <div class="package-price">20tr</div>
-                        <ul class="package-meta">
-                            <li>20 KOC (Micro KOC)</li>
-                            <li>20 nội dung</li>
-                            <li>21 ngày triển khai</li>
-                            <li>Brand chọn KOC</li>
-                        </ul>
-                        <a asp-page="/Public/RegisterKocStep1" class="package-btn primary">Mua gói ngay</a>
-                    </article>
-                </div>
-                <div class="col-lg-6 col-xl-3">
-                    <article class="package-card flow-item">
-                        <div class="package-icon purple"><i class="fa-regular fa-crown"></i></div>
-                        <h3>Premium Pack</h3>
-                        <div class="package-price">50tr</div>
-                        <ul class="package-meta">
-                            <li>30 KOC (Mixed)</li>
-                            <li>40 nội dung</li>
-                            <li>30 ngày triển khai</li>
-                            <li>Báo cáo chuyên sâu</li>
-                        </ul>
-                        <a asp-page="/Public/RegisterKocStep1" class="package-btn">Mua gói ngay</a>
-                    </article>
-                </div>
-                <div class="col-lg-6 col-xl-3">
-                    <article class="package-card flow-item">
-                        <div class="package-icon orange"><i class="fa-solid fa-crown"></i></div>
-                        <h3>Enterprise Pack</h3>
-                        <div class="package-price">100tr</div>
-                        <ul class="package-meta">
-                            <li>50 KOC (All segments)</li>
-                            <li>100 nội dung</li>
-                            <li>60 ngày triển khai</li>
-                            <li>Dedicated account manager</li>
-                        </ul>
-                        <a asp-page="/Public/RegisterKocStep1" class="package-btn">Mua gói ngay</a>
-                    </article>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="brand-package-compare section-flow reveal-up pb-5">
-        <div class="container">
-            <div class="compare-card flow-item">
-                <h2>So sánh chi tiết các gói</h2>
-                <div class="table-responsive">
-                    <table class="table align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th>Tính năng</th>
-                                <th>Starter</th>
-                                <th>Growth</th>
-                                <th>Premium</th>
-                                <th>Enterprise</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td>Số lượng KOC</td><td>10</td><td>20</td><td>30</td><td>50</td></tr>
-                            <tr><td>Phân khúc KOC</td><td>Nano</td><td>Micro</td><td>Mixed</td><td>All segments</td></tr>
-                            <tr><td>Số nội dung</td><td>10</td><td>20</td><td>40</td><td>100</td></tr>
-                            <tr><td>Thời gian triển khai</td><td>14 ngày</td><td>21 ngày</td><td>30 ngày</td><td>60 ngày</td></tr>
-                            <tr><td>Duyệt nội dung</td><td>-</td><td><i class="fa-solid fa-check text-success"></i></td><td><i class="fa-solid fa-check text-success"></i></td><td><i class="fa-solid fa-check text-success"></i></td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <p class="text-center package-contact flow-item">Cần tư vấn gói phù hợp? Liên hệ hotline: <a href="tel:19000000">1900-xxxx</a></p>
-        </div>
-    </section>
+ <section class="brand-package-head section-flow reveal-up"><div class="container">
+  <a asp-page="/Public/BrandPublic" class="brand-package-back flow-item"><i class="fa-solid fa-arrow-left"></i> Dành cho Brand</a>
+  <div class="brand-package-head-copy">
+   <p class="brand-package-eyebrow flow-item"><i class="fa-solid fa-sparkles"></i> GIẢI PHÁP CHIẾN DỊCH KOC</p>
+   <h1 class="flow-item">Chọn gói phù hợp.<br /><span>Triển khai hiệu quả.</span></h1>
+   <p class="flow-item">Tham khảo ngân sách và số KOC, hoặc tùy chỉnh theo nhu cầu. Thanh toán khi tạo chiến dịch, không cần mua gói trước.</p>
+   <div class="brand-package-assurances flow-item"><span><i class="fa-solid fa-bullhorn"></i> Ngân sách trả KOC</span><span><i class="fa-solid fa-users"></i> Giới hạn theo số KOC</span><span><i class="fa-solid fa-calendar-check"></i> Tùy chỉnh theo nhu cầu</span></div>
+  </div>
+ </div></section>
+ <section class="brand-package-grid section-flow reveal-up"><div class="container">
+  <div class="brand-package-grid-heading"><div><p>GÓI DỊCH VỤ</p><h2>Chọn cách triển khai</h2></div><span>Chọn hình thức tuyển chọn và số lượng KOC phù hợp cho chiến dịch.</span></div>
+  @if(Model.Items.Count==0){<div class="brand-package-empty">Bảng giá tham khảo đang được cập nhật. Bạn vẫn có thể tùy chỉnh nhu cầu khi tạo chiến dịch.</div>}
+  @if(Model.Items.Any(x=>!x.BrandSelectionEnabled)){
+   <section class="package-method-section is-topstar"><header><span><i class="fa-solid fa-people-arrows"></i></span><div><small>PHƯƠNG ÁN 1</small><h3>Để Topstar tuyển chọn và phân công KOC</h3><p>Brand cung cấp brief; Topstar tìm KOC phù hợp và gửi đủ số lượng cần xác nhận.</p></div></header><div class="row g-4 align-items-stretch">@foreach(var item in Model.Items.Where(x=>!x.BrandSelectionEnabled)){<div class="col-lg-6 col-xl-4"><partial name="_BrandPackageCard" model="item" /></div>}</div></section>
+  }
+  @if(Model.Items.Any(x=>x.BrandSelectionEnabled)){
+   <section class="package-method-section is-brand"><header><span><i class="fa-solid fa-user-check"></i></span><div><small>PHƯƠNG ÁN 2</small><h3>Brand chủ động lựa chọn KOC</h3><p>Topstar cung cấp shortlist; Brand trực tiếp chọn và xác nhận KOC tham gia.</p></div></header><div class="row g-4 align-items-stretch">@foreach(var item in Model.Items.Where(x=>x.BrandSelectionEnabled)){<div class="col-lg-6 col-xl-4"><partial name="_BrandPackageCard" model="item" /></div>}</div></section>
+  }
+ </div></section>
 </div>

@@ -1,123 +1,235 @@
-﻿@page
+@page
 @model Topstar.Web.Pages.Brand.EditProfileModel
 @{
     ViewData["Title"] = "Chỉnh sửa hồ sơ Brand";
 }
 
-<div class="page-wrap card-list">
-    <h1 class="section-title mb-0">Chỉnh sửa hồ sơ Brand</h1>
-    <div class="card-x">
-        <form method="post" enctype="multipart/form-data" novalidate>
-            @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
-            {
-                <div class="alert alert-danger py-2">@Model.ErrorMessage</div>
-            }
-
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label asp-for="Input.CompanyName" class="form-label">Tên công ty/Brand</label>
-                    <input asp-for="Input.CompanyName" class="form-control" />
-                    <span asp-validation-for="Input.CompanyName" class="text-danger small"></span>
+<div class="brand-profile-edit-page">
+    <header class="brand-page-header">
+        <span class="brand-page-header-icon"><i class="fa-solid fa-building-circle-check"></i></span>
+        <div>
+            <h1>Chỉnh sửa hồ sơ Brand</h1>
+            <p>Cập nhật thông tin doanh nghiệp, người liên hệ và hồ sơ pháp lý.</p>
+        </div>
+    </header>
+    @if (!Model.Completion.IsComplete || !Model.Completion.IsApproved)
+    {
+        <section class="brand-completion-card" aria-labelledby="brand-completion-title">
+            <div class="brand-completion-summary">
+                <div>
+                    <span class="brand-completion-eyebrow"><i class="fa-solid fa-list-check"></i> Tiến độ hồ sơ</span>
+                    <h2 id="brand-completion-title">@Model.Completion.Percent% hoàn thiện</h2>
+                    <p>@(Model.Completion.MissingItems.Count > 0
+                        ? $"Còn {Model.Completion.MissingItems.Count} mục bắt buộc. Chọn từng mục để đến đúng ô cần cập nhật."
+                        : $"Thông tin đã đầy đủ; hồ sơ hiện ở trạng thái “{Model.Completion.StatusLabel}”.")</p>
                 </div>
-                <div class="col-md-6">
-                    <label asp-for="Input.ContactName" class="form-label">Tên người đại diện</label>
-                    <input asp-for="Input.ContactName" class="form-control" />
-                    <span asp-validation-for="Input.ContactName" class="text-danger small"></span>
-                </div>
-                <div class="col-md-6">
-                    <label asp-for="Input.Email" class="form-label">Email liên hệ</label>
-                    <input asp-for="Input.Email" class="form-control" />
-                    <span asp-validation-for="Input.Email" class="text-danger small"></span>
-                </div>
-                <div class="col-md-6">
-                    <label asp-for="Input.Phone" class="form-label">Số điện thoại user</label>
-                    <input asp-for="Input.Phone" class="form-control" />
-                    <span asp-validation-for="Input.Phone" class="text-danger small"></span>
-                </div>
-                <div class="col-md-6">
-                    <label asp-for="Input.ContactPhone" class="form-label">Số điện thoại người liên hệ</label>
-                    <input asp-for="Input.ContactPhone" class="form-control" />
-                    <span asp-validation-for="Input.ContactPhone" class="text-danger small"></span>
-                </div>
-
-                <div class="col-12">
-                    <label asp-for="Input.StreetAddress" class="form-label">Số nhà + tên đường</label>
-                    <input asp-for="Input.StreetAddress" class="form-control" />
-                    <span asp-validation-for="Input.StreetAddress" class="text-danger small"></span>
-                </div>
-                <div class="col-md-6">
-                    <label asp-for="Input.ProvinceId" class="form-label">Tỉnh/Thành phố</label>
-                    <select asp-for="Input.ProvinceId" asp-items="Model.ProvinceOptions" class="form-select" id="brand-edit-province">
-                        <option value="">Chọn Tỉnh/Thành phố</option>
-                    </select>
-                    <span asp-validation-for="Input.ProvinceId" class="text-danger small"></span>
-                </div>
-                <div class="col-md-6">
-                    <label asp-for="Input.WardId" class="form-label">Phường/Xã</label>
-                    <select asp-for="Input.WardId" asp-items="Model.WardOptions" class="form-select" id="brand-edit-ward">
-                        <option value="">Chọn Phường/Xã</option>
-                    </select>
-                    <span asp-validation-for="Input.WardId" class="text-danger small"></span>
-                </div>
+                <span class="brand-completion-status">@Model.Completion.StatusLabel</span>
             </div>
-
-            <hr class="my-4" />
-            <h2 class="h5 mb-3">Thông tin thuế & pháp lý</h2>
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <label asp-for="Input.TaxCode" class="form-label">Mã số thuế</label>
-                    <input asp-for="Input.TaxCode" class="form-control" />
-                    <span asp-validation-for="Input.TaxCode" class="text-danger small"></span>
-                </div>
-                <div class="col-md-8">
-                    <label asp-for="Input.TaxCompanyName" class="form-label">Tên pháp lý trên MST</label>
-                    <input asp-for="Input.TaxCompanyName" class="form-control" />
-                    <span asp-validation-for="Input.TaxCompanyName" class="text-danger small"></span>
-                </div>
-                <div class="col-12">
-                    <label asp-for="Input.TaxInvoiceAddress" class="form-label">Địa chỉ xuất hóa đơn</label>
-                    <input asp-for="Input.TaxInvoiceAddress" class="form-control" />
-                    <span asp-validation-for="Input.TaxInvoiceAddress" class="text-danger small"></span>
-                </div>
-                <div class="col-12">
-                    <label class="form-label">Giấy phép kinh doanh</label>
-                    <input asp-for="BusinessLicenseFile" type="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" />
-                    @if (!string.IsNullOrWhiteSpace(Model.Input.CurrentBusinessLicenseUrl))
+            <div class="brand-completion-progress" role="progressbar" aria-valuenow="@Model.Completion.Percent" aria-valuemin="0" aria-valuemax="100">
+                <span style="width:@Model.Completion.Percent%"></span>
+            </div>
+            @if (Model.Completion.MissingItems.Count > 0)
+            {
+                <div class="brand-requirement-grid">
+                    @foreach (var item in Model.Completion.MissingItems)
                     {
-                        <div class="mt-2">
-                            File hiện tại: <a href="@Model.Input.CurrentBusinessLicenseUrl" target="_blank">Xem giấy phép</a>
-                        </div>
+                        <button type="button"
+                                class="brand-requirement-item"
+                                data-brand-requirement-pane="@item.Pane"
+                                data-brand-requirement-target="@item.TargetId">
+                            <span><i class="fa-solid @item.Icon"></i></span>
+                            <div><strong>@item.Label</strong><small>@item.Detail</small></div>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
                     }
                 </div>
+            }
+        </section>
+    }
+    <section class="brand-profile-card">
+        <form method="post" enctype="multipart/form-data" novalidate class="brand-validated-form" data-brand-validation-form>
+            @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+            {
+                <div hidden data-ts-notification="error" data-message="@Model.ErrorMessage"></div>
+            }
+            <div class="brand-form-error-summary alert alert-danger @(ViewData.ModelState.IsValid ? "d-none" : "")"
+                 role="alert"
+                 tabindex="-1"
+                 data-brand-error-summary>
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span>Thông tin chưa hợp lệ. Vui lòng kiểm tra các ô được đánh dấu bên dưới.</span>
             </div>
 
-            <div class="d-flex justify-content-end gap-2 mt-4">
-                <a asp-page="/Brand/Profile" class="btn btn-outline-secondary">Hủy</a>
-                <button type="submit" class="btn btn-warning">Lưu hồ sơ Brand</button>
+            <div class="ts-tabs brand-form-tabs" role="tablist" aria-label="Nhóm thông tin hồ sơ">
+                <button class="brand-form-tab active" type="button" role="tab" aria-selected="true" data-pane="brand-company-pane">
+                    <i class="fa-regular fa-building"></i>Thông tin doanh nghiệp
+                </button>
+                <button class="brand-form-tab" type="button" role="tab" aria-selected="false" data-pane="brand-legal-pane">
+                    <i class="fa-solid fa-scale-balanced"></i>Thuế &amp; pháp lý
+                </button>
+            </div>
+
+            <div class="brand-form-pane active" id="brand-company-pane" role="tabpanel">
+                <div class="brand-form-section-title">
+                    <span><i class="fa-regular fa-address-card"></i></span>
+                    <h2>Thông tin liên hệ</h2>
+                </div>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="brand-file-panel">
+                            <label asp-for="LogoFile" class="form-label">Logo Brand</label>
+                            <div class="d-flex align-items-center gap-3 flex-wrap">
+                                @if (!string.IsNullOrWhiteSpace(Model.Input.CurrentLogoUrl))
+                                {
+                                    <img src="@Model.Input.CurrentLogoUrl" alt="Logo Brand hiện tại" style="width:88px;height:88px;object-fit:contain;border:1px solid #d9e2e7;border-radius:16px;background:#fff;padding:8px" />
+                                }
+                                <div class="flex-grow-1">
+                                    <input asp-for="LogoFile" type="file" class="form-control" accept="image/jpeg,image/png,image/webp,image/svg+xml" />
+                                    <span asp-validation-for="LogoFile"></span>
+                                    <div class="form-text">JPG, PNG, WEBP hoặc SVG; tối đa 5 MB.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.CompanyName" class="form-label">Tên công ty/Brand</label>
+                        <input asp-for="Input.CompanyName" class="form-control" />
+                        <span asp-validation-for="Input.CompanyName"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.ContactName" class="form-label">Tên người đại diện</label>
+                        <input asp-for="Input.ContactName" class="form-control" />
+                        <span asp-validation-for="Input.ContactName"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.Email" class="form-label">Email đăng nhập và liên hệ</label>
+                        <input asp-for="Input.Email" class="form-control" />
+                        <span asp-validation-for="Input.Email"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Input.Phone" class="form-label">Số điện thoại tài khoản</label>
+                        <input asp-for="Input.Phone" class="form-control" />
+                        <span asp-validation-for="Input.Phone"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Input.ContactPhone" class="form-label">Số điện thoại liên hệ</label>
+                        <input asp-for="Input.ContactPhone" class="form-control" />
+                        <span asp-validation-for="Input.ContactPhone"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.Industries" class="form-label">Ngành hàng</label>
+                        <select asp-for="Input.Industries" asp-items="Model.IndustryOptions" class="form-select" multiple data-placeholder="Chọn một hoặc nhiều ngành hàng">
+                        </select>
+                        <span asp-validation-for="Input.Industries"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.Website" class="form-label">Website</label>
+                        <input asp-for="Input.Website" class="form-control" placeholder="https://example.com" />
+                        <span asp-validation-for="Input.Website"></span>
+                    </div>
+
+                    <div class="col-12 mt-4">
+                        <div class="brand-form-section-title">
+                            <span><i class="fa-solid fa-location-dot"></i></span>
+                            <h2>Địa chỉ doanh nghiệp</h2>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Input.StreetAddress" class="form-label">Số nhà và tên đường</label>
+                        <input asp-for="Input.StreetAddress" class="form-control" />
+                        <span asp-validation-for="Input.StreetAddress"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.ProvinceId" class="form-label">Tỉnh/Thành phố</label>
+                        <select asp-for="Input.ProvinceId" asp-items="Model.ProvinceOptions" class="form-select" id="brand-edit-province">
+                            <option value="">Chọn Tỉnh/Thành phố</option>
+                        </select>
+                        <span asp-validation-for="Input.ProvinceId"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.WardId" class="form-label">Phường/Xã</label>
+                        <select asp-for="Input.WardId" asp-items="Model.WardOptions" class="form-select" id="brand-edit-ward">
+                            <option value="">Chọn Phường/Xã</option>
+                        </select>
+                        <span asp-validation-for="Input.WardId"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="brand-form-pane" id="brand-legal-pane" role="tabpanel">
+                <div class="brand-form-section-title">
+                    <span><i class="fa-solid fa-file-invoice"></i></span>
+                    <h2>Thông tin thuế và xuất hóa đơn</h2>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label asp-for="Input.TaxCode" class="form-label">Mã số thuế</label>
+                        <input asp-for="Input.TaxCode" class="form-control" />
+                        <span asp-validation-for="Input.TaxCode"></span>
+                    </div>
+                    <div class="col-md-8">
+                        <label asp-for="Input.TaxCompanyName" class="form-label">Tên pháp lý trên mã số thuế</label>
+                        <input asp-for="Input.TaxCompanyName" class="form-control" />
+                        <span asp-validation-for="Input.TaxCompanyName"></span>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Input.TaxInvoiceAddress" class="form-label">Địa chỉ xuất hóa đơn</label>
+                        <input asp-for="Input.TaxInvoiceAddress" class="form-control" />
+                        <span asp-validation-for="Input.TaxInvoiceAddress"></span>
+                    </div>
+                    <div class="col-12 mt-4">
+                        <div class="brand-form-section-title">
+                            <span><i class="fa-solid fa-building-columns"></i></span>
+                            <div><h2>Tài khoản nhận hoàn tiền <small class="text-muted">(không bắt buộc)</small></h2><p class="text-muted mb-0">Có thể bổ sung sau. Khi khai báo, vui lòng điền đủ ngân hàng, số tài khoản và chủ tài khoản.</p></div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.RefundBankName" class="form-label">Ngân hàng</label>
+                        <input asp-for="Input.RefundBankName" class="form-control" autocomplete="organization" />
+                        <span asp-validation-for="Input.RefundBankName"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.RefundAccountNumber" class="form-label">Số tài khoản</label>
+                        <input asp-for="Input.RefundAccountNumber" class="form-control" inputmode="numeric" autocomplete="off" />
+                        <span asp-validation-for="Input.RefundAccountNumber"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Input.RefundAccountHolder" class="form-label">Chủ tài khoản</label>
+                        <input asp-for="Input.RefundAccountHolder" class="form-control" autocomplete="name" />
+                        <span asp-validation-for="Input.RefundAccountHolder"></span>
+                    </div>
+                    <div class="col-12 mt-4">
+                        <div class="brand-form-section-title">
+                            <span><i class="fa-solid fa-file-shield"></i></span>
+                            <h2>Hồ sơ pháp lý</h2>
+                        </div>
+                        <div class="brand-file-panel">
+                            <label asp-for="BusinessLicenseFile" class="form-label">Giấy phép kinh doanh</label>
+                            <input asp-for="BusinessLicenseFile" type="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" />
+                            <span asp-validation-for="BusinessLicenseFile"></span>
+                            <div class="form-text">Hỗ trợ PDF, JPG hoặc PNG; sử dụng bản rõ nét và còn hiệu lực.</div>
+                            @if (!string.IsNullOrWhiteSpace(Model.Input.CurrentBusinessLicenseUrl))
+                            {
+                                <a class="btn btn-sm btn-outline-secondary mt-2" href="@Model.Input.CurrentBusinessLicenseUrl" target="_blank">
+                                    <i class="fa-regular fa-file-lines"></i> Xem giấy phép hiện tại
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="brand-form-actions mt-4">
+                <a asp-page="/Brand/Profile" class="btn btn-light"><i class="fa-solid fa-xmark"></i> Hủy</a>
+                <button type="submit" class="btn brand-btn-primary" data-brand-submit>
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    <span>Lưu hồ sơ Brand</span>
+                </button>
             </div>
         </form>
-    </div>
+    </section>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        (function () {
-            var $province = $("#brand-edit-province");
-            var $ward = $("#brand-edit-ward");
-
-            $province.on('change', function () {
-                var provinceId = ($province.val() || '').trim();
-                $ward.empty().append($('<option/>', { value: '', text: 'Chọn Phường/Xã' }));
-                if (!provinceId) return;
-
-                $.get('/Brand/EditProfile?handler=WardsByProvince', { provinceId: provinceId })
-                    .done(function (res) {
-                        $.each((res && res.data) ? res.data : [], function (_, ward) {
-                            $ward.append($('<option/>', { value: ward.id, text: ward.name }));
-                        });
-                    });
-            });
-        })();
-    </script>
 }

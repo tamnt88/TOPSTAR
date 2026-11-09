@@ -1,0 +1,67 @@
+/* Shared geometry and behavior; portal colors remain themeable. */
+.topstar-list { --list-accent: var(--bs-primary, #6f36c8); }
+.topstar-list .dt-paging .pagination, .topstar-list .dataTables_paginate .pagination { gap: 0; margin: 0; flex-wrap: wrap; }
+.topstar-list .dt-paging .page-link, .topstar-list .dataTables_paginate .page-link { min-width: 36px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 0; margin: 0 0 0 -1px; }
+.topstar-list .pagination > :first-child .page-link { border-radius: 6px 0 0 6px; }
+.topstar-list .pagination > :last-child .page-link { border-radius: 0 6px 6px 0; }
+.topstar-list .page-item.active .page-link { background: var(--list-accent); border-color: var(--list-accent); color: #fff; }
+.topstar-list .page-item.disabled .page-link { pointer-events: none; opacity: .55; }
+.topstar-list .page-link:focus-visible { outline: 2px solid var(--list-accent); outline-offset: 2px; }
+.list-feedback { padding: 12px 16px; border: 1px solid #e0b566; border-radius: 8px; background: #fff8eb; color: #6b4510; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 8px 0; }
+.list-feedback[hidden] { display: none; }
+.topstar-list .dt-processing { z-index: 5; }
+#taskOverdue[hidden] { display: none; }
+.list-actions,.list-window-filters { display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;margin:12px 0; }
+.list-window-filters label { display:grid;gap:6px;min-width:120px;font-size:13px;font-weight:600; }
+.list-window-filters label:first-of-type { flex:1;min-width:200px; }
+.list-window-footer { display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:16px 0; }
+.list-window-footer .page-link { min-width:36px;height:38px;display:flex;align-items:center;justify-content:center; }
+.list-window-footer [aria-disabled="true"] { pointer-events:none; }
+@media(max-width: 575px) { .list-feedback { align-items: flex-start; flex-direction: column; } .topstar-list .dt-info { white-space: normal; } .topstar-list .dt-paging { overflow-x: auto; max-width: 100%; } }
+
+/* Portal pagination palette — this file loads last, so Bootstrap blue cannot leak through. */
+.dashboard-body-brand{--portal-pager:#16877d;--portal-pager-strong:#106f67;--portal-pager-soft:#edf8f6;--portal-pager-border:#c9dadc;--portal-pager-text:#356d68}
+.dashboard-body-koc{--portal-pager:#d94c9f;--portal-pager-strong:#ad347c;--portal-pager-soft:#fff2f8;--portal-pager-border:#ead5e2;--portal-pager-text:#9c326f}
+.admin-main-content{--portal-pager:#6f36c8;--portal-pager-strong:#54229e;--portal-pager-soft:#f3edfc;--portal-pager-border:#ddd4eb;--portal-pager-text:#6230b4}
+.dashboard-body-brand .topstar-list{--list-accent:#16877d}
+.dashboard-body-koc .topstar-list{--list-accent:#d94c9f}
+.admin-main-content .topstar-list{--list-accent:#6f36c8}
+
+:is(.dashboard-body-brand,.dashboard-body-koc,.admin-main-content) :is(.pagination,.dt-paging,.dataTables_paginate){--bs-pagination-active-bg:var(--portal-pager);--bs-pagination-active-border-color:var(--portal-pager);--bs-pagination-color:var(--portal-pager-text);--bs-pagination-hover-color:var(--portal-pager-strong);--bs-pagination-focus-color:var(--portal-pager-strong)}
+:is(.dashboard-body-brand,.dashboard-body-koc,.admin-main-content) :is(.pagination,.dt-paging .pagination,.dataTables_paginate .pagination){display:flex;align-items:center;justify-content:center;gap:.3rem;margin:0;flex-wrap:wrap}
+:is(.dashboard-body-brand,.dashboard-body-koc,.admin-main-content) :is(.pagination,.dt-paging,.dataTables_paginate) .page-item{margin:0!important}
+:is(.dashboard-body-brand,.dashboard-body-koc,.admin-main-content) :is(.pagination,.dt-paging,.dataTables_paginate) .page-link,
+.admin-main-content .admin-pagination .page-link{display:grid!important;place-items:center!important;width:34px!important;min-width:34px!important;min-height:34px!important;height:34px!important;margin:0!important;padding:0!important;border:1px solid var(--portal-pager-border)!important;border-radius:8px!important;color:var(--portal-pager-text)!important;background:#fff!important;box-shadow:none!important;font-size:.78rem!important;line-height:1!important;text-decoration:none!important}
+:is(.dashboard-body-brand,.dashboard-body-koc,.admin-main-content) :is(.pagination,.dt-paging,.dataTables_paginate) .page-link:hover,
+.admin-main-content .admin-pagination .page-link:hover{border-color:var(--portal-pager)!important;color:var(--portal-pager-strong)!important;background:var(--portal-pager-soft)!important}
+:is(.dashboard-body-brand,.dashboard-body-koc,.admin-main-content) :is(.pagination,.dt-paging,.dataTables_paginate) :is(.page-item.active,.dt-paging-button.current) .page-link,
+.admin-main-content .admin-pagination .page-link.active{border-color:var(--portal-pager)!important;color:#fff!important;background:var(--portal-pager)!important;box-shadow:0 4px 10px color-mix(in srgb,var(--portal-pager) 22%,transparent)!important}
+:is(.dashboard-body-brand,.dashboard-body-koc,.admin-main-content) :is(.pagination,.dt-paging,.dataTables_paginate) .page-item.disabled .page-link,
+.admin-main-content .admin-pagination .page-link.disabled{pointer-events:none;border-color:#e1e7e8!important;color:#a1afb4!important;background:#f3f6f6!important;opacity:1!important}
+
+/* Hand-built pagers use the same geometry and portal palette. */
+.dashboard-body-brand .brand-package-pager a,
+.dashboard-body-koc .koc-pagination a,
+.admin-main-content .account-pagination a,
+.admin-main-content .menu-pager li a{display:grid!important;place-items:center!important;width:34px!important;min-width:34px!important;min-height:34px!important;height:34px!important;margin:0!important;padding:0!important;border:1px solid var(--portal-pager-border)!important;border-radius:8px!important;color:var(--portal-pager-text)!important;background:#fff!important;box-shadow:none!important;font-size:.78rem!important;line-height:1!important;text-decoration:none!important}
+.dashboard-body-brand .brand-package-pager a:hover,
+.dashboard-body-koc .koc-pagination a:hover,
+.admin-main-content .account-pagination a:hover,
+.admin-main-content .menu-pager li a:hover{border-color:var(--portal-pager)!important;color:var(--portal-pager-strong)!important;background:var(--portal-pager-soft)!important}
+.dashboard-body-brand .brand-package-pager a.active,
+.dashboard-body-koc .koc-pagination a.active,
+.admin-main-content .account-pagination a.active,
+.admin-main-content .menu-pager li.active a{border-color:var(--portal-pager)!important;color:#fff!important;background:var(--portal-pager)!important;box-shadow:0 4px 10px color-mix(in srgb,var(--portal-pager) 22%,transparent)!important}
+.dashboard-body-brand .brand-package-pager a.disabled,
+.dashboard-body-koc .koc-pagination a.disabled,
+.admin-main-content .account-pagination a.disabled,
+.admin-main-content .menu-pager li.disabled a{pointer-events:none;border-color:#e1e7e8!important;color:#a1afb4!important;background:#f3f6f6!important;opacity:1!important}
+
+@media(max-width:575.98px){
+    :is(.dashboard-body-brand,.dashboard-body-koc,.admin-main-content) :is(.pagination,.dt-paging,.dataTables_paginate) .page-link,
+    .admin-main-content .admin-pagination .page-link,
+    .dashboard-body-brand .brand-package-pager a,
+    .dashboard-body-koc .koc-pagination a,
+    .admin-main-content .account-pagination a,
+    .admin-main-content .menu-pager li a{width:32px!important;min-width:32px!important;min-height:32px!important;height:32px!important;font-size:.75rem!important}
+}

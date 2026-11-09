@@ -1,12 +1,43 @@
-﻿@page
+@page
 @model Topstar.Web.Pages.Brand.ProfileModel
-@{ ViewData["Title"] = "Brand Profile"; }
-<div class="page-wrap card-list">
-  <div class="d-flex justify-content-between align-items-center">
-    <h1 class="section-title mb-0">Ho so Brand</h1>
-    <a asp-page="/Brand/EditProfile" class="btn btn-warning">Edit Profile</a>
-  </div>
-  <div class="card-x">
-    <div class="kpi-title">Vui long cap nhat day du thong tin phap ly va thue de kich hoat toan bo tinh nang.</div>
-  </div>
+@{ ViewData["Title"] = "Hồ sơ Brand"; var profile = Model.Profile; }
+<div class="brand-profile-view-page">
+@if (profile is not null)
+{
+    <header class="brand-profile-view-header">
+        <div class="brand-profile-view-identity">
+            <span class="brand-profile-view-logo">@if (!string.IsNullOrWhiteSpace(profile.LogoUrl)) { <img src="@profile.LogoUrl" alt="Logo @profile.CompanyName" style="width:100%;height:100%;object-fit:contain;border-radius:inherit" /> } else { <i class="fa-solid fa-building"></i> }</span>
+            <div><span class="brand-page-eyebrow"><i class="fa-solid fa-address-card"></i> Hồ sơ doanh nghiệp</span><h1>@profile.CompanyName</h1><div class="brand-profile-view-meta"><span class="brand-profile-status @profile.StatusClass"><i class="fa-solid fa-circle-check"></i> @profile.StatusLabel</span><span><i class="fa-solid fa-calendar-plus"></i> Tham gia @profile.CreatedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy")</span></div></div>
+        </div>
+        <a asp-page="/Brand/EditProfile" class="btn btn-sm brand-btn-primary brand-profile-edit-action"><i class="fa-solid fa-pen-to-square"></i><span>Chỉnh sửa hồ sơ</span></a>
+    </header>
+    @if (!string.IsNullOrWhiteSpace(profile.ReviewNote)) { <div class="brand-profile-review-note"><i class="fa-solid fa-circle-info"></i><div><strong>Phản hồi hồ sơ</strong><span>@profile.ReviewNote</span></div></div> }
+    <section class="brand-profile-summary-grid">
+        <article><span class="summary-icon"><i class="fa-solid fa-bullhorn"></i></span><div><small>Tổng chiến dịch</small><strong>@profile.CampaignCount</strong></div></article>
+        <article><span class="summary-icon"><i class="fa-solid fa-chart-line"></i></span><div><small>Đang vận hành</small><strong>@profile.ActiveCampaignCount</strong></div></article>
+        <article><span class="summary-icon"><i class="fa-solid fa-shield-halved"></i></span><div><small>Trạng thái hồ sơ</small><strong>@profile.StatusLabel</strong></div></article>
+    </section>
+    <div class="brand-profile-view-grid">
+        <section class="brand-profile-info-card is-wide-card brand-profile-login-card">
+            <header><span><i class="fa-solid fa-user-shield"></i></span><div><h2>Thông tin đăng nhập</h2><p>Tài khoản dùng để đăng nhập và bảo vệ quyền truy cập Brand.</p></div></header>
+            <dl class="brand-profile-detail-list"><div><dt>Email đăng nhập</dt><dd>@profile.Email</dd></div><div><dt>Số điện thoại tài khoản</dt><dd>@(profile.Phone ?? "Chưa cập nhật")</dd></div><div class="is-wide"><dt>Bảo mật tài khoản</dt><dd><button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#brandChangePasswordModal"><i class="fa-solid fa-key"></i> Đổi mật khẩu</button></dd></div></dl>
+        </section>
+        <section class="brand-profile-info-card">
+            <header><span><i class="fa-solid fa-building-user"></i></span><div><h2>Thông tin doanh nghiệp</h2><p>Thông tin nhận diện và liên hệ chính thức.</p></div></header>
+            <dl class="brand-profile-detail-list"><div><dt>Tên Brand</dt><dd>@profile.CompanyName</dd></div><div><dt>Người đại diện</dt><dd>@profile.ContactName</dd></div><div><dt>Số điện thoại liên hệ</dt><dd>@profile.ContactPhone</dd></div><div><dt>Ngành hàng</dt><dd>@(profile.Industry ?? "Chưa cập nhật")</dd></div><div class="is-wide"><dt>Website</dt><dd>@if (!string.IsNullOrWhiteSpace(profile.Website)) { <a href="@profile.Website" target="_blank" rel="noopener">@profile.Website</a> } else { <span>Chưa cập nhật</span> }</dd></div></dl>
+        </section>
+        <section class="brand-profile-info-card">
+            <header><span><i class="fa-solid fa-location-dot"></i></span><div><h2>Địa chỉ doanh nghiệp</h2><p>Địa chỉ dùng trong vận hành và đối soát.</p></div></header>
+            <dl class="brand-profile-detail-list"><div class="is-wide"><dt>Số nhà và tên đường</dt><dd>@(profile.StreetAddress ?? "Chưa cập nhật")</dd></div><div><dt>Phường/Xã</dt><dd>@(profile.WardName ?? "Chưa cập nhật")</dd></div><div><dt>Tỉnh/Thành phố</dt><dd>@(profile.ProvinceName ?? "Chưa cập nhật")</dd></div></dl>
+        </section>
+        <section class="brand-profile-info-card is-wide-card">
+            <header><span><i class="fa-solid fa-scale-balanced"></i></span><div><h2>Thuế và pháp lý</h2><p>Thông tin xuất hóa đơn và hồ sơ xác minh doanh nghiệp.</p></div></header>
+            <dl class="brand-profile-detail-list"><div><dt>Mã số thuế</dt><dd>@(profile.TaxCode ?? "Chưa cập nhật")</dd></div><div><dt>Tên pháp lý</dt><dd>@(profile.TaxCompanyName ?? "Chưa cập nhật")</dd></div><div class="is-wide"><dt>Địa chỉ xuất hóa đơn</dt><dd>@(profile.TaxInvoiceAddress ?? "Chưa cập nhật")</dd></div><div class="is-wide"><dt>Giấy phép kinh doanh</dt><dd>@if (!string.IsNullOrWhiteSpace(profile.BusinessLicenseFileUrl)) { <a href="@profile.BusinessLicenseFileUrl" target="_blank" rel="noopener" class="brand-profile-document-link"><i class="fa-solid fa-file-shield"></i> Xem hồ sơ pháp lý</a> } else { <span class="brand-profile-missing"><i class="fa-solid fa-circle-exclamation"></i> Chưa tải lên</span> }</dd></div></dl>
+        </section>
+    </div>
+}
+else
+{
+    <div class="brand-empty-state"><i class="fa-solid fa-building-circle-exclamation"></i><h1>Chưa tìm thấy hồ sơ Brand</h1><p>Vui lòng khởi tạo hồ sơ doanh nghiệp để tiếp tục sử dụng hệ thống.</p><a asp-page="/Brand/EditProfile" class="btn btn-sm brand-btn-primary"><i class="fa-solid fa-plus"></i> Tạo hồ sơ Brand</a></div>
+}
 </div>

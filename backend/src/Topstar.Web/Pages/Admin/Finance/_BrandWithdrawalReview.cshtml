@@ -1,0 +1,22 @@
+@model Topstar.Web.Pages.Admin.Finance.BrandWithdrawalReview
+@{var w=Model.Request;var sameApprover=w.DualApprovalRequired&&w.FirstApprovedBy==Model.Actor;}
+<div class="balance-review-heading"><div><h3>@Model.BrandName</h3><small>@w.CreatedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm")</small></div><span class="balance-status is-@w.Status.ToLowerInvariant()">@Topstar.Web.Pages.Brand.BalanceModel.Label(w.Status)</span></div>
+<div class="balance-review-amounts"><div><small>Số tiền giữ</small><strong>@PortalFormat.Money(w.Amount)</strong></div><div><small>Phí</small><strong>@PortalFormat.Money(w.Fee)</strong></div><div class="is-net"><small>Thực nhận</small><strong>@PortalFormat.Money(w.NetAmount)</strong></div></div>
+<div class="balance-bank"><span><i class="fa-solid fa-building-columns"></i></span><div><small>Tài khoản nhận tiền đã chốt khi tạo yêu cầu</small><strong>@w.BankName · @w.AccountNumber</strong><p>@w.AccountHolder</p></div></div>
+@if(w.DualApprovalRequired){<p class="balance-notice"><i class="fa-solid fa-user-shield"></i> @(sameApprover?"Bạn đã duyệt lần một. Cần quản trị viên khác duyệt lần hai.":w.FirstApprovedBy.HasValue?"Đã duyệt lần một. Kiểm tra thông tin trước khi duyệt lần hai.":"Yêu cầu này cần hai quản trị viên khác nhau duyệt.")</p>}
+@if(w.Status=="Pending"){
+<form method="post" asp-page="/Admin/Finance/BrandBalances" asp-page-handler="Process" data-balance-form novalidate><input type="hidden" name="id" value="@w.Id"/><input type="hidden" name="action" value="Approve"/><div class="balance-modal-action"><p>Duyệt yêu cầu giữ nguyên tiền đang giữ; chỉ ghi nhận đã chi sau khi xác nhận chuyển tiền.</p><button class="btn btn-primary" disabled="@sameApprover"><i class="fa-solid fa-check"></i> @(w.FirstApprovedBy.HasValue?"Duyệt lần hai":"Duyệt yêu cầu")</button></div></form>
+}
+@if(w.Status=="Approved"){
+<form method="post" asp-page="/Admin/Finance/BrandBalances" asp-page-handler="Process" enctype="multipart/form-data" data-balance-form novalidate class="balance-payment-form">
+<input type="hidden" name="id" value="@w.Id"/><input type="hidden" name="action" value="Paid"/>
+<h3>Xác nhận đã chuyển tiền</h3><p class="text-muted small">Chuyển đúng @PortalFormat.Money(w.NetAmount) tới tài khoản trên trước khi xác nhận.</p>
+<div class="mb-3"><label class="form-label" for="withdrawalReference">Mã giao dịch ngân hàng</label><input name="reference" id="withdrawalReference" required minlength="3" maxlength="100" class="form-control" data-error="Nhập mã giao dịch từ 3 đến 100 ký tự."/></div>
+<div><label class="form-label" for="withdrawalEvidence">Chứng từ chuyển tiền</label><input id="withdrawalEvidence" name="evidenceFile" type="file" required accept=".jpg,.jpeg,.png,.webp" class="form-control" data-error="Chọn ảnh chứng từ JPG, PNG hoặc WEBP tối đa 5 MB."/><small class="text-muted">JPG, PNG hoặc WEBP; tối đa 5 MB.</small></div>
+<div class="balance-form-footer"><span><i class="fa-solid fa-lock"></i> Ghi nhận giao dịch và lưu chứng từ.</span><button class="btn btn-success"><i class="fa-solid fa-check"></i> Xác nhận đã chuyển</button></div>
+</form>}
+@if(w.Status is "Pending" or "Approved"){
+<details class="balance-reject"><summary><i class="fa-solid fa-circle-xmark"></i> Từ chối yêu cầu</summary><form method="post" asp-page="/Admin/Finance/BrandBalances" asp-page-handler="Process" data-balance-form novalidate><input type="hidden" name="id" value="@w.Id"/><input type="hidden" name="action" value="Reject"/><label class="form-label mt-3" for="withdrawalRejectNote">Ghi chú cho Brand</label><textarea id="withdrawalRejectNote" name="note" class="form-control" maxlength="500" rows="2"></textarea><div class="balance-form-footer"><span>Trả @PortalFormat.Money(w.Amount) về số dư khả dụng.</span><button class="btn btn-outline-danger"><i class="fa-solid fa-xmark"></i> Từ chối và trả tiền giữ</button></div></form></details>}
+@if(w.PaymentReference is not null){<div class="balance-payment-receipt"><i class="fa-solid fa-circle-check"></i><div><strong>Đã chuyển tiền</strong><p>Mã giao dịch: @w.PaymentReference</p>@if(!string.IsNullOrWhiteSpace(w.EvidenceUrl)){<a href="@w.EvidenceUrl" target="_blank" rel="noopener"><i class="fa-solid fa-receipt"></i> Xem chứng từ</a>}</div></div>}
+@if(!string.IsNullOrWhiteSpace(w.Note)){<p class="small text-muted mt-3">Ghi chú: @w.Note</p>}
+<p class="balance-review-id">Mã yêu cầu: @w.Id</p>

@@ -1,0 +1,41 @@
+@page "/Admin/KOC/Profile/{Id:guid}"
+@model Topstar.Web.Pages.Admin.KocProfilePreviewModel
+@{
+    ViewData["Title"] = $"Profile KOC · {Model.Profile.DisplayName}";
+    ViewData["AdminHeaderTitle"] = "Profile KOC";
+    ViewData["AdminHeaderSubtitle"] = "Bản xem hồ sơ nghề nghiệp theo góc nhìn Brand";
+    ViewData["AdminActivePath"] = "/Admin/Accounts/KOC";
+    var p = Model.Profile;
+    var k = p.KocDetail!;
+    string StatusText(string value) => value switch { "Approved" => "Đã duyệt", "PendingReview" => "Chờ duyệt", "NeedUpdate" => "Cần bổ sung", "Rejected" => "Đã từ chối", _ => value };
+}
+<link rel="stylesheet" href="~/css/admin/koc-profile-preview.css" asp-append-version="true" />
+
+<main class="koc-preview">
+    <nav class="koc-preview-nav"><a asp-page="/Admin/AccountCenter" asp-route-Type="KOC" asp-route-UserId="@Model.UserId"><i class="fa-solid fa-arrow-left"></i> Quay lại Trung tâm KOC</a><span><i class="fa-solid fa-eye"></i> Chế độ xem profile</span></nav>
+
+    <section class="koc-preview-hero">
+        <div class="koc-preview-identity">
+            <div class="koc-preview-avatar">@if (!string.IsNullOrWhiteSpace(k.AvatarUrl)) { <img src="@k.AvatarUrl" alt="Ảnh đại diện @p.DisplayName" /> } else { <i class="fa-solid fa-user"></i> }</div>
+            <div><small>CREATOR PROFILE</small><h1>@p.DisplayName</h1><p><i class="fa-solid fa-location-dot"></i> @(k.Region ?? p.ProvinceName ?? "Chưa cập nhật khu vực")</p><div class="koc-preview-tags"><b><i class="fa-solid fa-circle-check"></i> @StatusText(p.Status)</b>@foreach (var category in k.Categories.Take(4)) { <span>@category</span> }</div></div>
+        </div>
+        <div class="koc-preview-metrics"><article><strong>@k.Followers.ToString("N0")</strong><small>Người theo dõi</small></article><article><strong>@k.Score.ToString("0.##")</strong><small>Điểm hồ sơ</small></article><article><strong>@k.SocialAccounts.Count</strong><small>Kênh xã hội</small></article><article><strong>@k.Portfolio.Count</strong><small>Portfolio</small></article></div>
+    </section>
+
+    <div class="koc-preview-layout">
+        <div class="koc-preview-main">
+            <section class="koc-preview-card"><header><span><i class="fa-solid fa-share-nodes"></i></span><div><h2>Kênh mạng xã hội</h2><p>Quy mô và chất lượng các kênh KOC đã khai báo.</p></div></header>@if (k.SocialAccounts.Count == 0) { <div class="koc-preview-empty">Chưa có kênh mạng xã hội.</div> } else { <div class="koc-preview-socials">@foreach (var social in k.SocialAccounts.Where(x => x.IsVisible)) { <a href="@social.ChannelUrl" target="_blank" rel="noopener"><span><i class="fa-solid fa-share-nodes"></i></span><div><strong>@social.Platform @(social.IsPrimary ? "· Kênh chính" : "")</strong><small>@(social.Handle ?? social.ChannelUrl)</small><p>@social.Followers.ToString("N0") followers · @((social.AvgEngagementRate ?? 0).ToString("0.##"))% tương tác</p></div><i class="fa-solid fa-arrow-up-right-from-square"></i></a> }</div> }</section>
+
+            <section class="koc-preview-card"><header><span class="is-pink"><i class="fa-solid fa-photo-film"></i></span><div><h2>Nội dung & portfolio</h2><p>Sản phẩm nổi bật dùng để đánh giá phong cách sáng tạo.</p></div></header>@if (k.Portfolio.Count == 0) { <div class="koc-preview-empty">Chưa có nội dung portfolio.</div> } else { <div class="koc-preview-portfolio">@foreach (var item in k.Portfolio.Take(6)) { <article><small>@(item.Platform ?? "Nội dung")</small><h3>@item.Title</h3><p>@(item.BrandName ?? item.CampaignName ?? "Nội dung cá nhân")</p><div><span><i class="fa-solid fa-eye"></i> @item.Views.ToString("N0")</span><span><i class="fa-solid fa-heart"></i> @item.Likes.ToString("N0")</span><span><i class="fa-solid fa-comment"></i> @item.Comments.ToString("N0")</span></div>@if (!string.IsNullOrWhiteSpace(item.PostUrl)) { <a href="@item.PostUrl" target="_blank" rel="noopener">Xem nội dung <i class="fa-solid fa-arrow-up-right-from-square"></i></a> }</article> }</div> }</section>
+
+            @if (k.Media.Count > 0) { <section class="koc-preview-card"><header><span class="is-cyan"><i class="fa-regular fa-images"></i></span><div><h2>Thư viện hình ảnh</h2><p>Media KOC sử dụng trong hồ sơ nghề nghiệp.</p></div></header><div class="koc-preview-gallery">@foreach (var media in k.Media.Where(x => !x.MediaType.Contains("Video", StringComparison.OrdinalIgnoreCase)).Take(8)) { <a href="@media.FileUrl" target="_blank" rel="noopener"><img src="@media.FileUrl" alt="Hình ảnh hồ sơ KOC" loading="lazy" /></a> }</div></section> }
+        </div>
+
+        <aside class="koc-preview-side">
+            <section class="koc-preview-card"><header><span class="is-amber"><i class="fa-solid fa-wand-magic-sparkles"></i></span><div><h2>Năng lực sản xuất</h2></div></header>@if (k.Production is null) { <div class="koc-preview-empty">Chưa cập nhật.</div> } else { <div class="koc-preview-skills"><span class="@(k.Production.CanScript ? "is-ready" : "")"><i class="fa-solid fa-pen-nib"></i> Viết kịch bản</span><span class="@(k.Production.CanShoot ? "is-ready" : "")"><i class="fa-solid fa-camera"></i> Quay nội dung</span><span class="@(k.Production.CanEdit ? "is-ready" : "")"><i class="fa-solid fa-scissors"></i> Dựng video</span><span class="@(k.Production.CanLivestream ? "is-ready" : "")"><i class="fa-solid fa-video"></i> Livestream</span></div> }</section>
+            <section class="koc-preview-card"><header><span class="is-green"><i class="fa-solid fa-briefcase"></i></span><div><h2>Kinh nghiệm</h2></div></header><dl><div><dt>Số năm kinh nghiệm</dt><dd>@(k.Experience?.Years?.ToString("0.#") ?? "Chưa cập nhật")</dd></div><div><dt>Brand từng hợp tác</dt><dd>@(k.Experience?.WorkedBrands ?? "Chưa cập nhật")</dd></div><div><dt>Ngân sách tối thiểu</dt><dd>@(k.Preference?.MinBudgetAmount is decimal budget ? budget.ToString("N0") + " đ" : "Trao đổi")</dd></div><div><dt>Khả dụng</dt><dd>@(k.Preference?.AvailabilityNote ?? "Chưa cập nhật")</dd></div></dl></section>
+            @if (!string.IsNullOrWhiteSpace(p.DocumentUrl)) { <section class="koc-preview-document"><i class="fa-solid fa-file-lines"></i><div><strong>Hồ sơ năng lực</strong><small>Tài liệu do KOC tải lên</small></div><a href="@p.DocumentUrl" target="_blank" rel="noopener">Xem file</a></section> }
+            <div class="koc-preview-privacy"><i class="fa-solid fa-shield-halved"></i><p><strong>Thông tin riêng tư được bảo vệ</strong><span>Email, điện thoại và địa chỉ chi tiết không hiển thị trong profile giới thiệu.</span></p></div>
+        </aside>
+    </div>
+</main>

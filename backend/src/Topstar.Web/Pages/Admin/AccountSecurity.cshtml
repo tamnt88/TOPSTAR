@@ -1,0 +1,61 @@
+@page "/Admin/Accounts/Security/{userId:guid}"
+@model Topstar.Web.Pages.Admin.AccountSecurityModel
+@{
+    var d = Model.Detail;
+    var activeSessions = d.Sessions.Count(x => !x.RevokedAtUtc.HasValue && x.ExpiresAtUtc > DateTime.UtcNow);
+    ViewData["Title"] = "Quản trị tài khoản";
+    ViewData["AdminActivePath"] = d.ProfileType == "KOC" ? "/Admin/Accounts/KOC" : "/Admin/Accounts/Brand";
+    string Label(string? value) => value switch { "Active" => "Đang hoạt động", "Locked" => "Đã khóa", "Approved" => "Đã duyệt", "PendingReview" => "Chờ duyệt", "NeedUpdate" => "Cần bổ sung", "Rejected" => "Đã từ chối", _ => value ?? "Chưa xác định" };
+}
+<link rel="stylesheet" href="~/css/admin/account-security.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/admin/account-security-fixes.css" asp-append-version="true" />
+
+<div class="security-center">
+    <header class="security-center-header">
+        <div><a asp-page="/Admin/Brands" asp-route-Type="@d.ProfileType" class="security-back"><i class="fa-solid fa-arrow-left"></i> Danh sách @(d.ProfileType == "KOC" ? "KOC" : "Brand")</a><div class="security-title"><span><i class="fa-solid fa-shield-halved"></i></span><div><h1>Quản trị tài khoản</h1><p>@d.DisplayName · @d.Email</p></div></div></div>
+        <span class="security-status @(d.UserStatus == "Active" ? "is-active" : "is-locked")"><i class="fa-solid @(d.UserStatus == "Active" ? "fa-circle-check" : "fa-lock")"></i> @Label(d.UserStatus)</span>
+    </header>
+    @if (!string.IsNullOrWhiteSpace(Model.Message)) { <div data-admin-flash data-message="@Model.Message" data-type="@(Model.MessageSuccess ? "success" : "error")" hidden></div> }
+
+    <section class="security-summary">
+        <article><span><i class="fa-solid fa-id-card"></i></span><div><small>Trạng thái hồ sơ</small><strong class="security-state-tag @(d.ProfileStatus == "Approved" ? "is-success" : d.ProfileStatus == "Rejected" ? "is-danger" : "is-warning")"><i class="fa-solid @(d.ProfileStatus == "Approved" ? "fa-circle-check" : d.ProfileStatus == "Rejected" ? "fa-circle-xmark" : "fa-clock")"></i> @Label(d.ProfileStatus)</strong></div></article>
+        <article><span><i class="fa-solid fa-envelope-circle-check"></i></span><div><small>Email</small><strong class="security-state-tag @(d.EmailConfirmed ? "is-success" : "is-warning")"><i class="fa-solid @(d.EmailConfirmed ? "fa-circle-check" : "fa-clock")"></i> @(d.EmailConfirmed ? "Đã xác minh" : "Chưa xác minh")</strong></div></article>
+        <article><span><i class="fa-solid fa-mobile-screen"></i></span><div><small>Số điện thoại</small><strong class="security-state-tag @(d.PhoneConfirmed ? "is-success" : "is-warning")"><i class="fa-solid @(d.PhoneConfirmed ? "fa-circle-check" : "fa-clock")"></i> @(d.PhoneConfirmed ? "Đã xác minh" : "Chưa xác minh")</strong></div></article>
+        <article><span><i class="fa-solid fa-laptop"></i></span><div><small>Phiên hiệu lực</small><strong>@activeSessions</strong></div></article>
+        <article><span><i class="fa-solid fa-clock"></i></span><div><small>Đăng nhập gần nhất</small><strong>@(d.LastLoginAtUtc?.AddHours(7).ToString("dd/MM/yyyy HH:mm") ?? "Chưa có")</strong></div></article>
+    </section>
+
+    <section class="security-workspace">
+        <nav class="ts-tabs security-tabs" role="tablist">
+            <button type="button" class="is-active" data-security-tab="overview"><i class="fa-solid fa-chart-pie"></i> Tổng quan</button>
+            <button type="button" data-security-tab="sessions"><i class="fa-solid fa-laptop"></i> Phiên đăng nhập <b>@activeSessions</b></button>
+            <button type="button" data-security-tab="actions"><i class="fa-solid fa-shield-halved"></i> Bảo mật</button>
+            <button type="button" data-security-tab="notes"><i class="fa-solid fa-note-sticky"></i> Ghi chú <b>@d.Notes.Count</b></button>
+            <button type="button" data-security-tab="history"><i class="fa-solid fa-clock-rotate-left"></i> Lịch sử</button>
+        </nav>
+
+        <div class="security-panel is-active" data-security-panel="overview">
+            <div class="security-overview-grid"><article><h2><i class="fa-solid fa-user-shield"></i> Thông tin kiểm soát</h2><dl><dt>Loại tài khoản</dt><dd>@d.ProfileType</dd><dt>Trạng thái hồ sơ</dt><dd>@Label(d.ProfileStatus)</dd><dt>Email xác minh</dt><dd>@(d.EmailConfirmed ? "Đã xác minh" : "Chưa xác minh")</dd><dt>Điện thoại xác minh</dt><dd>@(d.PhoneConfirmed ? "Đã xác minh" : "Chưa xác minh")</dd></dl></article><article><h2><i class="fa-solid fa-bolt"></i> Việc cần xử lý</h2><p>Thực hiện xác minh, gửi liên kết bảo mật hoặc kiểm soát quyền truy cập từ tab Bảo mật.</p><button type="button" class="btn btn-admin-primary" data-open-security-tab="actions"><i class="fa-solid fa-arrow-right"></i> Mở tác vụ bảo mật</button></article></div>
+        </div>
+
+        <div class="security-panel" data-security-panel="sessions">
+            <div class="security-section-head"><div><h2>Phiên đăng nhập</h2><p>Theo dõi thiết bị và thu hồi phiên có dấu hiệu bất thường.</p></div>@if(activeSessions > 0){<button type="button" class="btn btn-outline-danger" data-security-modal="revoke" data-session-id=""><i class="fa-solid fa-right-from-bracket"></i> Thu hồi tất cả</button>}</div>
+            <div class="table-responsive"><table class="table security-table"><thead><tr><th>Thiết bị</th><th>IP</th><th>Thời gian</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>@foreach(var s in d.Sessions){var active=!s.RevokedAtUtc.HasValue&&s.ExpiresAtUtc>DateTime.UtcNow;<tr><td><strong>@s.Device</strong><small>@s.UserAgent</small></td><td>@(s.IpAddress??"—")</td><td>@s.IssuedAtUtc.AddHours(7).ToString("dd/MM/yyyy HH:mm")</td><td><span class="security-pill @(active?"is-active":"is-muted")">@(active?"Đang hoạt động":"Đã hết/thu hồi")</span></td><td>@if(active){<button type="button" class="btn btn-sm btn-outline-danger" data-security-modal="revoke" data-session-id="@s.Id"><i class="fa-solid fa-ban"></i> Thu hồi</button>}</td></tr>}</tbody></table></div>
+        </div>
+
+        <div class="security-panel" data-security-panel="actions"><div class="security-action-grid">
+            <button type="button" data-security-modal="verify"><span><i class="fa-solid fa-badge-check"></i></span><div><strong>Cập nhật xác minh</strong><small>Điều chỉnh trạng thái email và số điện thoại</small></div><i class="fa-solid fa-chevron-right"></i></button>
+            <button type="button" data-security-modal="activation"><span><i class="fa-regular fa-envelope"></i></span><div><strong>Gửi email kích hoạt</strong><small>Tạo lại mã kích hoạt có thời hạn</small></div><i class="fa-solid fa-chevron-right"></i></button>
+            <button type="button" data-security-modal="password"><span><i class="fa-solid fa-key"></i></span><div><strong>Đặt lại mật khẩu</strong><small>Gửi liên kết bảo mật đến email tài khoản</small></div><i class="fa-solid fa-chevron-right"></i></button>
+            <button type="button" class="is-danger" data-security-modal="lock"><span><i class="fa-solid @(d.UserStatus=="Active"?"fa-lock":"fa-lock-open")"></i></span><div><strong>@(d.UserStatus=="Active"?"Khóa tài khoản":"Mở khóa tài khoản")</strong><small>Kiểm soát quyền truy cập và lưu audit</small></div><i class="fa-solid fa-chevron-right"></i></button>
+        </div></div>
+
+        <div class="security-panel" data-security-panel="notes"><form method="post" asp-page-handler="Note" class="security-note-form" novalidate><input type="hidden" name="userId" value="@d.UserId"/><label for="securityNoteBody" class="security-required-label">Ghi chú nội bộ</label><textarea id="securityNoteBody" name="body" class="form-control" required minlength="10" maxlength="2000" data-validation-message="Vui lòng nhập ghi chú từ 10 đến 2.000 ký tự." rows="3" placeholder="Nhập nội dung ghi chú từ 10 đến 2.000 ký tự"></textarea><button class="btn btn-admin-primary"><i class="fa-solid fa-plus"></i> Thêm ghi chú</button></form><div class="security-note-list">@foreach(var n in d.Notes){<article><span><i class="fa-solid fa-note-sticky"></i></span><div><strong>@(n.ActorEmail??"Admin")</strong><time>@n.CreatedAtUtc.AddHours(7).ToString("dd/MM/yyyy HH:mm")</time><p>@n.Body</p></div></article>}</div></div>
+
+        <div class="security-panel" data-security-panel="history"><div class="ts-tabs security-history-tabs"><button type="button" class="is-active" data-history="auth">Đăng nhập</button><button type="button" data-history="audit">Audit quản trị</button></div><div data-history-panel="auth"><div class="table-responsive"><table class="table security-table"><thead><tr><th>Thời điểm</th><th>Sự kiện</th><th>Kết quả</th><th>IP</th><th>Chi tiết</th></tr></thead><tbody>@foreach(var e in d.AuthEvents){<tr><td>@e.OccurredAtUtc.AddHours(7).ToString("dd/MM/yyyy HH:mm:ss")</td><td>@e.EventType</td><td>@e.EventStatus</td><td>@(e.IpAddress??"—")</td><td>@(e.FailureReason??"—")</td></tr>}</tbody></table></div></div><div data-history-panel="audit" hidden><div class="table-responsive"><table class="table security-table"><thead><tr><th>Thời điểm</th><th>Hành động</th><th>Người thực hiện</th><th>Dữ liệu audit</th></tr></thead><tbody>@foreach(var a in d.AuditLogs){<tr><td>@a.CreatedAtUtc.AddHours(7).ToString("dd/MM/yyyy HH:mm:ss")</td><td>@a.ActionName</td><td>@a.ActorEmail<small>@a.ActorRole</small></td><td><code>@a.PayloadJson</code></td></tr>}</tbody></table></div></div></div>
+    </section>
+</div>
+
+@foreach(var action in new[]{"verify","activation","password","lock","revoke"}) { var title=action switch{"verify"=>"Cập nhật xác minh","activation"=>"Gửi email kích hoạt","password"=>"Gửi liên kết đặt lại mật khẩu","lock"=>(d.UserStatus=="Active"?"Khóa tài khoản":"Mở khóa tài khoản"),_=>"Thu hồi phiên đăng nhập"}; var handler=action switch{"password"=>"PasswordReset","lock"=>"Lock","revoke"=>"RevokeSession",_=>char.ToUpper(action[0])+action[1..]}; <div class="modal fade security-action-modal" id="security-@action-modal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><form method="post" asp-page-handler="@handler" novalidate><div class="modal-header"><h2><i class="fa-solid fa-shield-halved"></i> @title</h2><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="hidden" name="userId" value="@d.UserId"/>@if(action=="lock"){<input type="hidden" name="locked" value="@(d.UserStatus=="Active"?"true":"false")"/>}@if(action=="revoke"){<input type="hidden" name="sessionId"/>}@if(action=="verify"){<div class="row g-3 mb-3"><div class="col-6"><label>Email</label><select name="emailConfirmed" class="form-select"><option value="">Giữ nguyên</option><option value="true">Đã xác minh</option><option value="false">Chưa xác minh</option></select></div><div class="col-6"><label>Số điện thoại</label><select name="phoneConfirmed" class="form-select"><option value="">Giữ nguyên</option><option value="true">Đã xác minh</option><option value="false">Chưa xác minh</option></select></div></div>}<label>Lý do <span>*</span></label><textarea name="reason" minlength="10" maxlength="1000" rows="4" placeholder="Nhập lý do từ 10 đến 1.000 ký tự"></textarea><div class="field-error"><i class="fa-solid fa-circle-exclamation"></i> Vui lòng nhập lý do từ 10 đến 1.000 ký tự.</div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Đóng</button><button class="btn @(action is "lock" or "revoke"?"btn-danger":"btn-admin-primary")"><i class="fa-solid fa-check"></i> Xác nhận</button></div></form></div></div></div> }
+
+@section Scripts { <script src="~/js/admin/account-security.js" asp-append-version="true"></script> }

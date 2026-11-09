@@ -4,13 +4,88 @@
     ViewData["Title"] = "Kích hoạt tài khoản";
 }
 
-<section class="py-5">
-    <div class="container" style="max-width:720px;">
-        <div class="card-x">
-            <h1 class="mb-3">Kích hoạt tài khoản</h1>
-            <p class="mb-4 @(Model.IsSuccess ? "text-success" : "text-danger")">@Model.Message</p>
-            <a asp-page="/Public/Login" class="btn koc-btn-primary">Đến trang đăng nhập</a>
-        </div>
-    </div>
-</section>
+@section Styles {
+    <link rel="stylesheet" href="~/css/public/login-theme.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/public/auth-polish.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/public/activate-account.css" asp-append-version="true" />
+}
 
+<div class="login-page login-page-theme activation-page">
+    <section class="login-section section-flow reveal-up py-5">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-10 col-xl-9">
+                    <div class="login-shell flow-item">
+                        <div class="row g-0">
+                            <div class="col-lg-5 login-aside activation-aside">
+                                <div class="login-aside-content">
+                                    <p class="login-eyebrow"><i class="fa-solid fa-shield-halved"></i> Xác thực an toàn</p>
+                                    <h1>Xác minh<br><span>email của bạn</span></h1>
+                                    <p>Hoàn tất bước xác minh để bảo vệ tài khoản và bắt đầu sử dụng TopStar.</p>
+                                    <ul>
+                                        <li><i class="fa-solid fa-circle-check"></i> OTP gồm 6 chữ số</li>
+                                        <li><i class="fa-solid fa-circle-check"></i> Mã có hiệu lực trong 24 giờ</li>
+                                        <li><i class="fa-solid fa-circle-check"></i> Kiểm tra cả thư mục Spam</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="col-lg-7 login-main">
+                                <div class="login-main-content">
+                                    @if (Model.IsSuccess)
+                                    {
+                                        <div class="activation-success-icon" aria-hidden="true"><i class="fa-solid fa-circle-check"></i></div>
+                                        <h2>Xác minh thành công</h2>
+                                        <p class="text-muted mb-4">@Model.Message</p>
+                                        <a asp-page="/Public/Login" class="btn login-submit-btn w-100"><i class="fa-solid fa-right-to-bracket me-2"></i>Đăng nhập</a>
+                                    }
+                                    else
+                                    {
+                                        <h2>Kích hoạt tài khoản</h2>
+                                        <p class="text-muted mb-4">Nhập mã OTP được gửi đến email đăng ký.</p>
+
+                                        @if (!string.IsNullOrWhiteSpace(Model.Message))
+                                        {
+                                            <div class="activation-alert alert @(Model.HasDeliveryWarning ? "alert-warning" : Model.WasSubmitted ? "alert-danger" : "alert-info")">
+                                                <i class="fa-solid @(Model.HasDeliveryWarning ? "fa-triangle-exclamation" : Model.WasSubmitted ? "fa-circle-exclamation" : "fa-circle-info")"></i>
+                                                <span>@Model.Message</span>
+                                            </div>
+                                        }
+
+                                        <form method="post" class="activation-form">
+                                            <div class="mb-3">
+                                                <label asp-for="Email" class="form-label">Email đăng ký</label>
+                                                <input asp-for="Email" type="email" autocomplete="email" required class="form-control" />
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="code" class="form-label">Mã OTP</label>
+                                                <input id="code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required class="form-control activation-code" placeholder="000000" aria-describedby="otpHelp" />
+                                                <div id="otpHelp" class="form-text">6 chữ số · Tối đa 5 lần nhập sai</div>
+                                            </div>
+                                            <button class="btn login-submit-btn w-100" type="submit"><i class="fa-solid fa-shield-halved me-2"></i>Xác minh OTP</button>
+                                        </form>
+
+                                        <details class="activation-resend">
+                                            <summary><i class="fa-solid fa-envelope me-2"></i>Chưa nhận được mã?</summary>
+                                            <form method="post" asp-page-handler="Resend" class="activation-resend-form">
+                                                <label for="resendEmail" class="form-label">Email nhận mã</label>
+                                                <input id="resendEmail" name="Email" value="@Model.Email" type="email" autocomplete="email" required class="form-control" />
+                                                <div class="form-text">Tối đa 3 mã trong 15 phút.</div>
+                                                <button class="btn activation-resend-btn" type="submit"><i class="fa-solid fa-paper-plane me-2"></i>Gửi lại mã</button>
+                                            </form>
+                                        </details>
+
+                                        <a asp-page="/Public/Login" class="activation-back-link"><i class="fa-solid fa-arrow-left"></i>Quay lại đăng nhập</a>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

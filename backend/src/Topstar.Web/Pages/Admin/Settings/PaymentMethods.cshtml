@@ -1,0 +1,38 @@
+@page
+@model Topstar.Web.Pages.Admin.Settings.PaymentMethodsModel
+@{ViewData["Title"]="Phương thức thanh toán";ViewData["AdminHeaderTitle"]="Phương thức thanh toán";}
+<div ><header class="mb-4"><h1 class="section-title">Phương thức thanh toán</h1><p class="text-muted">Quản lý các lựa chọn thanh toán hiển thị tại checkout của Brand.</p></header>
+@if(!string.IsNullOrWhiteSpace(Model.Message)){<div class="alert alert-success"><i class="fa-solid fa-circle-check"></i> @Model.Message</div>}
+<form method="post"><div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+<section class="card-x mb-4"><div class="d-flex justify-content-between"><div><h2 class="h5"><i class="fa-solid fa-building-columns"></i> Chuyển khoản ngân hàng</h2><p class="text-muted">Đơn được xác nhận thủ công sau khi đối soát.</p></div><label><input asp-for="Input.BankTransferEnabled"/> Hoạt động</label></div><div class="row g-3"><div class="col-md-4"><label class="form-label">Ngân hàng</label><input asp-for="Input.BankName" class="form-control"/></div><div class="col-md-4"><label class="form-label">Số tài khoản</label><input asp-for="Input.BankAccountNumber" class="form-control"/></div><div class="col-md-4"><label class="form-label">Chủ tài khoản</label><input asp-for="Input.BankAccountHolder" class="form-control"/></div></div></section>
+<section class="card-x"><div class="d-flex justify-content-between"><div><h2 class="h5"><i class="fa-solid fa-credit-card"></i> Thanh toán online OnePAY</h2><p class="text-muted">Thông tin thẻ được nhập và xử lý trên cổng OnePAY.</p></div><label><input asp-for="Input.OnePayEnabled"/> Hoạt động</label></div>
+<div class="row g-3"><div class="col-md-4"><label class="form-label">Môi trường</label><select asp-for="Input.Environment" class="form-select"><option value="Test">Thử nghiệm</option><option value="Production">Thực tế</option></select></div><div class="col-md-4"><label class="form-label">Merchant ID</label><input asp-for="Input.MerchantId" class="form-control"/></div><div class="col-md-4"><label class="form-label">Access Code</label><input asp-for="Input.AccessCode" class="form-control"/></div>
+<div class="col-md-6"><label class="form-label">Base URL</label><input asp-for="Input.BaseUrl" class="form-control"/></div><div class="col-md-6"><label class="form-label">Secure Hash Secret</label><input asp-for="Input.SecureHashSecret" type="text" autocomplete="off" spellcheck="false" class="form-control" placeholder="Nhập secret do OnePAY cấp"/></div>
+<div class="col-md-6"><label class="form-label">Return URL</label><input asp-for="Input.ReturnUrl" class="form-control"/></div><div class="col-md-6"><label class="form-label">Callback/IPN URL</label><input asp-for="Input.CallbackUrl" class="form-control"/></div></div>
+<div class="mt-3"><strong>Kênh chấp nhận</strong><div class="d-flex flex-wrap gap-4 mt-2"><label><input asp-for="Input.Domestic"/> Thẻ nội địa / Internet Banking</label><label><input asp-for="Input.International"/> Thẻ quốc tế</label><label><input asp-for="Input.EWallet"/> Ví điện tử</label></div></div></section>
+<section class="card-x mt-4">
+    <div class="d-flex justify-content-between"><div><h2 class="h5"><i class="fa-solid fa-credit-card"></i> Thanh toán online VNPay</h2><p class="text-muted">Áp dụng cho mua gói KOC và ký quỹ chiến dịch. Khi bật, VNPay là cổng online được hiển thị cho đơn mới.</p></div><label><input asp-for="Input.VnPayEnabled"/> Hoạt động</label></div>
+    <div class="row g-3">
+        <div class="col-md-4"><label class="form-label" asp-for="Input.VnPayEnvironment">Môi trường</label><select asp-for="Input.VnPayEnvironment" class="form-select"><option value="Test">Thử nghiệm</option><option value="Production">Thực tế</option></select></div>
+        <div class="col-md-4"><label class="form-label" asp-for="Input.VnPayTmnCode">Terminal Code (TmnCode)</label><input asp-for="Input.VnPayTmnCode" class="form-control"/></div>
+        <div class="col-md-4"><label class="form-label" asp-for="Input.VnPayHashSecret">Hash Secret</label><input asp-for="Input.VnPayHashSecret" type="text" class="form-control" autocomplete="off" spellcheck="false"/></div>
+        <div class="col-12"><label class="form-label" asp-for="Input.VnPayBaseUrl">URL thanh toán</label><input asp-for="Input.VnPayBaseUrl" class="form-control"/><small class="text-muted">Sandbox: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html · Thực tế: https://pay.vnpay.vn/vpcpay.html</small></div>
+        <div class="col-md-6"><label class="form-label" asp-for="Input.VnPayReturnUrl">Return URL</label><input asp-for="Input.VnPayReturnUrl" class="form-control"/></div>
+        <div class="col-md-6"><label class="form-label" asp-for="Input.VnPayIpnUrl">IPN URL (đăng ký với VNPay)</label><input asp-for="Input.VnPayIpnUrl" class="form-control"/></div>
+    </div>
+</section>
+<div class="mt-4 d-flex gap-2"><button class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Lưu cấu hình</button></div></form></div>
+@section Scripts{
+    <partial name="_ValidationScriptsPartial"/>
+    <script>
+        (() => {
+            const environment=document.getElementById('Input_VnPayEnvironment');
+            const url=document.getElementById('Input_VnPayBaseUrl');
+            environment?.addEventListener('change',()=>{
+                if(url)url.value=environment.value==='Test'
+                    ?'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html'
+                    :'https://pay.vnpay.vn/vpcpay.html';
+            });
+        })();
+    </script>
+}

@@ -52,11 +52,6 @@
                         <input asp-for="Input.HeightCm" class="form-control" placeholder="VD: 160" />
                         <span asp-validation-for="Input.HeightCm" class="text-danger"></span>
                     </div>
-                    <div class="col-12">
-                        <label asp-for="Input.Measurements" class="form-label"></label>
-                        <input asp-for="Input.Measurements" class="form-control" placeholder="VD: 80-60-85" />
-                        <span asp-validation-for="Input.Measurements" class="text-danger"></span>
-                    </div>
                     <div class="col-md-6">
                         <label asp-for="Input.MaritalStatus" class="form-label"></label>
                         <select asp-for="Input.MaritalStatus" class="form-select">
@@ -183,7 +178,6 @@
                     hasChildren: $hasChildren.val() === 'true',
                     weight: $('[name="Input.WeightKg"]').val(),
                     height: $('[name="Input.HeightCm"]').val(),
-                    measurements: $('[name="Input.Measurements"]').val(),
                     maritalStatus: $('[name="Input.MaritalStatus"]').val(),
                     servicePrice: $('[name="Input.ServicePriceVnd"]').val(),
                     children: []
@@ -207,7 +201,6 @@
                     var data = JSON.parse(raw);
                     if (data.weight) $('[name="Input.WeightKg"]').val(data.weight);
                     if (data.height) $('[name="Input.HeightCm"]').val(data.height);
-                    if (data.measurements) $('[name="Input.Measurements"]').val(data.measurements);
                     if (data.maritalStatus) $('[name="Input.MaritalStatus"]').val(data.maritalStatus);
                     if (data.servicePrice) $('[name="Input.ServicePriceVnd"]').val(data.servicePrice);
 

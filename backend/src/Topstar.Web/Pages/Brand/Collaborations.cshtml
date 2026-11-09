@@ -1,0 +1,118 @@
+@page
+@model Topstar.Web.Pages.Brand.CollaborationsModel
+@{
+    ViewData["Title"] = "Lịch sử hợp tác";
+
+    string StatusLabel(string value) => value switch
+    {
+        "Confirmed" => "Đã xác nhận",
+        "InProgress" => "Đang hợp tác",
+        "Completed" => "Đã hoàn thành",
+        "Cancelled" => "Đã hủy",
+        "Rejected" => "Đã từ chối",
+        _ => value
+    };
+
+    string DomainLabel(string value) => value switch
+    {
+        "Booking" => "Lịch làm việc",
+        "Shipment" => "Giao nhận",
+        "Deliverable" => "Nội dung",
+        "Dispute" => "Hỗ trợ",
+        "Participation" => "Hợp tác",
+        "Review" => "Đánh giá",
+        _ => value
+    };
+
+    var activeCount = (Model.Window.Counts.GetValueOrDefault("Confirmed") + Model.Window.Counts.GetValueOrDefault("InProgress"));
+    var completedCount = Model.Window.Counts.GetValueOrDefault("Completed");
+    var eventCount = Model.Items.Sum(x => x.Events.Count);
+}
+
+<div class="brand-collaboration-page">
+    <header class="brand-page-heading">
+        <div>
+            <span class="brand-page-eyebrow"><i class="fa-solid fa-handshake"></i> QUÁ TRÌNH HỢP TÁC</span>
+            <h1>Lịch sử hợp tác</h1>
+            <p>Theo dõi xuyên suốt lịch làm việc, giao nhận, nội dung và hỗ trợ với từng KOC.</p>
+        </div>
+        <span class="brand-count-pill">@Model.Items.Count lượt hợp tác</span>
+    </header>
+
+    <section class="brand-collaboration-stats" aria-label="Thống kê lịch sử hợp tác">
+        <article><span class="is-total"><i class="fa-solid fa-handshake"></i></span><div><small>Tổng lượt hợp tác</small><strong>@Model.Window.Total</strong></div></article>
+        <article><span class="is-active"><i class="fa-solid fa-arrows-rotate"></i></span><div><small>Đang hợp tác</small><strong>@activeCount</strong></div></article>
+        <article><span class="is-completed"><i class="fa-solid fa-circle-check"></i></span><div><small>Đã hoàn thành</small><strong>@completedCount</strong></div></article>
+        <article><span class="is-events"><i class="fa-solid fa-timeline"></i></span><div><small>Sự kiện đã ghi nhận</small><strong>@eventCount</strong></div></article>
+    </section>
+
+    <partial name="_ListWindow" model='new Topstar.Web.Features.Common.Paging.ListWindowViewModel("brandCollaborationTable", Model.Window)' />
+@if (Model.Items.Count == 0)
+    {
+        <div class="brand-empty-state">
+            <span><i class="fa-regular fa-handshake"></i></span>
+            <h2>Chưa có lần hợp tác nào</h2>
+            <p>Lịch sử sẽ được ghi nhận sau khi KOC xác nhận tham gia chiến dịch.</p>
+        </div>
+    }
+    else
+    {
+        <div class="brand-collaboration-dt-shell table-responsive">
+            <table id="brandCollaborationTable" class="table brand-data-table align-middle w-100">
+                <thead><tr><th>STT</th><th>Chiến dịch</th><th>KOC hợp tác</th><th>Ngày xác nhận</th><th>Trạng thái</th><th>Sự kiện</th><th>Thao tác</th></tr></thead>
+                <tbody>
+                @{ var row = 0; }
+                @foreach (var item in Model.Items)
+                {
+                    row++;
+                    <tr>
+                        <td class="text-center">@row</td>
+                        <td><strong>@item.CampaignTitle</strong></td>
+                        <td><div class="brand-collaboration-person"><span><i class="fa-solid fa-user"></i></span><div><strong>@item.KocName</strong><small>@item.BrandName</small></div></div></td>
+                        <td data-order="@item.ConfirmedAtUtc.Ticks"><strong>@item.ConfirmedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy")</strong><small>@item.ConfirmedAtUtc.ToVietnamTime().ToString("HH:mm")</small></td>
+                        <td><span class="brand-status-pill @(item.Status == "Completed" ? "is-completed" : item.Status == "Cancelled" ? "is-muted" : "is-published")">@StatusLabel(item.Status)</span></td>
+                        <td class="text-center"><span class="brand-count-pill">@item.Events.Count</span></td>
+                        <td class="text-center"><button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#collaboration-@item.ParticipationId" title="Xem quá trình hợp tác"><i class="fa-regular fa-eye"></i></button></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+
+        @foreach (var item in Model.Items)
+        {
+            <div class="modal fade brand-collaboration-modal" id="collaboration-@item.ParticipationId" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-lg"><div class="modal-content brand-action-modal">
+                    <div class="modal-header"><div class="brand-modal-title"><span><i class="fa-solid fa-handshake"></i></span><div><h2>@item.KocName</h2><p>@item.CampaignTitle · @StatusLabel(item.Status)</p></div></div><button class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div>
+                    <div class="modal-body">
+                        <div class="brand-collaboration-summary"><article><small>Brand</small><strong>@item.BrandName</strong></article><article><small>KOC</small><strong>@item.KocName</strong></article><article><small>Xác nhận hợp tác</small><strong>@item.ConfirmedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm")</strong></article></div>
+                        <div class="brand-collaboration-timeline">
+                            <header><h3><i class="fa-solid fa-timeline"></i> Timeline tổng hợp</h3><span>@item.Events.Count sự kiện</span></header>
+                            @if (item.Events.Count == 0)
+                            {
+                                <div class="brand-evidence-empty"><i class="fa-solid fa-timeline"></i><strong>Chưa có sự kiện lịch sử</strong></div>
+                            }
+                            else
+                            {
+                                @foreach (var entry in item.Events.OrderByDescending(x => x.OccurredAtUtc))
+                                {
+                                    <article><i></i><div><header><span>@DomainLabel(entry.Domain)</span><strong>@StatusLabel(entry.Status)</strong><time>@entry.OccurredAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm")</time></header>@if (!string.IsNullOrWhiteSpace(entry.Note)) { <p>@entry.Note</p> }@if (!string.IsNullOrWhiteSpace(entry.ActorRole)) { <small><i class="fa-solid fa-user-pen"></i> Cập nhật bởi @(entry.ActorRole == "ADMIN" ? "Topstar" : entry.ActorRole == "BRAND" ? "Brand" : "KOC")</small> }</div></article>
+                                }
+                            }
+                        </div>
+                    </div>
+                    <div class="modal-footer"><button class="btn btn-light" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Đóng</button></div>
+                </div></div>
+            </div>
+        }
+    }
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/lib/datatables/css/dataTables.bootstrap5.min.css?v=2.3.8" />
+}
+@section Scripts {
+    <script src="~/lib/datatables/js/dataTables.min.js?v=2.3.8"></script>
+    <script src="~/lib/datatables/js/dataTables.bootstrap5.min.js?v=2.3.8"></script>
+    <script src="~/js/brand/brand-collaborations.js?v=20260801-1"></script>
+}

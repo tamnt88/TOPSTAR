@@ -1,16 +1,257 @@
-﻿@page
+@page
 @model Topstar.Web.Pages.Koc.JobsModel
-@{ ViewData["Title"] = "KOC Jobs"; }
-<div class="page-wrap card-list">
-  <h1 class="section-title mb-0">Quan ly Jobs</h1>
-  <div class="kpi-grid">
-    <div class="kpi-box"><div class="kpi-title">Da nhan</div><div class="kpi-value">12.5M</div></div>
-    <div class="kpi-box"><div class="kpi-title">Dang cho</div><div class="kpi-value">4.2M</div></div>
-    <div class="kpi-box"><div class="kpi-title">Du kien tang</div><div class="kpi-value">15.9M</div></div>
-  </div>
-  <div class="card-x">
-    <h2 class="h5">Job cho xac nhan</h2>
-    <div class="list-row"><div><b>L'Oreal Paris - Holiday Collection</b><div class="kpi-title">Con 2 gio de phan hoi • Thu lao 4,000,000</div></div><button class="btn-x btn-orange">Chap nhan</button></div>
-    <div class="list-row"><div><b>The Face Shop - Review boi Velyvadam</b><div class="kpi-title">Con 24 gio de phan hoi • Thu lao 2,100,000</div></div><button class="btn-x btn-orange">Chap nhan</button></div>
-  </div>
+@using Topstar.Application.Campaigns
+@{
+    ViewData["Title"] = "Tìm việc KOC";
+    var hasFilters = !string.IsNullOrWhiteSpace(Model.Keyword) || Model.Logistics != "all" || Model.Sort != "newest"
+        || !string.IsNullOrWhiteSpace(Model.DeliverableType);
+    var firstResult = Model.TotalCount == 0 ? 0 : (Model.PageNumber - 1) * Model.PageSize + 1;
+    var lastResult = Math.Min(Model.PageNumber * Model.PageSize, Model.TotalCount);
+    var firstPage = Math.Max(1, Model.PageNumber - 2);
+    var lastPage = Math.Min(Model.TotalPages, firstPage + 4);
+    firstPage = Math.Max(1, lastPage - 4);
+    string ApplicationStatus(string? status) => string.IsNullOrWhiteSpace(status) ? "Đang cập nhật" : PortalFormat.Status(status);
+    DateTime ExpectedResponse(DateTime appliedAtUtc)
+    {
+        var date = appliedAtUtc;
+        for (var days = 0; days < 3;) { date = date.AddDays(1); if (date.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday)) days++; }
+        return date;
+    }
+}
+
+<div class="koc-jobs-page">
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div class="alert @(Model.MessageSuccess ? "alert-success" : "alert-danger")" role="status">@Model.Message</div>
+        <div data-koc-flash data-type="@(Model.MessageSuccess ? "success" : "error")" data-message="@Model.Message"></div>
+    }
+    <header class="koc-jobs-header">
+        <div>
+            <span class="koc-page-eyebrow"><i class="fa-solid fa-wand-magic-sparkles"></i> Việc làm dành cho KOC</span>
+            <h1>Tìm việc KOC</h1>
+            <p>Tìm chiến dịch phù hợp với thế mạnh nội dung, ngân sách và cách thức làm việc của bạn.</p>
+        </div>
+        <a asp-page="/Koc/Tasks" class="btn btn-primary btn-sm">
+            <i class="fa-solid fa-list-check me-1"></i>Xem đầu việc của tôi
+        </a>
+    </header>
+
+    <nav class="koc-jobs-sections" aria-label="Tìm việc và theo dõi ứng tuyển">
+        <a asp-page="/Koc/Jobs" asp-route-section="opportunities" class="@(Model.Section == "opportunities" ? "active" : null)"><i class="fa-solid fa-bullhorn"></i>Việc đang tuyển</a>
+        <a asp-page="/Koc/Jobs" asp-route-section="applications" class="@(Model.Section == "applications" ? "active" : null)"><i class="fa-solid fa-paper-plane"></i>Đã ứng tuyển</a>
+    </nav>
+
+    @if (Model.Section == "opportunities")
+    {
+    <section class="koc-job-filter-card">
+        <div class="koc-job-filter-title">
+            <span><i class="fa-solid fa-filter"></i></span>
+            <div><h2>Bộ lọc chiến dịch</h2><p>Thu hẹp kết quả để tìm đúng cơ hội phù hợp.</p></div>
+            @if (hasFilters) { <em><i class="fa-solid fa-circle-check"></i> Đang áp dụng</em> }
+        </div>
+        <form method="get" class="koc-job-filter-grid">
+            <div class="koc-filter-keyword">
+                <label asp-for="Keyword">Từ khóa</label>
+                <div class="koc-input-icon"><i class="fa-solid fa-magnifying-glass"></i><input asp-for="Keyword" class="form-control" maxlength="120" placeholder="Tên chiến dịch hoặc thương hiệu" /></div>
+            </div>
+            <div>
+                <label asp-for="Logistics">Hình thức phối hợp</label>
+                <select asp-for="Logistics" class="form-select"><option value="all">Tất cả hình thức</option><option value="booking">Có đặt lịch</option><option value="shipment">Có gửi sản phẩm</option></select>
+            </div>
+            <div>
+                <label asp-for="DeliverableType">Loại nội dung</label>
+                <input asp-for="DeliverableType" class="form-control" maxlength="80" placeholder="Video, bài viết, livestream…" />
+            </div>
+            <div>
+                <label asp-for="Sort">Sắp xếp</label>
+                <select asp-for="Sort" class="form-select"><option value="newest">Mới nhất</option><option value="budget_desc">Ngân sách cao nhất</option><option value="budget_asc">Ngân sách thấp nhất</option><option value="ending">Sắp hết hạn</option></select>
+            </div>
+            <div>
+                <label asp-for="PageSize">Hiển thị</label>
+                <select asp-for="PageSize" class="form-select"><option value="12">12 chiến dịch</option><option value="24">24 chiến dịch</option><option value="48">48 chiến dịch</option></select>
+            </div>
+            <div class="koc-job-filter-actions">
+                <button class="btn btn-primary btn-sm" type="submit"><i class="fa-solid fa-filter me-1"></i>Lọc</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="koc-job-results">
+        <header>
+            <div><h2><i class="fa-solid fa-bullhorn"></i> Chiến dịch đang tuyển</h2><p>Hiển thị @firstResult–@lastResult trong @Model.TotalCount kết quả</p></div>
+        </header>
+        @if (Model.Campaigns.Count == 0)
+        {
+            <div class="koc-dashboard-empty koc-jobs-empty">
+                <span><i class="fa-solid fa-magnifying-glass"></i></span>
+                <div><strong>Không tìm thấy chiến dịch phù hợp</strong><p>Hãy thử thay đổi từ khóa hoặc bỏ bớt điều kiện lọc.</p></div>
+                @if (hasFilters) { <a asp-page="/Koc/Jobs" class="btn btn-outline-primary btn-sm">Xóa bộ lọc</a> }
+            </div>
+        }
+        else
+        {
+            <div class="koc-job-card-grid">
+            @foreach (var item in Model.Campaigns)
+            {
+                var brandInitial = string.IsNullOrWhiteSpace(item.BrandName) ? "B" : item.BrandName.Trim()[0].ToString().ToUpperInvariant();
+                var estimatedIncome = item.DesiredKocCount > 0 ? item.BudgetAmount / item.DesiredKocCount : item.BudgetAmount;
+                var daysUntilClose = item.EndDate.HasValue ? item.EndDate.Value.DayNumber - DateOnly.FromDateTime(DateTime.Today).DayNumber : (int?)null;
+                var urgencyClass = daysUntilClose is >= 0 and <= 3 ? "is-ending-soon" : null;
+                <article class="koc-job-card @urgencyClass">
+                    <div class="koc-job-card-top">
+                        <span class="koc-job-brand-icon" title="@item.BrandName">@if (!string.IsNullOrWhiteSpace(item.AvatarUrl)) { <img class="campaign-published-avatar" src="@item.AvatarUrl" alt="Ảnh đại diện @item.Title" loading="lazy" /> } else { @brandInitial }</span>
+                        <div>
+                            <small title="@item.BrandName">@item.BrandName</small>
+                            <h3 title="@item.Title">@item.Title</h3>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(item.CurrentApplicationStatus))
+                        {
+                            <span class="koc-job-application-status"><i class="fa-solid fa-circle-check"></i>@ApplicationStatus(item.CurrentApplicationStatus)</span>
+                        }
+                    </div>
+                    @if (item.CurrentKocTargetingMatch is not null)
+                    {
+                        <div class="koc-job-fit @(item.CurrentKocTargetingMatch.IsMatch ? "is-match" : "is-mismatch")">
+                            <i class="fa-solid @(item.CurrentKocTargetingMatch.IsMatch ? "fa-circle-check" : "fa-circle-info")"></i>
+                            <span>
+                                @if (item.CurrentKocTargetingMatch.IsMatch)
+                                {
+                                    <strong>Hồ sơ phù hợp</strong><small>Khớp các điều kiện Brand đã công bố.</small>
+                                }
+                                else
+                                {
+                                    <strong>Cần kiểm tra điều kiện</strong><small>Chưa khớp: @string.Join(", ", item.CurrentKocTargetingMatch.UnmatchedCriteria.Take(2))@(item.CurrentKocTargetingMatch.UnmatchedCriteria.Count > 2 ? "…" : ".")</small>
+                                }
+                            </span>
+                        </div>
+                    }
+                    <div class="koc-job-budget">
+                        <div>
+                            <small>Thu nhập ước tính / KOC</small>
+                            <i class="fa-regular fa-circle-question" title="Ước tính bằng tổng ngân sách chia cho số KOC cần tuyển. Thù lao chính thức được xác nhận khi Brand lựa chọn và phân bổ ngân sách."></i>
+                        </div>
+                        <strong>@estimatedIncome.ToString("N0", PortalFormat.Vietnamese) <b>đ</b></strong>
+                        <small class="koc-job-budget-total">Tổng chiến dịch: @item.BudgetAmount.ToString("N0", PortalFormat.Vietnamese) đ</small>
+                    </div>
+                    <div class="koc-job-meta">
+                        <div class="koc-job-dates">
+                            <span><i class="fa-regular fa-calendar-check"></i><small>Bắt đầu</small><b>@(item.StartDate?.ToString("dd/MM/yyyy") ?? "Chưa chốt")</b></span>
+                            <i class="fa-solid fa-arrow-right-long"></i>
+                            <span><i class="fa-regular fa-flag"></i><small>Kết thúc</small><b>@(item.EndDate?.ToString("dd/MM/yyyy") ?? "Chưa chốt")</b></span>
+                        </div>
+                        <div class="koc-job-facts">
+                            @if (item.DesiredKocCount > 0) { <span><i class="fa-solid fa-users"></i>Cần @item.DesiredKocCount KOC</span> }
+                            <span><i class="fa-solid fa-paper-plane"></i>@item.ApplicationCount lượt ứng tuyển</span>
+                            @if (item.DeliverableQuantity > 0) { <span><i class="fa-solid fa-photo-film"></i>@item.DeliverableQuantity nội dung</span> }
+                            @if (item.DeliverableDueDateUtc.HasValue) { <span><i class="fa-regular fa-clock"></i>Hạn nội dung @item.DeliverableDueDateUtc.Value.ToVietnamTime().ToString("dd/MM")</span> }
+                            @if (daysUntilClose is >= 0 and <= 3) { <span class="is-urgent"><i class="fa-solid fa-hourglass-half"></i>@(daysUntilClose == 0 ? "Hết hạn hôm nay" : $"Còn {daysUntilClose} ngày")</span> }
+                        </div>
+                    </div>
+                    <div class="koc-job-card-actions">
+                        <div class="koc-job-tags">
+                            @if (!string.IsNullOrWhiteSpace(item.DeliverableType)) { <span><i class="fa-solid fa-photo-film"></i>@item.DeliverableType</span> }
+                            @if (item.RequiresBooking) { <span><i class="fa-regular fa-calendar-check"></i>Đặt lịch</span> }
+                            @if (item.RequiresShipment) { <span><i class="fa-solid fa-truck-fast"></i>Gửi sản phẩm</span> }
+                        </div>
+                        <a asp-page="/Koc/CampaignDetail" asp-route-id="@item.Id" asp-route-returnUrl="@(Request.Path + Request.QueryString)" class="btn btn-primary btn-sm">
+                            <i class="fa-regular fa-eye me-1"></i>Xem chi tiết <i class="fa-solid fa-chevron-right ms-1"></i>
+                        </a>
+                        <form method="post" asp-page-handler="Favorite" class="koc-job-favorite-form">
+                            <input type="hidden" name="id" value="@item.Id" />
+                            <input type="hidden" name="returnUrl" value="@(Request.Path + Request.QueryString)" />
+                            <button type="submit" class="btn btn-sm @(item.IsFavorite ? "btn-primary" : "btn-outline-primary")" aria-label="@(item.IsFavorite ? "Bỏ lưu việc" : "Lưu việc để xem sau")">
+                                <i class="@(item.IsFavorite ? "fa-solid" : "fa-regular") fa-bookmark"></i><span>@(item.IsFavorite ? "Đã lưu" : "Lưu việc")</span>
+                            </button>
+                        </form>
+                    </div>
+                </article>
+            }
+            </div>
+        }
+
+        @if (Model.TotalPages > 1)
+        {
+            <nav class="koc-pagination" aria-label="Phân trang chiến dịch">
+                <span>Trang @Model.PageNumber/@Model.TotalPages</span>
+                <div>
+                    <a class="@(Model.PageNumber == 1 ? "disabled" : "")" asp-page="/Koc/Jobs" asp-route-PageNumber="@(Model.PageNumber - 1)" asp-route-PageSize="@Model.PageSize" asp-route-Keyword="@Model.Keyword" asp-route-Logistics="@Model.Logistics" asp-route-DeliverableType="@Model.DeliverableType" asp-route-Sort="@Model.Sort" aria-label="Trang trước"><i class="fa-solid fa-chevron-left"></i></a>
+                    @for (var pageNumber = firstPage; pageNumber <= lastPage; pageNumber++)
+                    {
+                        <a class="@(pageNumber == Model.PageNumber ? "active" : "")" asp-page="/Koc/Jobs" asp-route-PageNumber="@pageNumber" asp-route-PageSize="@Model.PageSize" asp-route-Keyword="@Model.Keyword" asp-route-Logistics="@Model.Logistics" asp-route-DeliverableType="@Model.DeliverableType" asp-route-Sort="@Model.Sort">@pageNumber</a>
+                    }
+                    <a class="@(Model.PageNumber == Model.TotalPages ? "disabled" : "")" asp-page="/Koc/Jobs" asp-route-PageNumber="@(Model.PageNumber + 1)" asp-route-PageSize="@Model.PageSize" asp-route-Keyword="@Model.Keyword" asp-route-Logistics="@Model.Logistics" asp-route-DeliverableType="@Model.DeliverableType" asp-route-Sort="@Model.Sort" aria-label="Trang sau"><i class="fa-solid fa-chevron-right"></i></a>
+                </div>
+            </nav>
+        }
+    </section>
+    }
+    else
+    {
+    <section class="koc-my-applications is-page" id="my-applications">
+        <header><div><h2><i class="fa-solid fa-paper-plane"></i> Đăng ký của tôi</h2><p>Theo dõi kết quả và trạng thái xử lý từng hồ sơ đã gửi.</p></div><strong>@Model.ApplicationWindow.Total hồ sơ</strong></header>
+        <partial name="_ListWindow" model='new Topstar.Web.Features.Common.Paging.ListWindowViewModel("kocApplicationList", Model.ApplicationWindow)' />
+        <div class="koc-application-list">
+        @if (Model.Applications.Count == 0)
+        {
+            <div class="koc-dashboard-empty is-compact"><span><i class="fa-regular fa-folder-open"></i></span><div><strong>Chưa có hồ sơ ứng tuyển</strong><p>Các chiến dịch bạn đã ứng tuyển sẽ xuất hiện tại đây.</p></div></div>
+        }
+        @foreach (var item in Model.Applications)
+        {
+            var applicationStage = item.Status switch
+            {
+                ApplicationStatuses.Confirmed => 3,
+                ApplicationStatuses.Shortlisted => 2,
+                ApplicationStatuses.Applied => 1,
+                _ => 0
+            };
+            var applicationClosed = item.Status is ApplicationStatuses.NotSelected or ApplicationStatuses.Withdrawn or ApplicationStatuses.CancelledByAdmin;
+            var expectedResponseAt = ExpectedResponse(item.AppliedAtUtc);
+            <article id="application-@item.Id" class="@(Model.FocusApplication == item.Id ? "is-focused" : null)">
+                <div class="koc-application-head"><strong>@item.CampaignTitle</strong><small>@item.BrandName · Gửi lúc @item.AppliedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm")</small><em>@ApplicationStatus(item.Status)</em></div>
+                <div class="koc-application-progress @(applicationClosed ? "is-closed" : null)" aria-label="Tiến độ ứng tuyển: @ApplicationStatus(item.Status)">
+                    <span class="@(applicationStage >= 1 ? "is-complete" : null)"><i class="fa-solid fa-paper-plane"></i><b>Đã gửi</b></span>
+                    <span class="@(applicationStage >= 2 ? "is-complete" : null)"><i class="fa-solid fa-user-check"></i><b>Brand cân nhắc</b></span>
+                    <span class="@(applicationStage >= 3 ? "is-complete" : null)"><i class="fa-solid fa-circle-check"></i><b>Được chọn</b></span>
+                </div>
+                <p class="koc-application-next">
+                    <i class="fa-solid @(applicationClosed ? "fa-circle-info" : "fa-clock")"></i>
+                    @(item.Status switch
+                    {
+                        ApplicationStatuses.Applied => "Hồ sơ đã gửi thành công, đang chờ Brand xem và phản hồi.",
+                        ApplicationStatuses.Shortlisted => "Brand đang cân nhắc hồ sơ của bạn. Hãy theo dõi thông báo để phản hồi kịp thời.",
+                        ApplicationStatuses.Confirmed => "Bạn đã được chọn. Mở chi tiết chiến dịch để xem việc cần làm tiếp theo.",
+                        ApplicationStatuses.NotSelected => "Brand chưa lựa chọn hồ sơ này. Bạn có thể tiếp tục tìm việc phù hợp khác.",
+                        ApplicationStatuses.CancelledByAdmin => "Hồ sơ đã được đóng bởi hệ thống. Hãy xem thông báo hoặc liên hệ hỗ trợ nếu cần.",
+                        ApplicationStatuses.Withdrawn => "Bạn đã rút hồ sơ ứng tuyển này.",
+                        _ => "Trạng thái hồ sơ vừa được cập nhật."
+                    })
+                </p>
+                <div class="koc-application-terms">
+                    @if (item.ProposedAmount.HasValue) { <span><i class="fa-solid fa-tag"></i>Thù lao trước thuế đã đề xuất: <strong>@PortalFormat.Money(item.ProposedAmount.Value)</strong></span> }
+                    @if (item.Status is ApplicationStatuses.Applied or ApplicationStatuses.Shortlisted)
+                    {
+                        <span class="@(DateTime.UtcNow > expectedResponseAt ? "is-overdue" : null)"><i class="fa-regular fa-clock"></i>Brand dự kiến phản hồi trước <strong>@expectedResponseAt.ToVietnamTime().ToString("dd/MM/yyyy")</strong></span>
+                    }
+                </div>
+                <div class="koc-application-actions">
+                    <a asp-page="/Koc/CampaignDetail" asp-route-id="@item.CampaignId" asp-route-returnUrl="@(Request.Path + Request.QueryString)" class="btn btn-outline-primary btn-sm"><i class="fa-regular fa-eye"></i>Chi tiết</a>
+                    @if (item.Status == ApplicationStatuses.Applied)
+                    {
+                        <form method="post" asp-page-handler="Withdraw" data-withdraw-form data-campaign-title="@item.CampaignTitle"><input type="hidden" name="id" value="@item.Id" /><button class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-xmark"></i>Rút đăng ký</button></form>
+                    }
+                </div>
+            </article>
+        }
+        </div>
+    </section>
+    }
 </div>
+
+<div class="modal fade" id="withdrawConfirmModal" tabindex="-1" aria-labelledby="withdrawConfirmTitle" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+        <div class="modal-header"><h2 class="modal-title fs-5" id="withdrawConfirmTitle">Rút hồ sơ ứng tuyển?</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div>
+        <div class="modal-body"><p>Bạn muốn rút hồ sơ khỏi chiến dịch <strong data-withdraw-title></strong>?</p><p class="text-muted mb-0">Brand sẽ không tiếp tục xét hồ sơ này. Hành động chỉ được thực hiện khi bạn xác nhận.</p></div>
+        <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Giữ hồ sơ</button><button type="button" class="btn btn-danger" data-withdraw-confirm>Xác nhận rút</button></div>
+    </div></div>
+</div>
+@section Scripts { <script src="~/js/koc/jobs.js" asp-append-version="true"></script> }

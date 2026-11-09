@@ -1,78 +1,13 @@
-﻿@page
+@page
 @model Topstar.Web.Pages.Admin.Settings.EmailAccountsModel
-@{
-    ViewData["Title"] = "Cài đặt Email";
-}
-<div class="page-wrap card-list admin-page-wrap">
-    <div class="card-x">
-        <h2 class="section-title mb-2">Quản trị tài khoản gửi & nhận email</h2>
-        <p class="kpi-title">Quản lý các tài khoản email dùng cho gửi thông báo, kích hoạt, quên mật khẩu và nhận phản hồi hệ thống.</p>
-        @if (TempData["AdminMessageSuccess"] is string success)
-        {
-            <div class="alert alert-success py-2">@success</div>
-        }
-        @if (TempData["AdminMessageError"] is string error)
-        {
-            <div class="alert alert-danger py-2">@error</div>
-        }
-
-        <div class="table-responsive mt-3">
-            <table class="table table-sm align-middle">
-                <thead>
-                <tr>
-                    <th>Tên</th><th>Email</th><th>SMTP</th><th>Mặc định</th><th>Trạng thái</th><th class="text-end">Thao tác</th>
-                </tr>
-                </thead>
-                <tbody>
-                @foreach (var row in Model.Rows)
-                {
-                    <tr>
-                        <td>@row.Name</td>
-                        <td>@row.EmailAddress</td>
-                        <td>@(string.IsNullOrWhiteSpace(row.SmtpHost) ? "-" : $"{row.SmtpHost}:{row.SmtpPort}")</td>
-                        <td>@(row.IsDefaultSender ? "Gửi" : "") @(row.IsDefaultReceiver ? "Nhận" : "")</td>
-                        <td>@(row.IsActive ? "Hoạt động" : "Tắt")</td>
-                        <td class="text-end">
-                            <a class="btn btn-sm btn-outline-primary" asp-page="/Admin/Settings/EmailAccounts" asp-route-editId="@row.Id"><i class="fa-solid fa-pen-to-square"></i></a>
-                            <form method="post" asp-page-handler="Delete" class="d-inline" onsubmit="return confirm('Xóa tài khoản email này?');">
-                                <input type="hidden" name="id" value="@row.Id" />
-                                <button class="btn btn-sm btn-outline-danger" type="submit"><i class="fa-solid fa-trash"></i></button>
-                            </form>
-                        </td>
-                    </tr>
-                }
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div class="card-x">
-        <h3 class="section-title mb-3">@(Model.Input.Id.HasValue ? "Cập nhật tài khoản email" : "Thêm tài khoản email")</h3>
-        <form method="post" asp-page-handler="Save" class="row g-3">
-            <input asp-for="Input.Id" type="hidden" />
-            <div class="col-md-4"><label class="form-label">Tên</label><input class="form-control" asp-for="Input.Name" /></div>
-            <div class="col-md-4"><label class="form-label">Email</label><input class="form-control" asp-for="Input.EmailAddress" /></div>
-            <div class="col-md-4"><label class="form-label">Tên hiển thị</label><input class="form-control" asp-for="Input.DisplayName" /></div>
-            <div class="col-md-3"><label class="form-label">SMTP Host</label><input class="form-control" asp-for="Input.SmtpHost" /></div>
-            <div class="col-md-2"><label class="form-label">SMTP Port</label><input class="form-control" type="number" asp-for="Input.SmtpPort" /></div>
-            <div class="col-md-3"><label class="form-label">SMTP User</label><input class="form-control" asp-for="Input.SmtpUsername" /></div>
-            <div class="col-md-4"><label class="form-label">SMTP Password</label><input class="form-control" asp-for="Input.SmtpPassword" /></div>
-            <div class="col-md-3"><label class="form-label">IMAP Host</label><input class="form-control" asp-for="Input.ImapHost" /></div>
-            <div class="col-md-2"><label class="form-label">IMAP Port</label><input class="form-control" type="number" asp-for="Input.ImapPort" /></div>
-            <div class="col-md-3"><label class="form-label">IMAP User</label><input class="form-control" asp-for="Input.ImapUsername" /></div>
-            <div class="col-md-4"><label class="form-label">IMAP Password</label><input class="form-control" asp-for="Input.ImapPassword" /></div>
-            <div class="col-md-12 d-flex gap-3 flex-wrap">
-                <label class="form-check"><input class="form-check-input" type="checkbox" asp-for="Input.SmtpEnableSsl" /> <span class="form-check-label">SMTP SSL</span></label>
-                <label class="form-check"><input class="form-check-input" type="checkbox" asp-for="Input.ImapEnableSsl" /> <span class="form-check-label">IMAP SSL</span></label>
-                <label class="form-check"><input class="form-check-input" type="checkbox" asp-for="Input.IsDefaultSender" /> <span class="form-check-label">Mặc định gửi</span></label>
-                <label class="form-check"><input class="form-check-input" type="checkbox" asp-for="Input.IsDefaultReceiver" /> <span class="form-check-label">Mặc định nhận</span></label>
-                <label class="form-check"><input class="form-check-input" type="checkbox" asp-for="Input.IsActive" /> <span class="form-check-label">Hoạt động</span></label>
-                <label class="form-check"><input class="form-check-input" type="checkbox" asp-for="Input.IsVisible" /> <span class="form-check-label">Hiển thị</span></label>
-            </div>
-            <div class="col-12 d-flex justify-content-end gap-2">
-                <a class="btn btn-light btn-sm" asp-page="/Admin/Settings/EmailAccounts">Làm mới</a>
-                <button class="btn btn-warning btn-sm" type="submit">Lưu</button>
-            </div>
-        </form>
-    </div>
-</div>
+@{ViewData["Title"]="Tài khoản email hệ thống";ViewData["AdminHeaderTitle"]=ViewData["Title"];var active=Model.Rows.Count(x=>x.IsActive);}
+@section Styles{<link rel="stylesheet" href="~/css/admin/email-accounts.css" asp-append-version="true"/>}
+<main class="account-crud-page email-admin">
+ <header class="account-crud-header email-page-header"><div><h1>Tài khoản email hệ thống</h1><p>Quản lý email gửi thông báo, kích hoạt, khôi phục mật khẩu và nhận phản hồi.</p></div><div class="d-flex flex-wrap gap-2"><a asp-page="EmailAccountForm" class="btn btn-sm btn-primary"><i class="fa-solid fa-plus"></i><span>Thêm tài khoản</span></a></div></header>
+ @if(TempData["AdminMessageSuccess"] is string success){<div class="alert alert-success">@success</div>}@if(TempData["AdminMessageError"] is string error){<div class="alert alert-danger">@error</div>}
+ <section class="email-summary"><article><i class="fa-solid fa-at"></i><div><strong>@Model.Rows.Count</strong><span>Tổng tài khoản</span></div></article><article><i class="fa-solid fa-circle-check"></i><div><strong>@active</strong><span>Đang hoạt động</span></div></article><article><i class="fa-solid fa-paper-plane"></i><div><strong>@Model.Rows.Count(x=>x.IsDefaultSender)</strong><span>Mặc định gửi</span></div></article><article><i class="fa-solid fa-inbox"></i><div><strong>@Model.Rows.Count(x=>x.IsDefaultReceiver)</strong><span>Mặc định nhận</span></div></article></section>
+ <section class="email-card"><div class="email-card-head"><div><h2>Danh sách tài khoản</h2><p>Mật khẩu SMTP/IMAP không được hiển thị trên danh sách.</p></div></div><div class="email-toolbar"><label><span>Tìm kiếm</span><div><i class="fa-solid fa-magnifying-glass"></i><input id="emailSearch" class="form-control" placeholder="Tên hoặc địa chỉ email"/></div></label><label><span>Trạng thái</span><select id="emailStatus" class="form-select"><option value="">Tất cả</option><option value="Đang hoạt động">Đang hoạt động</option><option value="Tạm tắt">Tạm tắt</option></select></label><label><span>Hiển thị</span><select id="emailLength" class="form-select"><option value="10">10 dòng</option><option value="20">20 dòng</option><option value="50">50 dòng</option></select></label><button id="emailFilter" class="btn btn-primary"><i class="fa-solid fa-filter"></i><span>Lọc</span></button></div>
+ <div class="table-responsive"><table id="emailAccountTable" class="table email-table align-middle w-100" data-list-actions="false"><thead><tr><th>STT</th><th>Tài khoản</th><th>Kết nối gửi</th><th>Mặc định</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>@foreach(var row in Model.Rows){<tr><td></td><td><strong>@row.Name</strong><small>@row.EmailAddress</small></td><td><strong>@(string.IsNullOrWhiteSpace(row.SmtpHost)?"Chưa cấu hình":$"{row.SmtpHost}:{row.SmtpPort}")</strong><small>@(row.SmtpEnableSsl?"Bảo mật SSL":"Không dùng SSL")</small></td><td><div class="email-defaults">@if(row.IsDefaultSender){<span><i class="fa-solid fa-paper-plane"></i>Gửi</span>}@if(row.IsDefaultReceiver){<span><i class="fa-solid fa-inbox"></i>Nhận</span>}@if(!row.IsDefaultSender&&!row.IsDefaultReceiver){<em>—</em>}</div></td><td><span class="email-status @(row.IsActive?"is-active":"is-off")">@(row.IsActive?"Đang hoạt động":"Tạm tắt")</span></td><td><div class="email-actions"><a asp-page="EmailAccountForm" asp-route-id="@row.Id" title="Sửa"><i class="fa-solid fa-pen"></i></a><a asp-page="EmailAccountDelete" asp-route-id="@row.Id" class="is-delete" title="Xóa"><i class="fa-solid fa-trash"></i></a></div></td></tr>}</tbody></table></div></section>
+ <form id="emailDiagnosticForm" method="post" class="d-none"><input id="emailDiagnosticId" type="hidden" name="id" /></form>
+</main>
+@section Scripts{<script src="~/lib/datatables/js/dataTables.min.js?v=2.3.8"></script><script src="~/lib/datatables/js/dataTables.bootstrap5.min.js?v=2.3.8"></script><script src="~/js/admin/email-accounts.js" asp-append-version="true"></script>}

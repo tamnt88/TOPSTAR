@@ -26,3 +26,31 @@ Thumbs.db
 .DS_Store
 
 .fake
+# Private identity documents (never commit or publish)
+**/App_Data/private-koc-tax/
+
+# Local builds, browser profiles and runtime data
+.tmp/
+.build/
+_build_tmp/
+artifacts/
+backend/artifacts/
+tmpbuild/
+**/App_Data/
+**/wwwroot/uploads/
+**/node_modules/
+**/appsettings*.json
+!**/appsettings.example.json
+*.pfx
+*.p12
+.env
+.env.*
+!*.env.example
+/all.sql
+/sql_*.sql
+/tmp_*
+
+.local-static-asset-backup*/
+.tmp-*
+/2026.sql
+/backend/ccccc.sql

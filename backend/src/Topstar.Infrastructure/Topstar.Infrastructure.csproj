@@ -12,6 +12,11 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.8" />
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="9.0.8" />
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="9.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.8" />
+    <PackageReference Include="HtmlSanitizer" Version="9.0.967" />
   </ItemGroup>
 
   <PropertyGroup>

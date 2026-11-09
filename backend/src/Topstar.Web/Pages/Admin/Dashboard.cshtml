@@ -1,77 +1,173 @@
 @page
 @model Topstar.Web.Pages.Admin.DashboardModel
 @{
-    ViewData["Title"] = "Admin Dashboard";
-    ViewData["Description"] = "Dashboard quản trị hệ thống TopStar cho admin.";
+    ViewData["Title"] = "Tổng quan vận hành";
+    ViewData["Description"] = "Trung tâm điều hành hệ thống TopStar dành cho Admin.";
+
+    var pendingActions = Model.Data.PendingCampaigns + Model.Data.NeedReviewSubmissions + Model.Data.OpenShipmentIssues;
+    var slaItems = Model.Operations.SubmissionEscalations
+        .Concat(Model.Operations.BrandReviewEscalations)
+        .Select(x => new { x.Severity, x.EscalationStatus })
+        .Concat(Model.Operations.DisputeEscalations.Select(x => new { x.Severity, x.EscalationStatus }))
+        .ToList();
+    var slaCritical = slaItems.Count(x => x.Severity == "Critical");
+    var slaOpen = slaItems.Count(x => x.EscalationStatus == "Open");
+    var slaAcknowledged = slaItems.Count(x => x.EscalationStatus == "Acknowledged");
+    var defaultSender = Model.EmailAccounts.FirstOrDefault(x => x.IsDefaultSender);
+    var emailReady = defaultSender is { IsActive: true }
+        && !string.IsNullOrWhiteSpace(defaultSender.SmtpHost)
+        && defaultSender.SmtpPort is > 0
+        && !string.IsNullOrWhiteSpace(defaultSender.SmtpUsername);
+    var googleLogin = Model.SocialLoginConfigurations.FirstOrDefault(x => x.Provider.Equals("Google", StringComparison.OrdinalIgnoreCase));
+    var facebookLogin = Model.SocialLoginConfigurations.FirstOrDefault(x => x.Provider.Equals("Facebook", StringComparison.OrdinalIgnoreCase));
+    bool SocialReady(Topstar.Application.SystemSettings.SocialLoginConfigurationItem? item) => item is not null
+        && !(item.LoginEnabled || item.RegistrationEnabled)
+            || item is not null && !string.IsNullOrWhiteSpace(item.ClientId) && !string.IsNullOrWhiteSpace(item.ClientSecret);
+    var integrationIssues = (emailReady ? 0 : 1) + (SocialReady(googleLogin) ? 0 : 1) + (SocialReady(facebookLogin) ? 0 : 1);
+
 }
 
-<section class="admin-dashboard-page">
-    <div class="container admin-dashboard-wrap">
-        <div class="admin-kpi-grid">
-            <article class="admin-kpi-card">
-                <span class="kpi-icon kpi-blue"><i class="fa-regular fa-building"></i></span>
-                <p>Brand hoạt động</p>
-                <h3>@Model.Data.ActiveBrands</h3>
-            </article>
-            <article class="admin-kpi-card">
-                <span class="kpi-icon kpi-green"><i class="fa-solid fa-user-group"></i></span>
-                <p>KOC Active</p>
-                <h3>@Model.Data.ActiveKocs</h3>
-            </article>
-            <article class="admin-kpi-card">
-                <span class="kpi-icon kpi-purple"><i class="fa-regular fa-circle-dot"></i></span>
-                <p>Chiến dịch đang chạy</p>
-                <h3>@Model.Data.RunningCampaigns</h3>
-            </article>
-            <article class="admin-kpi-card">
-                <span class="kpi-icon kpi-orange"><i class="fa-solid fa-dollar-sign"></i></span>
-                <p>Tổng budget chiến dịch chạy</p>
-                <h3>@Model.Data.TotalBudgetRunningCampaigns.ToString("N0")</h3>
-            </article>
+<section class="admin-dashboard-page ops-dashboard">
+    <header class="ops-dashboard-heading">
+        <div>
+            <div class="ops-eyebrow">Trung tâm điều hành</div>
+            <h1>Tổng quan hệ thống</h1>
+            <p>Dữ liệu vận hành tại thời điểm @DateTime.UtcNow.ToVietnamTime().ToString("HH:mm, dd/MM/yyyy")</p>
         </div>
+        <div class="ops-heading-actions">
+            <a asp-page="/Admin/Reports" class="btn btn-light"><i class="fa-solid fa-chart-column"></i> Xem báo cáo</a>
+            <a asp-page="/Admin/Operations" class="btn btn-primary"><i class="fa-solid fa-headset"></i> Bàn vận hành</a>
+        </div>
+    </header>
 
-        <div class="admin-block">
-            <h2><i class="fa-regular fa-circle-exclamation text-danger"></i> Cảnh báo cần xử lý</h2>
-            <div class="admin-alert-grid">
-                <div class="admin-alert-card alert-yellow">
-                    <b>@Model.Data.PendingCampaigns</b>
-                    <span>Campaign chờ duyệt/chỉnh sửa</span>
-                </div>
-                <div class="admin-alert-card alert-red">
-                    <b>@Model.Data.NeedReviewSubmissions</b>
-                    <span>Submission chờ duyệt</span>
-                </div>
-                <div class="admin-alert-card alert-blue">
-                    <b>@Model.Data.OpenShipmentIssues</b>
-                    <span>Vấn đề giao nhận đang mở</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="admin-block">
-            <h2>Trạng thái chiến dịch</h2>
-            <div class="admin-status-list">
-                @foreach (var item in Model.Data.CampaignStatuses)
-                {
-                    <div class="admin-status-row">
-                        <div class="status-main">
-                            <span class="status-icon run"><i class="fa-regular fa-circle-dot"></i></span>
-                            <div><b>@item.Label</b><p>@item.Count chiến dịch</p></div>
-                        </div>
-                    </div>
-                }
-            </div>
-        </div>
-
-        <div class="admin-block">
-            <h2>Hoạt động gần đây</h2>
-            <ul class="admin-activity-list">
-                @foreach (var row in Model.Data.RecentActivities)
-                {
-                    <li><b>@row.Title</b><span>@row.CreatedAtUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span></li>
-                }
-            </ul>
-        </div>
+    <div class="ops-kpi-grid" aria-label="Chỉ số vận hành chính">
+        <article class="ops-kpi-card ops-kpi-brand">
+            <span class="ops-kpi-icon"><i class="fa-regular fa-building"></i></span>
+            <div><span>Brand hoạt động</span><strong>@Model.Data.ActiveBrands.ToString("N0", PortalFormat.Vietnamese)</strong></div>
+            <a asp-page="/Admin/Brands" aria-label="Xem danh sách Brand"><i class="fa-solid fa-arrow-right"></i></a>
+        </article>
+        <article class="ops-kpi-card ops-kpi-koc">
+            <span class="ops-kpi-icon"><i class="fa-solid fa-users"></i></span>
+            <div><span>KOC hoạt động</span><strong>@Model.Data.ActiveKocs.ToString("N0", PortalFormat.Vietnamese)</strong></div>
+            <a asp-page="/Admin/Brands" asp-route-Type="KOC" aria-label="Xem danh sách KOC"><i class="fa-solid fa-arrow-right"></i></a>
+        </article>
+        <article class="ops-kpi-card ops-kpi-campaign">
+            <span class="ops-kpi-icon"><i class="fa-solid fa-bullhorn"></i></span>
+            <div><span>Chiến dịch đang chạy</span><strong>@Model.Data.RunningCampaigns.ToString("N0", PortalFormat.Vietnamese)</strong></div>
+            <a asp-page="/Admin/Campaigns" aria-label="Xem chiến dịch"><i class="fa-solid fa-arrow-right"></i></a>
+        </article>
+        <article class="ops-kpi-card ops-kpi-budget">
+            <span class="ops-kpi-icon"><i class="fa-solid fa-coins"></i></span>
+            <div><span>Ngân sách đang vận hành</span><strong>@Model.Data.TotalBudgetRunningCampaigns.ToString("N0", PortalFormat.Vietnamese) <small>₫</small></strong></div>
+            <a asp-page="/Admin/Finance/Billing" aria-label="Xem tài chính"><i class="fa-solid fa-arrow-right"></i></a>
+        </article>
     </div>
-</section>
 
+    <section class="ops-panel ops-priority-panel">
+        <div class="ops-panel-heading">
+            <div>
+                <div class="ops-title-row">
+                    <h2>Việc cần xử lý</h2>
+                    @if (pendingActions > 0)
+                    {
+                        <span class="ops-count-badge">@pendingActions</span>
+                    }
+                </div>
+                <p>Hàng đợi được ưu tiên theo mức ảnh hưởng đến chiến dịch và đối tác.</p>
+            </div>
+            <a asp-page="/Admin/Operations" class="ops-text-link">Mở bàn vận hành <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+        <div class="ops-action-grid">
+            <a asp-page="/Admin/Campaigns" class="ops-action-card priority-amber">
+                <span class="ops-action-icon"><i class="fa-regular fa-file-lines"></i></span>
+                <span class="ops-action-content">
+                    <strong>@Model.Data.PendingCampaigns</strong>
+                    <b>Chiến dịch chờ xử lý</b>
+                    <small>Duyệt mới hoặc kiểm tra yêu cầu chỉnh sửa</small>
+                </span>
+                <i class="fa-solid fa-chevron-right"></i>
+            </a>
+            <a asp-page="/Admin/Operations" class="ops-action-card priority-red">
+                <span class="ops-action-icon"><i class="fa-regular fa-circle-check"></i></span>
+                <span class="ops-action-content">
+                    <strong>@Model.Data.NeedReviewSubmissions</strong>
+                    <b>Nội dung chờ duyệt</b>
+                    <small>Kiểm tra submission đang chờ quyết định</small>
+                </span>
+                <i class="fa-solid fa-chevron-right"></i>
+            </a>
+            <a asp-page="/Admin/Operations" class="ops-action-card priority-blue">
+                <span class="ops-action-icon"><i class="fa-solid fa-truck-fast"></i></span>
+                <span class="ops-action-content">
+                    <strong>@Model.Data.OpenShipmentIssues</strong>
+                    <b>Sự cố giao nhận</b>
+                    <small>Xác minh bằng chứng và đưa ra hướng xử lý</small>
+                </span>
+                <i class="fa-solid fa-chevron-right"></i>
+            </a>
+        </div>
+    </section>
+
+    <section class="ops-panel admin-work-queue-summary">
+        <div class="ops-panel-heading">
+            <div><div class="ops-title-row"><h2>Hàng đợi vận hành</h2><span class="ops-count-badge">@slaItems.Count</span></div><p>Tổng hợp các trường hợp quá SLA cần Admin tiếp nhận hoặc theo dõi.</p></div>
+            <a asp-page="/Admin/Operations" class="ops-text-link">Mở hàng đợi <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+        <div class="admin-work-queue-grid">
+            <a asp-page="/Admin/Operations" class="admin-work-queue-card is-critical"><i class="fa-solid fa-triangle-exclamation"></i><span><strong>@slaCritical</strong><small>Quá hạn nghiêm trọng</small></span></a>
+            <a asp-page="/Admin/Operations" class="admin-work-queue-card is-open"><i class="fa-solid fa-inbox"></i><span><strong>@slaOpen</strong><small>Chưa tiếp nhận</small></span></a>
+            <a asp-page="/Admin/Operations" class="admin-work-queue-card is-progress"><i class="fa-solid fa-user-clock"></i><span><strong>@slaAcknowledged</strong><small>Đang theo dõi</small></span></a>
+            <a asp-page="/Admin/Operations" class="admin-work-queue-card"><i class="fa-solid fa-box-open"></i><span><strong>@Model.Operations.ShipmentIssues.Count</strong><small>Sự cố giao nhận</small></span></a>
+        </div>
+        @if (slaCritical > 0)
+        {
+            <div class="admin-sla-warning"><i class="fa-solid fa-bell"></i><span><strong>@slaCritical công việc Critical cần ưu tiên.</strong> Mở bàn vận hành để tiếp nhận và lưu dấu xử lý.</span></div>
+        }
+    </section>
+
+    <section class="ops-panel admin-integration-health">
+        <div class="ops-panel-heading">
+            <div>
+                <div class="ops-title-row">
+                    <h2>Tình trạng tích hợp</h2>
+                    <span class="ops-count-badge @(integrationIssues > 0 ? "is-warning" : "is-ok")">@(integrationIssues > 0 ? $"{integrationIssues} cần xử lý" : "Ổn định")</span>
+                </div>
+                <p>Kiểm tra nhanh các kênh ảnh hưởng trực tiếp đến đăng nhập và email nghiệp vụ.</p>
+            </div>
+        </div>
+        <div class="admin-integration-grid">
+            <a asp-page="/Admin/Settings/EmailAccounts" class="admin-integration-card @(emailReady ? "is-ready" : "is-warning")">
+                <span class="admin-integration-icon"><i class="fa-regular fa-envelope"></i></span>
+                <span><strong>Email hệ thống</strong><small>@(emailReady ? $"Đang gửi qua {defaultSender!.EmailAddress}" : "Chưa có tài khoản gửi mặc định hợp lệ")</small></span>
+                <i class="fa-solid @(emailReady ? "fa-circle-check" : "fa-triangle-exclamation")"></i>
+            </a>
+            <a asp-page="/Admin/Settings/SocialLogin" class="admin-integration-card @(SocialReady(googleLogin) ? "is-ready" : "is-warning")">
+                <span class="admin-integration-icon"><i class="fa-brands fa-google"></i></span>
+                <span><strong>Đăng nhập Google</strong><small>@(googleLogin is null || !(googleLogin.LoginEnabled || googleLogin.RegistrationEnabled) ? "Đang tắt" : SocialReady(googleLogin) ? "Đã bật và có credential" : "Đã bật nhưng thiếu credential")</small></span>
+                <i class="fa-solid @(SocialReady(googleLogin) ? "fa-circle-check" : "fa-triangle-exclamation")"></i>
+            </a>
+            <a asp-page="/Admin/Settings/SocialLogin" class="admin-integration-card @(SocialReady(facebookLogin) ? "is-ready" : "is-warning")">
+                <span class="admin-integration-icon"><i class="fa-brands fa-facebook-f"></i></span>
+                <span><strong>Đăng nhập Facebook</strong><small>@(facebookLogin is null || !(facebookLogin.LoginEnabled || facebookLogin.RegistrationEnabled) ? "Đang tắt" : SocialReady(facebookLogin) ? "Đã bật và có credential" : "Đã bật nhưng thiếu credential")</small></span>
+                <i class="fa-solid @(SocialReady(facebookLogin) ? "fa-circle-check" : "fa-triangle-exclamation")"></i>
+            </a>
+        </div>
+    </section>
+
+    <section class="ops-panel dashboard-finance">
+        <div class="ops-panel-heading"><div><h2><i class="fa-solid fa-wallet"></i> Tài chính cần xử lý</h2><p>Ưu tiên đối soát và yêu cầu hoàn, rút tiền đang chờ.</p></div><a asp-page="/Admin/Finance/Index" class="ops-text-link">Quản lý tài chính <i class="fa-solid fa-arrow-right"></i></a></div>
+        <div class="dashboard-finance-grid">
+            <a href="/Admin/Finance/Billing?list.adminPackageList.status=Pending"><i class="fa-solid fa-receipt"></i><span><small>Đơn mua gói chờ thanh toán</small><strong>@Model.Finance.PackagePending</strong></span><i class="fa-solid fa-chevron-right"></i></a>
+            <a href="/Admin/Finance/CampaignFunding?queue=pending"><i class="fa-solid fa-shield-halved"></i><span><small>Ký quỹ chờ đối soát</small><strong>@Model.Finance.FundingPending</strong></span><i class="fa-solid fa-chevron-right"></i></a>
+            <a href="/Admin/Finance/Billing?list.adminPackageList.status=CancelRequested"><i class="fa-solid fa-rotate-left"></i><span><small>Yêu cầu hủy gói</small><strong>@Model.Finance.PackageCancellations</strong></span><i class="fa-solid fa-chevron-right"></i></a>
+            <a href="/Admin/Finance/BrandBalances?tab=withdrawals"><i class="fa-solid fa-money-bill-transfer"></i><span><small>Brand chờ rút / chuyển tiền</small><strong>@Model.Finance.Withdrawals</strong></span><i class="fa-solid fa-chevron-right"></i></a>
+        </div>
+        @if(Model.Finance.Recent.Count>0){
+        <div class="dashboard-request-heading"><h3>Yêu cầu đang chờ gần nhất</h3><small>Mới nhất trước</small></div>
+        <div class="dashboard-request-list">
+        @foreach(var item in Model.Finance.Recent){<a href="@item.Url"><span class="dashboard-request-icon"><i class="fa-solid @item.Icon"></i></span><span class="dashboard-request-name"><strong>@item.Brand</strong><small>@item.Label · @item.Reference</small></span><strong class="dashboard-request-amount">@PortalFormat.Money(item.Amount)</strong><time>@item.CreatedAtUtc.ToVietnamTime().ToString("dd/MM HH:mm")</time><i class="fa-solid fa-chevron-right"></i></a>}
+        </div>
+        }else{<div class="dashboard-finance-empty"><i class="fa-solid fa-circle-check"></i> Không có yêu cầu tài chính chờ xử lý.</div>}
+    </section>
+</section>
+@section Styles{<link rel="stylesheet" href="~/css/admin/dashboard-finance.css" asp-append-version="true"/>}

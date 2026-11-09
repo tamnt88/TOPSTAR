@@ -1,0 +1,204 @@
+@page
+@model Topstar.Web.Pages.Brand.CampaignWorkspaceModel
+@using Topstar.Application.Billing
+@{
+    ViewData["Title"] = "Trung tâm điều hành chiến dịch";
+    var d = Model.Data;
+    var nextTab = d?.NextPage switch { "Shortlist" => "koc", "CampaignFunding" => "finance", "Bookings" or "Shipments" or "Deliverables" or "Reports" => "execution", _ => "support" };
+    var nextSubTab = d?.NextSubPage;
+}
+
+@if (d is not null)
+{
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div hidden data-ts-notification="@(Model.Success ? "success" : "error")">@Model.Message</div>
+    }
+<div class="brand-page campaign-workspace">
+    <header class="campaign-workspace-hero">
+        <div>
+            <span class="brand-page-eyebrow"><i class="fa-solid fa-table-cells-large"></i> Trung tâm điều hành</span>
+            <h1>@d.Title</h1>
+            <p>@d.BrandName · @d.PackageCode</p>
+        </div>
+        <div class="campaign-workspace-hero-actions">
+            <a asp-page="/Brand/CampaignPreparation" asp-route-id="@d.Id" class="btn btn-outline-secondary"><i class="fa-solid fa-clipboard-list me-1"></i>Thông tin triển khai</a>
+            <a asp-page="/Brand/Campaigns" class="btn btn-light"><i class="fa-solid fa-arrow-left"></i> Danh sách chiến dịch</a>
+            <button type="button" class="btn btn-brand-primary" data-open-workspace-tab="@nextTab" data-open-workspace-subtab="@nextSubTab"><i class="fa-solid fa-arrow-right"></i> @d.NextAction</button>
+        </div>
+    </header>
+
+    @if(d.TechnicalStatus is not ("Completed" or "Cancelled"))
+    {
+        <div class="d-flex justify-content-end gap-2 mb-3">
+            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#campaignLifecycleModal"><i class="fa-solid fa-sliders"></i> @(d.TechnicalStatus=="Paused"?"Tiếp tục hoặc hủy chiến dịch":"Tạm ngừng / hủy chiến dịch")</button>
+        </div>
+        <div class="modal fade" id="campaignLifecycleModal" tabindex="-1" aria-labelledby="campaignLifecycleTitle" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+                <form method="post" asp-page-handler="Lifecycle" data-native-navigation="true">
+                    <input type="hidden" name="id" value="@d.Id"/>
+                    <div class="modal-header"><h2 class="modal-title fs-5" id="campaignLifecycleTitle">Điều chỉnh chiến dịch</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div>
+                    <div class="modal-body">
+                        <p>Tạm ngừng giữ nguyên KOC và tiền ký quỹ. Khi hủy, tiền đã nhận sẽ được Admin đối soát nghĩa vụ trước khi hoàn vào số dư Brand.</p>
+                        <p class="text-muted small">Chỉ tự thao tác khi chưa mở công việc hoặc phát sinh lịch/giao nhận. Nếu đã triển khai, hãy gửi yêu cầu hỗ trợ.</p>
+                        <label class="form-label" for="lifecycleAction">Thao tác</label>
+                        <select class="form-select mb-3" id="lifecycleAction" name="action">
+                            @if(d.TechnicalStatus=="Paused") { <option value="Resume">Tiếp tục chiến dịch</option> }
+                            else if(d.TechnicalStatus is "Published" or "InProgress") { <option value="Pause">Tạm ngừng chiến dịch</option> }
+                            <option value="Cancel">Hủy chiến dịch</option>
+                        </select>
+                        <label class="form-label" for="lifecycleReason">Ghi chú gửi đến KOC và bộ phận hỗ trợ</label>
+                        <textarea class="form-control" id="lifecycleReason" name="reason" required minlength="10" maxlength="500" rows="3" placeholder="Nhập ghi chú từ 10 đến 500 ký tự"></textarea>
+                    </div>
+                    <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Đóng</button><button class="btn btn-brand-primary">Xác nhận thao tác</button></div>
+                </form>
+            </div></div>
+        </div>
+    }
+
+    <section class="campaign-workspace-status is-@d.PhaseCode">
+        <span><i class="fa-solid fa-route"></i></span>
+        <div><small>Giai đoạn hiện tại</small><strong>@d.PhaseLabel</strong><p>@d.PhaseDescription</p></div>
+        <div class="campaign-workspace-dates"><small>Thời gian dự kiến</small><strong>@(d.StartDate?.ToString("dd/MM/yyyy") ?? "Chưa đặt") – @(d.EndDate?.ToString("dd/MM/yyyy") ?? "Chưa đặt")</strong></div>
+    </section>
+
+    <section class="campaign-workspace-flow" aria-label="Tiến trình chiến dịch">
+        <div class="@(d.HasCompletedFundingStep ? "is-done" : d.ConfirmedKocs > 0 ? "is-current" : "")"><span><i class="fa-solid fa-shield-halved"></i></span><strong>1. Thanh toán</strong><small>@(d.FundingStatus == CampaignFundingStatuses.Refunded ? "Đã hoàn tiền" : d.HasCompletedFundingStep ? "Đã thanh toán" : d.ConfirmedKocs > 0 ? "Kiểm tra thanh toán và phân bổ" : "Chưa hoàn tất thanh toán")</small></div>
+        <i class="fa-solid fa-chevron-right"></i>
+        <div class="@(d.IsExecutionComplete ? "is-done" : d.IsFunded ? "is-current" : "")"><span><i class="fa-solid fa-list-check"></i></span><strong>2. Thực hiện</strong><small>@d.ExecutionStepLabel</small></div>
+        <i class="fa-solid fa-chevron-right"></i>
+        <div class="@(d.IsSettlementComplete ? "is-done" : d.IsExecutionComplete ? "is-current" : "")"><span><i class="fa-solid fa-flag-checkered"></i></span><strong>3. Nghiệm thu</strong><small>@(d.IsSettlementComplete ? "Đã quyết toán" : d.IsExecutionComplete ? "Đang xử lý" : "Chưa nghiệm thu")</small></div>
+    </section>
+
+    <nav class="campaign-workspace-nav" aria-label="Chức năng chiến dịch" role="tablist">
+        <button type="button" class="active" data-workspace-tab="overview"><i class="fa-solid fa-chart-pie"></i> Tổng quan</button>
+        <button type="button" data-workspace-tab="koc"><i class="fa-solid fa-users"></i> KOC <span>@d.ConfirmedKocs/@d.DesiredKocCount</span></button>
+        <button type="button" data-workspace-tab="finance"><i class="fa-solid fa-wallet"></i> Tài chính</button>
+        <button type="button" data-workspace-tab="execution"><i class="fa-solid fa-list-check"></i> Thực hiện</button>
+        <button type="button" data-workspace-tab="support"><i class="fa-solid fa-headset"></i> Hỗ trợ <span>@d.OpenDisputes</span></button>
+    </nav>
+
+    <div class="campaign-workspace-tab-panel active" data-workspace-panel="overview">
+    <section class="campaign-workspace-kpis">
+        <article><span><i class="fa-solid fa-coins"></i></span><div><small>Ngân sách thù lao KOC</small><strong>@d.Budget.ToString("N0", PortalFormat.Vietnamese) đ</strong></div></article>
+        <article><span><i class="fa-solid fa-user-check"></i></span><div><small>KOC đã xác nhận</small><strong>@d.ConfirmedKocs/@d.DesiredKocCount</strong></div></article>
+        <article><span><i class="fa-solid fa-calendar-check"></i></span><div><small>Lịch làm việc cần xác nhận</small><strong>@d.SchedulePending</strong></div></article>
+        <article><span><i class="fa-solid fa-file-circle-check"></i></span><div><small>Nội dung cần duyệt</small><strong>@d.SubmissionPending</strong></div></article>
+    </section>
+
+    <section class="campaign-workspace-next">
+        <span><i class="fa-solid fa-bolt"></i></span>
+        <div><small>Việc cần làm tiếp theo</small><strong>@d.NextAction</strong><p>@d.PhaseDescription</p></div>
+        <button type="button" class="btn btn-brand-primary" data-open-workspace-tab="@nextTab" data-open-workspace-subtab="@nextSubTab"><i class="fa-solid fa-arrow-right"></i> @d.NextAction</button>
+    </section>
+
+    <section class="campaign-workspace-command-grid" aria-label="Kiểm soát chiến dịch">
+        <article class="campaign-workspace-command-card">
+            <header><span><i class="fa-solid fa-receipt"></i></span><div><small>TÀI CHÍNH CHIẾN DỊCH</small><h2>Chi phí và dòng tiền</h2></div></header>
+            <dl class="campaign-workspace-costs">
+                <div><dt>Giá gói dịch vụ</dt><dd>@d.FinancialSummary.PackageCost.ToString("N0", PortalFormat.Vietnamese) đ</dd></div>
+                <div><dt>Ngân sách thù lao dự kiến</dt><dd>@d.FinancialSummary.KocBudget.ToString("N0", PortalFormat.Vietnamese) đ</dd></div>
+                <div><dt>Phí nền tảng</dt><dd>@d.FinancialSummary.PlatformFee.ToString("N0", PortalFormat.Vietnamese) đ</dd></div>
+                <div><dt>Phí thanh toán</dt><dd>@d.FinancialSummary.GatewayFee.ToString("N0", PortalFormat.Vietnamese) đ</dd></div>
+                <div><dt>Đã giải ngân cho KOC</dt><dd>@d.FinancialSummary.ReleasedAmount.ToString("N0", PortalFormat.Vietnamese) đ</dd></div>
+                <div><dt>Số dư ký quỹ</dt><dd>@d.FinancialSummary.EscrowRemaining.ToString("N0", PortalFormat.Vietnamese) đ</dd></div>
+                <div><dt>Đã hoàn trả cho doanh nghiệp</dt><dd>@d.FinancialSummary.RefundAmount.ToString("N0", PortalFormat.Vietnamese) đ</dd></div>
+                <div class="is-total"><dt>Tổng chi phí đã ghi nhận</dt><dd>@d.FinancialSummary.ActualCost.ToString("N0", PortalFormat.Vietnamese) đ</dd></div>
+            </dl>
+            <p><i class="fa-solid fa-circle-info"></i> Chi phí đã ghi nhận được tính từ các khoản đã thanh toán, trừ khoản đã hoàn trả. Chưa bao gồm chi phí sản phẩm và các khoản chi ngoài hệ thống.</p>
+        </article>
+
+        <article class="campaign-workspace-command-card">
+            <header><span><i class="fa-solid fa-users-gear"></i></span><div><small>TIẾN ĐỘ THỰC HIỆN</small><h2>Tiến độ theo KOC</h2></div></header>
+            @if (d.TechnicalStatus is "Published" or "InProgress" && d.KocJourneys.Any(x => x.CanOpenWork))
+            {
+                <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin:12px 0 16px">
+                    <form method="post" asp-page-handler="OpenAccepted"><input type="hidden" asp-for="Id"/><button class="btn btn-outline-primary"><i class="fa-solid fa-person-running"></i> Mở cho KOC đủ điều kiện</button></form>
+                    <form method="post" asp-page-handler="OpenFullTeam"><input type="hidden" asp-for="Id"/><button class="btn btn-primary"><i class="fa-solid fa-users"></i> Mở khi đủ đội hình</button></form>
+                </div>
+            }
+            else if (d.KocJourneys.Any(x => x.ParticipationStatus == Topstar.Application.Matching.ParticipationStatuses.Confirmed && !x.IsWorkOpened && !x.IsFunded))
+            {
+                <div class="alert alert-warning" style="margin:12px 0 16px">
+                    <i class="fa-solid fa-circle-info"></i>
+                    KOC đã xác nhận nhưng thù lao chưa được bảo đảm. Kiểm tra thanh toán và phân bổ thù lao trước khi mở công việc.
+                </div>
+            }
+            @if (d.KocJourneys.Count == 0)
+            {
+                <div class="campaign-workspace-command-empty">Chưa có KOC được xác nhận. Vui lòng tuyển chọn và xác nhận danh sách KOC để theo dõi tiến độ.</div>
+            }
+            else
+            {
+                <div class="campaign-workspace-journeys">
+                    @foreach (var item in d.KocJourneys)
+                    {
+                        <div>
+                            <header><strong>@item.KocName</strong><span>@(item.IsWorkOpened ? "Đã mở công việc" : item.ParticipationStatus == Topstar.Application.Matching.ParticipationStatuses.Invited ? "Chờ KOC phản hồi" : $"Chờ {item.WaitingFor}")</span></header>
+                            <ol>
+                                <li class="is-done">Đã xác nhận</li>
+                                <li class="@(item.ShipmentStatus != "NotCreated" ? "is-done" : "")">Giao sản phẩm</li>
+                                <li class="@(item.BookingStatus == "Confirmed" ? "is-done" : "")">Lịch làm việc</li>
+                                <li class="@(item.SubmissionStatus != "NotSubmitted" ? "is-done" : "")">Nội dung</li>
+                                <li class="@(item.ParticipationStatus == "Completed" ? "is-done" : "")">Nghiệm thu</li>
+                            </ol>
+                            <footer><span>@item.NextAction</span><time>@(item.DueAtUtc?.ToVietnamTime().ToString("dd/MM/yyyy HH:mm") ?? "Chưa có hạn hoàn thành")</time></footer>
+                            @if (d.TechnicalStatus is "Published" or "InProgress" && item.CanOpenWork)
+                            {
+                                <form method="post" asp-page-handler="OpenWork" style="margin-top:10px"><input type="hidden" asp-for="Id"/><input type="hidden" name="participationId" value="@item.ParticipationId"/><button class="btn btn-sm btn-primary"><i class="fa-solid fa-play"></i> Mở công việc cho KOC này</button></form>
+                            }
+                            else if (item.ParticipationStatus == Topstar.Application.Matching.ParticipationStatuses.Confirmed && !item.IsWorkOpened && !item.IsFunded)
+                            {
+                                <div class="text-warning" style="margin-top:10px"><i class="fa-solid fa-lock"></i> Chưa ký quỹ thù lao cho KOC này</div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </article>
+    </section>
+    </div>
+
+    <div class="campaign-workspace-tab-panel" data-workspace-panel="koc">
+        <section class="campaign-workspace-panel campaign-workspace-panel-wide">
+            <div class="campaign-workspace-panel-head"><span><i class="fa-solid fa-users"></i></span><div><h2>Tuyển chọn KOC</h2><p>Theo dõi hồ sơ KOC và trạng thái xác nhận tham gia chiến dịch.</p></div></div>
+            <div class="campaign-workspace-native" aria-label="Tuyển chọn KOC" data-src="/Brand/Shortlist?id=@d.Id"></div>
+        </section>
+    </div>
+
+    <div class="campaign-workspace-tab-panel" data-workspace-panel="finance">
+        <section class="campaign-workspace-panel campaign-workspace-panel-wide">
+            <div class="campaign-workspace-panel-head"><span><i class="fa-solid fa-wallet"></i></span><div><h2>Ngân sách và thanh toán</h2><p>Phân bổ thù lao, ký quỹ và theo dõi đối soát.</p></div></div>
+            <div class="campaign-workspace-native" aria-label="Thanh toán chiến dịch" data-src="/Brand/CampaignFunding?campaignId=@d.Id"></div>
+        </section>
+    </div>
+
+    <div class="campaign-workspace-tab-panel" data-workspace-panel="execution">
+        <section class="campaign-workspace-panel campaign-workspace-panel-wide">
+            <div class="campaign-workspace-panel-head"><span><i class="fa-solid fa-list-check"></i></span><div><h2>Thực hiện chiến dịch</h2><p>Điều phối lịch, giao nhận và nghiệm thu nội dung tại một nơi.</p></div></div>
+            <div class="campaign-workspace-subtabs">
+                <button class="active" type="button" data-workspace-subtab="bookings" data-content-src="/Brand/Bookings?campaignId=@d.Id"><i class="fa-solid fa-calendar-days"></i> Lịch</button>
+                <button type="button" data-workspace-subtab="shipments" data-content-src="/Brand/Shipments?campaignId=@d.Id"><i class="fa-solid fa-truck-fast"></i> Giao nhận</button>
+                <button type="button" data-workspace-subtab="deliverables" data-content-src="/Brand/Deliverables?id=@d.Id"><i class="fa-solid fa-photo-film"></i> Nội dung</button>
+                <button type="button" data-workspace-subtab="reports" data-content-src="/Brand/Reports?campaignId=@d.Id"><i class="fa-solid fa-chart-line"></i> Báo cáo</button>
+            </div>
+            <div class="campaign-workspace-native" aria-label="Thực hiện chiến dịch" data-src="/Brand/Bookings?campaignId=@d.Id"></div>
+        </section>
+    </div>
+
+    <div class="campaign-workspace-tab-panel" data-workspace-panel="support">
+        <section class="campaign-workspace-panel campaign-workspace-panel-wide">
+            <div class="campaign-workspace-panel-head"><span><i class="fa-solid fa-headset"></i></span><div><h2>Hỗ trợ chiến dịch</h2><p>Theo dõi yêu cầu hỗ trợ, đánh giá chất lượng hợp tác và tra cứu hồ sơ chiến dịch.</p></div></div>
+            <div class="campaign-workspace-subtabs">
+                <button class="active" type="button" data-workspace-subtab="disputes" data-content-src="/Brand/Disputes?campaignId=@d.Id"><i class="fa-solid fa-scale-balanced"></i> Tranh chấp</button>
+                <button type="button" data-workspace-subtab="reviews" data-content-src="/Brand/Reviews?campaignId=@d.Id"><i class="fa-solid fa-star"></i> Đánh giá</button>
+                <button type="button" data-workspace-subtab="history" data-content-src="/Brand/Collaborations?campaignId=@d.Id"><i class="fa-solid fa-clock-rotate-left"></i> Lịch sử</button>
+                <button type="button" data-workspace-subtab="profile" data-content-src="/Brand/CampaignEdit?id=@d.Id"><i class="fa-solid fa-file-lines"></i> Hồ sơ</button>
+            </div>
+            <div class="campaign-workspace-native" aria-label="Hỗ trợ chiến dịch" data-src="/Brand/Disputes?campaignId=@d.Id"></div>
+        </section>
+    </div>
+</div>
+}
+
+@section Scripts { <script src="~/js/brand/campaign-workspace.js" asp-append-version="true"></script> }

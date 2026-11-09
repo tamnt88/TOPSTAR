@@ -1,0 +1,88 @@
+@page
+@model Topstar.Web.Pages.Admin.Settings.HomepageContentModel
+@{
+    ViewData["Title"] = "Nội dung trang chủ";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin/homepage-content.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin/homepage-upload.css" asp-append-version="true" />
+}
+
+<main class="homepage-admin">
+    <header class="homepage-admin__header">
+        <div><p class="admin-eyebrow"><i class="fa-solid fa-house"></i> NỘI DUNG WEBSITE</p><h1>Quản trị trang chủ</h1><p>Quản lý banner, CTA, lợi ích, quy trình, KOC nổi bật, số liệu và đối tác trên một màn hình.</p></div>
+        <a class="btn btn-outline-primary" href="/" target="_blank"><i class="fa-solid fa-arrow-up-right-from-square"></i> Xem trang chủ</a>
+    </header>
+    @if (TempData["AdminMessageSuccess"] is string ok) { <div class="alert alert-success"><i class="fa-solid fa-circle-check"></i> @ok</div> }
+    <div asp-validation-summary="All" class="alert alert-danger validation-summary-valid"></div>
+
+    <form method="post" asp-page-handler="Save" novalidate data-homepage-form>
+        <nav class="ts-tabs homepage-tabs" role="tablist">
+            <button type="button" class="active" data-home-tab="hero"><i class="fa-solid fa-panorama"></i> Banner & CTA</button>
+            <button type="button" data-home-tab="content"><i class="fa-solid fa-layer-group"></i> Nội dung chính</button>
+            <button type="button" data-home-tab="creators"><i class="fa-solid fa-users"></i> KOC nổi bật</button>
+            <button type="button" data-home-tab="proof"><i class="fa-solid fa-chart-column"></i> Số liệu & đối tác</button>
+            <button type="button" data-home-tab="publish"><i class="fa-solid fa-clock-rotate-left"></i> Xuất bản & lịch sử</button>
+        </nav>
+
+        <section class="homepage-panel active" data-home-panel="hero">
+            <div class="panel-heading"><span class="panel-icon"><i class="fa-solid fa-panorama"></i></span><div><h2>Banner đầu trang</h2><p>Nội dung đầu tiên người dùng nhìn thấy khi truy cập website.</p></div></div>
+            <div class="form-grid">
+                <div class="field span-2"><label asp-for="Input.TrustLabel">Nhãn tin cậy <b>*</b></label><input asp-for="Input.TrustLabel" /><span asp-validation-for="Input.TrustLabel"></span></div>
+                <div class="field span-2"><label asp-for="Input.HeroTitle">Tiêu đề chính <b>*</b></label><textarea asp-for="Input.HeroTitle" rows="2"></textarea><span asp-validation-for="Input.HeroTitle"></span></div>
+                <div class="field span-2"><label asp-for="Input.HeroDescription">Mô tả <b>*</b></label><textarea asp-for="Input.HeroDescription" rows="3"></textarea><span asp-validation-for="Input.HeroDescription"></span></div>
+                <div class="field"><label asp-for="Input.PrimaryCtaText">Nút chính <b>*</b></label><input asp-for="Input.PrimaryCtaText" /><span asp-validation-for="Input.PrimaryCtaText"></span></div>
+                <div class="field"><label asp-for="Input.PrimaryCtaUrl">Liên kết nút chính <b>*</b></label><input asp-for="Input.PrimaryCtaUrl" /><span asp-validation-for="Input.PrimaryCtaUrl"></span></div>
+                <div class="field"><label asp-for="Input.SecondaryCtaText">Nút phụ <b>*</b></label><input asp-for="Input.SecondaryCtaText" /><span asp-validation-for="Input.SecondaryCtaText"></span></div>
+                <div class="field"><label asp-for="Input.SecondaryCtaUrl">Liên kết nút phụ <b>*</b></label><input asp-for="Input.SecondaryCtaUrl" /><span asp-validation-for="Input.SecondaryCtaUrl"></span></div>
+                <div class="field span-2"><label asp-for="Input.HeroImageUrl">Ảnh banner <b>*</b></label><div class="homepage-image-field"><img src="@Model.Input.HeroImageUrl" alt="Xem trước ảnh banner" data-image-preview/><div><input type="hidden" asp-for="Input.HeroImageUrl" data-image-url/><label class="homepage-upload"><i class="fa-solid fa-cloud-arrow-up"></i><span>Chọn ảnh từ thiết bị</span><input type="file" accept="image/jpeg,image/png,image/webp" data-image-upload/></label><small>JPG, PNG hoặc WEBP; dung lượng tối đa 5 MB.</small><span class="upload-error" data-upload-error></span></div></div><span asp-validation-for="Input.HeroImageUrl"></span></div>
+            </div>
+        </section>
+
+        <section class="homepage-panel" data-home-panel="content">
+            <div class="panel-heading"><span class="panel-icon"><i class="fa-solid fa-layer-group"></i></span><div><h2>Giới thiệu và quy trình</h2><p>Thông điệp giá trị và các bước triển khai chiến dịch.</p></div></div>
+            <div class="form-grid">
+                <div class="field"><label asp-for="Input.AboutEyebrow">Nhãn giới thiệu</label><input asp-for="Input.AboutEyebrow" /></div>
+                <div class="field"><label asp-for="Input.AboutTitle">Tiêu đề giới thiệu</label><input asp-for="Input.AboutTitle" /></div>
+                <div class="field span-2"><label asp-for="Input.AboutDescription">Mô tả giới thiệu</label><textarea asp-for="Input.AboutDescription" rows="3"></textarea></div>
+                <div class="field span-2"><label asp-for="Input.ProcessTitle">Tiêu đề quy trình</label><input asp-for="Input.ProcessTitle" /></div>
+            </div>
+            <div class="list-heading"><h3 class="list-title">Lợi ích nổi bật</h3><button type="button" class="btn btn-outline-primary btn-sm" data-list-add="Features"><i class="fa-solid fa-plus"></i> Thêm lợi ích</button></div>
+            <div class="repeat-grid" data-dynamic-list="Features" data-max-items="8">
+            @for (var i=0;i<Model.Input.Features.Count;i++) { var featureIcon = Model.Input.Features[i].IconClass; <article class="repeat-card" data-list-item><input type="hidden" asp-for="Input.Features[i].DisplayOrder" data-display-order/><div class="repeat-card__title"><span data-item-title>Lợi ích @(i+1)</span><div class="item-actions"><label class="switch"><input asp-for="Input.Features[i].IsVisible"/><span></span></label><button type="button" class="icon-remove" data-list-remove title="Xóa lợi ích"><i class="fa-solid fa-trash"></i></button></div></div><input asp-for="Input.Features[i].Title" placeholder="Tiêu đề"/><textarea asp-for="Input.Features[i].Description" rows="2" placeholder="Mô tả"></textarea><div class="homepage-image-field homepage-icon-field"><span class="feature-icon-preview" data-image-preview>@if(featureIcon.StartsWith('/')){<img src="@featureIcon" alt="Icon lợi ích"/>}else{<i class="@featureIcon"></i>}</span><div><input type="hidden" asp-for="Input.Features[i].IconClass" data-image-url/><label class="homepage-upload homepage-upload--small"><i class="fa-solid fa-cloud-arrow-up"></i><span>Chọn icon từ thiết bị</span><input type="file" accept="image/jpeg,image/png,image/webp" data-image-upload/></label><small>JPG, PNG hoặc WEBP; tối đa 5 MB.</small><span class="upload-error" data-upload-error></span></div></div></article> }
+            </div>
+            <div class="list-heading"><h3 class="list-title">Các bước triển khai</h3><button type="button" class="btn btn-outline-primary btn-sm" data-list-add="ProcessSteps"><i class="fa-solid fa-plus"></i> Thêm bước</button></div>
+            <div class="repeat-grid" data-dynamic-list="ProcessSteps" data-max-items="8">
+            @for (var i=0;i<Model.Input.ProcessSteps.Count;i++) { <article class="repeat-card" data-list-item><input type="hidden" asp-for="Input.ProcessSteps[i].DisplayOrder" data-display-order/><div class="repeat-card__title"><span data-item-title>Bước @(i+1)</span><div class="item-actions"><label class="switch"><input asp-for="Input.ProcessSteps[i].IsVisible"/><span></span></label><button type="button" class="icon-remove" data-list-remove title="Xóa bước"><i class="fa-solid fa-trash"></i></button></div></div><input asp-for="Input.ProcessSteps[i].StepNumber" placeholder="Số bước"/><input asp-for="Input.ProcessSteps[i].Title" placeholder="Tiêu đề"/><textarea asp-for="Input.ProcessSteps[i].Description" rows="2" placeholder="Mô tả"></textarea></article> }
+            </div>
+        </section>
+
+        <section class="homepage-panel" data-home-panel="creators">
+            <div class="panel-heading"><span class="panel-icon"><i class="fa-solid fa-users"></i></span><div><h2>KOC/KOL nổi bật</h2><p>Chọn các gương mặt xuất hiện trên dải hình ảnh đầu trang.</p></div><label class="panel-toggle"><input asp-for="Input.ShowFeaturedCreators"/> Hiển thị khối</label></div>
+            <div class="list-heading"><h3 class="list-title">Danh sách hiển thị</h3><button type="button" class="btn btn-outline-primary btn-sm" data-list-add="Creators"><i class="fa-solid fa-plus"></i> Thêm KOC/KOL</button></div>
+            <div class="creator-editor" data-dynamic-list="Creators" data-max-items="12">
+            @for (var i=0;i<Model.Input.Creators.Count;i++) { <article class="creator-edit homepage-image-field" data-list-item><img src="@Model.Input.Creators[i].ImageUrl" alt="Xem trước ảnh KOC" data-image-preview/><div><input type="hidden" asp-for="Input.Creators[i].DisplayOrder" data-display-order/><input asp-for="Input.Creators[i].Name" placeholder="Tên hiển thị"/><input asp-for="Input.Creators[i].Category" placeholder="Nhóm nội dung"/><input asp-for="Input.Creators[i].Followers" placeholder="Người theo dõi"/><input type="hidden" asp-for="Input.Creators[i].ImageUrl" data-image-url/><label class="homepage-upload homepage-upload--small"><i class="fa-solid fa-image"></i><span>Thay ảnh</span><input type="file" accept="image/jpeg,image/png,image/webp" data-image-upload/></label><span class="upload-error" data-upload-error></span></div><div class="item-actions item-actions--vertical"><label class="switch"><input asp-for="Input.Creators[i].IsVisible"/><span></span></label><button type="button" class="icon-remove" data-list-remove title="Xóa KOC/KOL"><i class="fa-solid fa-trash"></i></button></div></article> }
+            </div>
+        </section>
+
+        <section class="homepage-panel" data-home-panel="proof">
+            <div class="panel-heading"><span class="panel-icon"><i class="fa-solid fa-chart-column"></i></span><div><h2>Số liệu và đối tác</h2><p>Tăng độ tin cậy bằng chỉ số vận hành và logo đối tác.</p></div></div>
+            <div class="form-grid"><div class="field span-2"><label asp-for="Input.MetricsTitle">Tiêu đề số liệu</label><input asp-for="Input.MetricsTitle" /></div></div>
+            <div class="section-option"><label class="switch"><input asp-for="Input.ShowMetrics"/><span></span></label><strong>Hiển thị số liệu</strong></div>
+            <div class="repeat-grid metrics-grid">@for(var i=0;i<Model.Input.Metrics.Count;i++){<article class="repeat-card"><input type="hidden" asp-for="Input.Metrics[i].DisplayOrder"/><input asp-for="Input.Metrics[i].Value" placeholder="Giá trị"/><input asp-for="Input.Metrics[i].Label" placeholder="Nhãn"/><label class="switch"><input asp-for="Input.Metrics[i].IsVisible"/><span></span></label></article>}</div>
+            <div class="form-grid mt-4"><div class="field"><label asp-for="Input.PartnerTitle">Tiêu đề đối tác</label><input asp-for="Input.PartnerTitle" /></div><div class="field"><label asp-for="Input.PartnerDescription">Mô tả đối tác</label><input asp-for="Input.PartnerDescription" /></div></div>
+            <div class="section-option"><label class="switch"><input asp-for="Input.ShowPartners"/><span></span></label><strong>Hiển thị đối tác</strong></div>
+            <div class="list-heading"><h3 class="list-title">Danh sách đối tác</h3><button type="button" class="btn btn-outline-primary btn-sm" data-list-add="Partners"><i class="fa-solid fa-plus"></i> Thêm đối tác</button></div>
+            <div class="partner-editor" data-dynamic-list="Partners" data-max-items="24">@for(var i=0;i<Model.Input.Partners.Count;i++){<article class="homepage-image-field" data-list-item><img src="@Model.Input.Partners[i].LogoUrl" alt="Xem trước logo" data-image-preview/><input type="hidden" asp-for="Input.Partners[i].DisplayOrder" data-display-order/><input asp-for="Input.Partners[i].Name" placeholder="Tên"/><div><input type="hidden" asp-for="Input.Partners[i].LogoUrl" data-image-url/><label class="homepage-upload homepage-upload--small"><i class="fa-solid fa-image"></i><span>Thay logo</span><input type="file" accept="image/jpeg,image/png,image/webp" data-image-upload/></label><span class="upload-error" data-upload-error></span></div><input asp-for="Input.Partners[i].Url" placeholder="Liên kết"/><div class="item-actions"><label class="switch"><input asp-for="Input.Partners[i].IsVisible"/><span></span></label><button type="button" class="icon-remove" data-list-remove title="Xóa đối tác"><i class="fa-solid fa-trash"></i></button></div></article>}</div>
+        </section>
+
+        <section class="homepage-panel" data-home-panel="publish">
+            <div class="panel-heading"><span class="panel-icon"><i class="fa-solid fa-paper-plane"></i></span><div><h2>CTA cuối trang và xuất bản</h2><p>Kiểm tra thông điệp và trạng thái hiển thị trước khi lưu.</p></div></div>
+            <div class="form-grid"><div class="field span-2"><label asp-for="Input.FinalCtaTitle">Tiêu đề CTA</label><input asp-for="Input.FinalCtaTitle"/></div><div class="field span-2"><label asp-for="Input.FinalCtaDescription">Mô tả CTA</label><textarea asp-for="Input.FinalCtaDescription" rows="2"></textarea></div><div class="field"><label asp-for="Input.FinalPrimaryCtaText">Nút chính</label><input asp-for="Input.FinalPrimaryCtaText"/><input asp-for="Input.FinalPrimaryCtaUrl" placeholder="Liên kết"/></div><div class="field"><label asp-for="Input.FinalSecondaryCtaText">Nút phụ</label><input asp-for="Input.FinalSecondaryCtaText"/><input asp-for="Input.FinalSecondaryCtaUrl" placeholder="Liên kết"/></div></div>
+            <div class="publish-toggle"><label class="switch"><input asp-for="Input.IsPublished"/><span></span></label><div><strong>Xuất bản nội dung</strong><p>Tắt lựa chọn này để tạm ẩn nội dung CMS và dùng nội dung mặc định an toàn.</p></div></div>
+            <h3 class="list-title">Lịch sử gần đây</h3><div class="history-list">@if(Model.History.Count==0){<p>Chưa có lịch sử thay đổi.</p>}else{@foreach(var row in Model.History){<article><i class="fa-solid fa-clock-rotate-left"></i><div><strong>@row.Reason</strong><small>@row.CreatedAtUtc.AddHours(7).ToString("dd/MM/yyyy HH:mm")</small></div></article>}}</div>
+        </section>
+        <footer class="homepage-savebar"><span><i class="fa-solid fa-shield-halved"></i> Mỗi lần lưu sẽ tạo một phiên bản lịch sử mới.</span><button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Lưu và cập nhật trang chủ</button></footer>
+    </form>
+</main>
+@section Scripts { <partial name="_ValidationScriptsPartial" /><script src="~/js/admin/homepage-content.js" asp-append-version="true"></script> }

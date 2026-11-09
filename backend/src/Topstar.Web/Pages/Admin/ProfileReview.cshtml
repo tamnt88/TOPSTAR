@@ -1,0 +1,471 @@
+@page
+@model Topstar.Web.Pages.Admin.ProfileReviewModel
+@using Topstar.Application.Profiles
+@{
+    ViewData["Title"] = "Duyệt hồ sơ";
+    ViewData["AdminHeaderTitle"] = "Duyệt hồ sơ";
+    ViewData["AdminActivePath"] = "/Admin/Profiles";
+    var p = Model.Profile;
+
+    string StatusLabel(string? status) => status switch
+    {
+        "Draft" => "Bản nháp",
+        "PendingReview" => "Chờ duyệt",
+        "NeedUpdate" => "Cần bổ sung",
+        "Approved" => "Đã duyệt",
+        "Rejected" => "Đã từ chối",
+        "Locked" => "Đã khóa",
+        "Active" => "Đang hoạt động",
+        "Disabled" => "Đã vô hiệu hóa",
+        _ => string.IsNullOrWhiteSpace(status) ? "Chưa xác định" : status
+    };
+    string StatusClass(string? status) => status switch
+    {
+        "Approved" or "Active" => "text-bg-success",
+        "PendingReview" => "text-bg-warning",
+        "NeedUpdate" => "text-bg-info",
+        "Rejected" or "Locked" or "Disabled" => "text-bg-danger",
+        _ => "text-bg-secondary"
+    };
+    string TranslateFact(string fact) => fact
+        .Replace("Married", "Đã kết hôn", StringComparison.OrdinalIgnoreCase)
+        .Replace("Single", "Độc thân", StringComparison.OrdinalIgnoreCase)
+        .Replace("Divorced", "Đã ly hôn", StringComparison.OrdinalIgnoreCase)
+        .Replace("followers", "người theo dõi", StringComparison.OrdinalIgnoreCase)
+        .Replace("Followers", "Người theo dõi", StringComparison.OrdinalIgnoreCase);
+    string TranslateNote(string note) => note.Equals("Migrated snapshot", StringComparison.OrdinalIgnoreCase)
+        ? "Dữ liệu lịch sử được chuyển đổi từ hệ thống."
+        : note;
+    string HistoryStatusLabel(string status)
+    {
+        var parts = status.Split(" · ", StringSplitOptions.RemoveEmptyEntries);
+        string Translate(string value) => value switch
+        {
+            "Pending" => "Đang chờ", "PendingReview" => "Chờ duyệt", "Applied" => "Đã ứng tuyển",
+            "Shortlisted" => "Vào shortlist", "Accepted" => "Đã chấp nhận", "Rejected" => "Đã từ chối",
+            "Confirmed" => "Đã xác nhận", "InProgress" => "Đang thực hiện", "Completed" => "Hoàn tất",
+            "Cancelled" => "Đã hủy", "Approved" => "Đã duyệt", "NeedRevision" => "Cần chỉnh sửa",
+            "Active" => "Đang hiệu lực", "Revoked" => "Đã thu hồi", "Resolved" => "Đã xử lý",
+            "Succeeded" => "Thành công", "Failed" => "Thất bại", "Running" => "Đang chạy",
+            "Success" => "Thành công", "Failure" => "Thất bại", "Locked" => "Đã khóa",
+            "High" => "Nghiêm trọng", "Medium" => "Trung bình", "Low" => "Nhẹ",
+            _ => value
+        };
+        return string.Join(" · ", parts.Select(Translate));
+    }
+}
+
+@if (p is not null)
+{
+<div class="profile-review-page">
+    <header class="profile-review-header">
+        <div>
+            <h1>@(p.KocDetail is null ? p.DisplayName : "Chi tiết hồ sơ KOC")</h1>
+            <div class="d-flex flex-wrap gap-2 mt-2">
+                <span class="badge text-bg-secondary">@p.ProfileType</span>
+                <span class="badge @StatusClass(p.Status)">@StatusLabel(p.Status)</span>
+            </div>
+        </div>
+        <a asp-page="/Admin/Brands" asp-route-Type="@Model.AccountListType()" class="btn btn-sm btn-outline-secondary">
+            <i class="fa-solid fa-arrow-left me-1"></i>Quay lại danh sách @Model.AccountListType()
+        </a>
+    </header>
+
+    @if (p.KocDetail is { } koc)
+    {
+        <section class="koc-admin-hero">
+            <div class="koc-admin-identity">
+                @if (!string.IsNullOrWhiteSpace(koc.AvatarUrl))
+                {
+                    <img src="@koc.AvatarUrl" alt="Ảnh đại diện @p.DisplayName" class="koc-admin-avatar" />
+                }
+                else
+                {
+                    <div class="koc-admin-avatar koc-admin-avatar-fallback">@p.DisplayName[..1].ToUpperInvariant()</div>
+                }
+                <div>
+                    <p class="koc-admin-eyebrow">HỒ SƠ KOC 360°</p>
+                    <h2>@p.DisplayName</h2>
+                    <div class="koc-admin-contact">
+                        <span><i class="fa-regular fa-envelope"></i>@p.Email</span>
+                        <span><i class="fa-solid fa-phone"></i>@(string.IsNullOrWhiteSpace(p.Phone) ? "Chưa cập nhật SĐT" : p.Phone)</span>
+                        <span><i class="fa-solid fa-location-dot"></i>@(string.IsNullOrWhiteSpace(koc.Region) ? "Chưa cập nhật khu vực" : koc.Region)</span>
+                    </div>
+                    <div class="koc-admin-categories">
+                        @foreach (var category in koc.Categories) { <span>@category</span> }
+                    </div>
+                </div>
+            </div>
+            <div class="koc-admin-kpis">
+                <div><strong>@koc.Followers.ToString("N0", PortalFormat.Vietnamese)</strong><span>Tổng follower social</span></div>
+                <div><strong>@koc.Score.ToString("N1", PortalFormat.Vietnamese)</strong><span>Điểm hồ sơ</span></div>
+                <div><strong>@koc.ViewCount.ToString("N0", PortalFormat.Vietnamese)</strong><span>Lượt xem hồ sơ</span></div>
+                <div><strong>@koc.SocialAccounts.Count</strong><span>Kênh social</span></div>
+            </div>
+        </section>
+
+        <div class="koc-admin-layout">
+            <div class="koc-admin-main">
+                <section class="card-x koc-admin-section">
+                    <div class="koc-admin-section-head"><div><i class="fa-solid fa-share-nodes"></i><h2>Kênh social</h2></div><span>@koc.SocialAccounts.Count kênh</span></div>
+                    @if (koc.SocialAccounts.Count == 0)
+                    {
+                        <div class="koc-admin-empty">KOC chưa kết nối kênh social.</div>
+                    }
+                    else
+                    {
+                        <div class="koc-social-grid">
+                            @foreach (var social in koc.SocialAccounts)
+                            {
+                                <article class="koc-social-card">
+                                    <div class="koc-social-title">
+                                        <span class="koc-social-icon"><i class="fa-solid fa-hashtag"></i></span>
+                                        <div><strong>@social.Platform</strong><small>@(string.IsNullOrWhiteSpace(social.Handle) ? "Chưa có username" : social.Handle)</small></div>
+                                        @if (social.IsVerified) { <i class="fa-solid fa-circle-check text-primary" title="Đã xác minh"></i> }
+                                    </div>
+                                    <div class="koc-social-stats">
+                                        <span><strong>@social.Followers.ToString("N0", PortalFormat.Vietnamese)</strong>Followers</span>
+                                        <span><strong>@(social.AvgViews?.ToString("N0", PortalFormat.Vietnamese) ?? "—")</strong>View TB</span>
+                                        <span><strong>@(social.AvgEngagementRate?.ToString("N2", PortalFormat.Vietnamese) ?? "—")%</strong>Tương tác</span>
+                                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(social.ChannelUrl))
+                                    {
+                                        <a href="@social.ChannelUrl" target="_blank" rel="noopener">Mở kênh <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                                    }
+                                </article>
+                            }
+                        </div>
+                    }
+                </section>
+
+                @if (koc.Portfolio.Count > 0)
+                {
+                    <section class="card-x koc-admin-section">
+                        <div class="koc-admin-section-head"><div><i class="fa-solid fa-briefcase"></i><h2>Portfolio nổi bật</h2></div></div>
+                        <div class="koc-portfolio-grid">
+                            @foreach (var item in koc.Portfolio)
+                            {
+                                <article>
+                                    <span>@(item.Platform ?? "Nội dung")</span>
+                                    <h3>@item.Title</h3>
+                                    <p>@(item.BrandName ?? item.CampaignName ?? "Chưa cập nhật Brand")</p>
+                                    <div><span><i class="fa-regular fa-eye"></i> @item.Views.ToString("N0", PortalFormat.Vietnamese)</span><span><i class="fa-regular fa-heart"></i> @item.Likes.ToString("N0", PortalFormat.Vietnamese)</span><span><i class="fa-regular fa-comment"></i> @item.Comments.ToString("N0", PortalFormat.Vietnamese)</span></div>
+                                    @if (!string.IsNullOrWhiteSpace(item.PostUrl)) { <a href="@item.PostUrl" target="_blank" rel="noopener">Xem nội dung</a> }
+                                </article>
+                            }
+                        </div>
+                    </section>
+                }
+
+                @if (koc.Media.Count > 0)
+                {
+                    <section class="card-x koc-admin-section">
+                        <div class="koc-admin-section-head"><div><i class="fa-regular fa-images"></i><h2>Hình ảnh hồ sơ</h2></div></div>
+                        <div class="koc-media-grid">
+                            @for (var mediaIndex = 0; mediaIndex < koc.Media.Count; mediaIndex++)
+                            {
+                                var media = koc.Media[mediaIndex];
+                                <button type="button" class="koc-gallery-trigger" data-gallery-index="@mediaIndex" aria-label="Xem ảnh @(mediaIndex + 1) trong thư viện">
+                                    <img src="@media.FileUrl" alt="Hình ảnh hồ sơ KOC @(mediaIndex + 1)" loading="lazy" />
+                                    <span><i class="fa-solid fa-magnifying-glass-plus"></i></span>
+                                </button>
+                            }
+                        </div>
+                    </section>
+                }
+            </div>
+
+            <aside class="koc-admin-sidebar">
+                <section class="card-x koc-admin-section">
+                    <div class="koc-admin-section-head"><div><i class="fa-regular fa-id-card"></i><h2>Thông tin cá nhân</h2></div></div>
+                    <dl class="koc-admin-detail-list">
+                        <div><dt>Giới tính</dt><dd>@(string.IsNullOrWhiteSpace(koc.Gender) ? "Chưa cập nhật" : koc.Gender)</dd></div>
+                        <div><dt>Địa chỉ</dt><dd>@string.Join(", ", new[] { p.Address, p.WardName, p.ProvinceName }.Where(x => !string.IsNullOrWhiteSpace(x)))</dd></div>
+                        <div><dt>Ngày tham gia</dt><dd>@p.CreatedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy")</dd></div>
+                        <div><dt>Hiển thị công khai</dt><dd>@(koc.IsVisible ? "Đang hiển thị" : "Đang ẩn")</dd></div>
+                    </dl>
+                </section>
+
+                @if (koc.Experience is not null || koc.Production is not null || koc.Preference is not null)
+                {
+                    <section class="card-x koc-admin-section">
+                        <div class="koc-admin-section-head"><div><i class="fa-solid fa-wand-magic-sparkles"></i><h2>Năng lực hợp tác</h2></div></div>
+                        <dl class="koc-admin-detail-list">
+                            @if (koc.Experience is { } experience)
+                            {
+                                <div><dt>Kinh nghiệm</dt><dd>@(experience.Years?.ToString("N1", PortalFormat.Vietnamese) ?? "—") năm</dd></div>
+                                <div><dt>Brand từng làm</dt><dd>@(experience.WorkedBrands ?? "Chưa cập nhật")</dd></div>
+                            }
+                            @if (koc.Preference is { } preference)
+                            {
+                                <div><dt>Ngân sách tối thiểu</dt><dd>@(preference.MinBudgetAmount.HasValue ? $"{preference.MinBudgetAmount:N0} ₫" : "Thỏa thuận")</dd></div>
+                                <div><dt>Khu vực nhận job</dt><dd>@(preference.PreferredRegions ?? "Không giới hạn")</dd></div>
+                                <div><dt>Lịch làm việc</dt><dd>@(preference.AvailabilityNote ?? "Chưa cập nhật")</dd></div>
+                            }
+                        </dl>
+                        @if (koc.Production is { } production)
+                        {
+                            <div class="koc-skill-list">
+                                @if (production.CanScript) { <span><i class="fa-solid fa-check"></i> Viết kịch bản</span> }
+                                @if (production.CanShoot) { <span><i class="fa-solid fa-check"></i> Quay dựng</span> }
+                                @if (production.CanEdit) { <span><i class="fa-solid fa-check"></i> Biên tập</span> }
+                                @if (production.CanLivestream) { <span><i class="fa-solid fa-check"></i> Livestream</span> }
+                            </div>
+                        }
+                    </section>
+                }
+
+                @if (koc.Body is { } body)
+                {
+                    <section class="card-x koc-admin-section">
+                        <div class="koc-admin-section-head"><div><i class="fa-solid fa-person"></i><h2>Thông tin thể trạng</h2></div></div>
+                        <div class="koc-body-grid">
+                            <div><strong>@(body.HeightCm?.ToString("N0", PortalFormat.Vietnamese) ?? "—")</strong><span>Chiều cao (cm)</span></div>
+                            <div><strong>@(body.WeightKg?.ToString("N0", PortalFormat.Vietnamese) ?? "—")</strong><span>Cân nặng (kg)</span></div>
+                            <div><strong>@(body.HasChildren ? body.ChildrenCount.ToString("N0", PortalFormat.Vietnamese) : "0")</strong><span>Số con</span></div>
+                        </div>
+                        <div class="koc-family-summary">
+                            <div><span>Tình trạng hôn nhân</span><strong>@(string.IsNullOrWhiteSpace(body.MaritalStatus) ? "Chưa cập nhật" : TranslateFact(body.MaritalStatus))</strong></div>
+                            <div><span>Thông tin con cái</span><strong>@(body.HasChildren ? $"Có {body.ChildrenCount} con" : "Chưa có con")</strong></div>
+                        </div>
+                        @if (body.Children.Count > 0)
+                        {
+                            <div class="koc-children-list">
+                                @for (var childIndex = 0; childIndex < body.Children.Count; childIndex++)
+                                {
+                                    var child = body.Children[childIndex];
+                                    <div>
+                                        <span class="koc-child-index">@(childIndex + 1)</span>
+                                        <div><strong>Con thứ @(childIndex + 1)</strong><small>@(string.IsNullOrWhiteSpace(child.Gender) ? "Chưa cập nhật giới tính" : child.Gender)</small></div>
+                                        <span>@(child.AgeYears.HasValue ? $"{child.AgeYears} tuổi" : child.BirthYear.HasValue ? $"Sinh năm {child.BirthYear}" : "Chưa cập nhật tuổi")</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </section>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(p.DocumentUrl))
+                {
+                    <a class="btn btn-outline-primary w-100" href="@p.DocumentUrl" target="_blank" rel="noopener"><i class="fa-solid fa-file-shield me-1"></i>Mở tài liệu xác minh</a>
+                }
+            </aside>
+        </div>
+
+        var historyTabs = new[]
+        {
+            new { Id = "collaboration", Label = "Hợp tác", Icon = "fa-handshake", Items = koc.History.Collaborations },
+            new { Id = "application", Label = "Ứng tuyển", Icon = "fa-paper-plane", Items = koc.History.Applications },
+            new { Id = "review", Label = "Đánh giá", Icon = "fa-star", Items = koc.History.Reviews },
+            new { Id = "finance", Label = "Tài chính", Icon = "fa-wallet", Items = koc.History.Finance },
+            new { Id = "violation", Label = "Vi phạm", Icon = "fa-triangle-exclamation", Items = koc.History.Violations },
+            new { Id = "account", Label = "Tài khoản", Icon = "fa-shield-halved", Items = koc.History.Account },
+            new { Id = "social-sync", Label = "Đồng bộ", Icon = "fa-arrows-rotate", Items = koc.History.SocialSync }
+        };
+        <section class="card-x koc-admin-history">
+            <div class="koc-admin-section-head"><div><i class="fa-solid fa-clock-rotate-left"></i><h2>Lịch sử hoạt động KOC</h2></div><span>Tối đa 20 bản ghi gần nhất mỗi nhóm</span></div>
+            <ul class="ts-tabs nav nav-tabs koc-history-tabs" role="tablist">
+                @for (var tabIndex = 0; tabIndex < historyTabs.Length; tabIndex++)
+                {
+                    var tab = historyTabs[tabIndex];
+                    <li class="nav-item" role="presentation"><button class="nav-link @(tabIndex == 0 ? "active" : "")" data-bs-toggle="tab" data-bs-target="#koc-history-@tab.Id" type="button" role="tab"><i class="fa-solid @tab.Icon"></i>@tab.Label <span>@tab.Items.Count</span></button></li>
+                }
+            </ul>
+            <div class="tab-content koc-history-content">
+                @for (var tabIndex = 0; tabIndex < historyTabs.Length; tabIndex++)
+                {
+                    var tab = historyTabs[tabIndex];
+                    <div class="tab-pane fade @(tabIndex == 0 ? "show active" : "")" id="koc-history-@tab.Id" role="tabpanel">
+                        @if (tab.Items.Count == 0)
+                        {
+                            <div class="koc-admin-empty">Chưa phát sinh lịch sử @tab.Label.ToLowerInvariant().</div>
+                        }
+                        else
+                        {
+                            <div class="koc-history-table-wrap">
+                                <table id="koc-history-table-@tab.Id" class="table koc-history-table w-100">
+                                    <thead><tr><th>Thời gian</th><th>Nội dung</th><th>Chi tiết</th><th>Trạng thái</th><th class="text-end">Giá trị</th></tr></thead>
+                                    <tbody>
+                                    @foreach (var item in tab.Items)
+                                    {
+                                        <tr>
+                                            <td data-order="@item.OccurredAtUtc.ToString("O")"><time><i class="fa-regular fa-clock"></i> @item.OccurredAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm")</time></td>
+                                            <td><div class="koc-history-title"><span class="koc-history-marker"><i class="fa-solid @tab.Icon"></i></span><strong>@item.Title</strong></div></td>
+                                            <td><span class="koc-history-detail">@(string.IsNullOrWhiteSpace(item.Detail) ? "—" : item.Detail)</span></td>
+                                            <td><span class="koc-history-status">@HistoryStatusLabel(item.Status)</span></td>
+                                            <td class="text-end" data-order="@(item.Amount ?? 0)">
+                                                @if (item.Amount.HasValue) { <strong class="koc-history-amount">@item.Amount.Value.ToString("N0", PortalFormat.Vietnamese) ₫</strong> }
+                                                else { <span class="text-muted">—</span> }
+                                            </td>
+                                        </tr>
+                                    }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </section>
+    }
+    else
+    {
+        <section class="card-x mb-4 profile-review-card">
+            <dl class="row mb-0">
+                <dt class="col-sm-3"><i class="fa-regular fa-envelope me-2"></i>Email</dt><dd class="col-sm-9">@p.Email</dd>
+                <dt class="col-sm-3"><i class="fa-solid fa-phone me-2"></i>Số điện thoại</dt><dd class="col-sm-9">@(string.IsNullOrWhiteSpace(p.Phone) ? "Chưa cập nhật" : p.Phone)</dd>
+                <dt class="col-sm-3"><i class="fa-solid fa-location-dot me-2"></i>Địa chỉ</dt><dd class="col-sm-9">@p.Address, @p.WardName, @p.ProvinceName</dd>
+                <dt class="col-sm-3"><i class="fa-regular fa-address-card me-2"></i>Thông tin hồ sơ</dt><dd class="col-sm-9"><ul class="mb-0 profile-review-facts">@foreach (var fact in p.Highlights) { <li>@TranslateFact(fact)</li> }</ul></dd>
+                @if (!string.IsNullOrWhiteSpace(p.DocumentUrl)) { <dt class="col-sm-3"><i class="fa-solid fa-file-shield me-2"></i>Tài liệu xác minh</dt><dd class="col-sm-9"><a class="btn btn-sm btn-outline-primary" href="@p.DocumentUrl" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square me-1"></i>Mở tài liệu</a></dd> }
+                <dt class="col-sm-3"><i class="fa-regular fa-calendar me-2"></i>Ngày tạo</dt><dd class="col-sm-9">@p.CreatedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm")</dd>
+            </dl>
+        </section>
+    }
+
+    @if (Model.History.Count > 0)
+    {
+        <section class="card-x mb-4 profile-review-card">
+            <h2 class="h5"><i class="fa-solid fa-clock-rotate-left me-2"></i>Lịch sử trạng thái hồ sơ</h2>
+            <div class="profile-status-timeline">
+                @foreach (var history in Model.History)
+                {
+                    <article class="profile-status-event">
+                        <div>
+                            @if (!string.IsNullOrWhiteSpace(history.FromStatus))
+                            {
+                                <span class="badge @StatusClass(history.FromStatus)">@StatusLabel(history.FromStatus)</span>
+                                <i class="fa-solid fa-arrow-right mx-1 text-muted" aria-hidden="true"></i>
+                            }
+                            <span class="badge @StatusClass(history.ToStatus)">@StatusLabel(history.ToStatus)</span>
+                            <time>@history.CreatedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm")</time>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(history.ReviewNote))
+                        {
+                            <p>@TranslateNote(history.ReviewNote)</p>
+                        }
+                    </article>
+                }
+            </div>
+        </section>
+    }
+
+    @if (ProfileTransitions.CanReview(p.Status))
+    {
+        <form method="post" class="card-x profile-review-card" novalidate>
+            <input asp-for="Type" type="hidden" />
+            <input asp-for="Id" type="hidden" />
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+            <label asp-for="Input.ReviewNote" class="form-label fw-semibold"><i class="fa-regular fa-note-sticky me-1"></i>Thông tin và căn cứ xử lý</label>
+            <textarea asp-for="Input.ReviewNote" class="form-control" rows="4" required minlength="10" maxlength="1000" placeholder="Nhập tối thiểu 10 ký tự: căn cứ duyệt, nội dung cần bổ sung hoặc lý do từ chối"></textarea>
+            <span asp-validation-for="Input.ReviewNote" class="text-danger small d-block mt-1"></span>
+            <div class="form-text">Bắt buộc cho cả ba quyết định; nội dung được lưu trong lịch sử và audit.</div>
+            @if (p.Status == ProfileStatuses.Locked)
+            {
+                <div class="alert alert-warning py-2 mt-3 mb-0">
+                    <i class="fa-solid fa-triangle-exclamation me-1"></i>
+                    Đây là dữ liệu cũ từng gắn trạng thái hồ sơ “Đã khóa”. Bạn có thể duyệt lại hồ sơ tại đây; trạng thái khóa tài khoản được quản lý độc lập.
+                </div>
+            }
+            <div class="d-flex flex-wrap gap-2 mt-3">
+                <button name="Input.Decision" value="@ProfileStatuses.Approved" class="btn btn-success"><i class="fa-solid fa-circle-check me-1"></i>Duyệt hồ sơ</button>
+                <button name="Input.Decision" value="@ProfileStatuses.NeedUpdate" class="btn btn-warning"><i class="fa-solid fa-pen-to-square me-1"></i>Yêu cầu cập nhật</button>
+                <button name="Input.Decision" value="@ProfileStatuses.Rejected" class="btn btn-danger"><i class="fa-solid fa-circle-xmark me-1"></i>Từ chối</button>
+            </div>
+        </form>
+    }
+    else
+    {
+        <div class="alert alert-info"><i class="fa-solid fa-circle-info me-1"></i>Hồ sơ này không còn ở trạng thái chờ duyệt.</div>
+    }
+</div>
+
+@if (p.KocDetail is { Media.Count: > 0 } gallery)
+{
+    <div class="modal fade koc-gallery-modal" id="kocGalleryModal" tabindex="-1" aria-labelledby="kocGalleryTitle" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div><h2 class="modal-title fs-5" id="kocGalleryTitle"><i class="fa-regular fa-images me-2"></i>Hình ảnh hồ sơ KOC</h2><small id="kocGalleryCounter"></small></div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="koc-gallery-stage">
+                        <button type="button" class="koc-gallery-nav koc-gallery-prev" aria-label="Ảnh trước"><i class="fa-solid fa-chevron-left"></i></button>
+                        <img id="kocGalleryImage" src="" alt="Ảnh hồ sơ KOC đang xem" />
+                        <button type="button" class="koc-gallery-nav koc-gallery-next" aria-label="Ảnh tiếp theo"><i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                    <div class="koc-gallery-thumbnails" role="list">
+                        @for (var mediaIndex = 0; mediaIndex < gallery.Media.Count; mediaIndex++)
+                        {
+                            <button type="button" data-gallery-index="@mediaIndex" role="listitem" aria-label="Chuyển tới ảnh @(mediaIndex + 1)">
+                                <img src="@gallery.Media[mediaIndex].FileUrl" alt="" loading="lazy" />
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+}
+
+@section Scripts {
+    <script src="~/lib/datatables/js/dataTables.min.js" asp-append-version="true"></script>
+    <script src="~/lib/datatables/js/dataTables.bootstrap5.min.js" asp-append-version="true"></script>
+    <script>
+        (() => {
+            const historyTables = [];
+            document.querySelectorAll('.koc-history-table').forEach(tableElement => {
+                historyTables.push($(tableElement).DataTable(TopstarLists.adapt(tableElement, {
+                    autoWidth: false,
+                    order: [[0, 'desc']],
+                    pageLength: 10,
+                    lengthMenu: [[10, 20], [10, 20]],
+                    scrollX: false,
+                    layout: {
+                        topStart: 'search',
+                        topEnd: 'pageLength',
+                        bottomStart: 'info',
+                        bottomEnd: 'paging'
+                    },
+                    language: {
+                        search: '',
+                        searchPlaceholder: 'Tìm trong lịch sử',
+                        lengthMenu: '_MENU_ dòng',
+                        info: 'Hiển thị _START_–_END_ trong _TOTAL_ bản ghi',
+                        infoEmpty: 'Chưa có bản ghi',
+                        zeroRecords: 'Không tìm thấy lịch sử phù hợp',
+                        emptyTable: 'Chưa phát sinh lịch sử',
+                        paginate: { first: 'Đầu', previous: '‹', next: '›', last: 'Cuối' }
+                    }
+                })));
+            });
+            document.querySelectorAll('.koc-history-tabs [data-bs-toggle="tab"]').forEach(tabButton => {
+                tabButton.addEventListener('shown.bs.tab', () => historyTables.forEach(table => table.columns.adjust()));
+            });
+
+            const modalElement = document.getElementById('kocGalleryModal');
+            if (!modalElement) return;
+            const urls = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Profile?.KocDetail?.Media.Select(x => x.FileUrl) ?? []));
+            const image = document.getElementById('kocGalleryImage');
+            const counter = document.getElementById('kocGalleryCounter');
+            const thumbnails = Array.from(modalElement.querySelectorAll('.koc-gallery-thumbnails button'));
+            let currentIndex = 0;
+            const showImage = index => {
+                currentIndex = (index + urls.length) % urls.length;
+                image.src = urls[currentIndex];
+                image.alt = `Ảnh hồ sơ KOC ${currentIndex + 1} trên ${urls.length}`;
+                counter.textContent = `Ảnh ${currentIndex + 1} / ${urls.length}`;
+                thumbnails.forEach((item, itemIndex) => item.classList.toggle('active', itemIndex === currentIndex));
+                thumbnails[currentIndex]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            };
+            document.querySelectorAll('.koc-gallery-trigger').forEach(trigger => trigger.addEventListener('click', () => {
+                showImage(Number(trigger.dataset.galleryIndex || 0));
+                bootstrap.Modal.getOrCreateInstance(modalElement, { backdrop: 'static', keyboard: false }).show();
+            }));
+            modalElement.querySelector('.koc-gallery-prev').addEventListener('click', () => showImage(currentIndex - 1));
+            modalElement.querySelector('.koc-gallery-next').addEventListener('click', () => showImage(currentIndex + 1));
+            thumbnails.forEach(item => item.addEventListener('click', () => showImage(Number(item.dataset.galleryIndex || 0))));
+        })();
+    </script>
+}

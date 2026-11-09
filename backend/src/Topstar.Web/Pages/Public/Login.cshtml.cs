@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Topstar.Application;
 using Topstar.Application.Dashboard;
+using Topstar.Application.SystemSettings;
 
 namespace Topstar.Web.Pages.Public;
 
@@ -14,7 +15,8 @@ public sealed class LoginModel(
     IAuthService authService,
     IAuthRepository authRepository,
     IAuthenticationSchemeProvider schemeProvider,
-    IDashboardDataService dashboardDataService) : AuthPageBase
+    IDashboardDataService dashboardDataService,
+    ISystemSettingsAdminService systemSettings) : AuthPageBase
 {
     [TempData]
     public string? FlashMessage { get; set; }
@@ -22,7 +24,16 @@ public sealed class LoginModel(
     [BindProperty]
     public InputModel Input { get; set; } = new();
 
+    [BindProperty(SupportsGet = true)]
+    public string? ReturnUrl { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public string? ExternalError { get; set; }
+
     public string? ErrorMessage { get; private set; }
+    public bool NeedsActivation { get; private set; }
+    public bool GoogleLoginEnabled { get; private set; }
+    public bool FacebookLoginEnabled { get; private set; }
 
     public sealed class InputModel
     {
@@ -37,9 +48,14 @@ public sealed class LoginModel(
         public bool RememberMe { get; set; }
     }
 
-    public void OnGet()
+    public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        if (!string.IsNullOrWhiteSpace(FlashMessage))
+        await LoadSocialOptionsAsync(cancellationToken);
+        if (string.Equals(ExternalError, "oauth-session", StringComparison.OrdinalIgnoreCase))
+        {
+            ErrorMessage = "Phiên đăng nhập Google/Facebook đã hết hạn hoặc được mở từ tên miền khác. Vui lòng bấm đăng nhập lại.";
+        }
+        else if (!string.IsNullOrWhiteSpace(FlashMessage))
         {
             ErrorMessage = FlashMessage;
         }
@@ -59,10 +75,17 @@ public sealed class LoginModel(
         if (!result.Success || result.Data is null)
         {
             ErrorMessage = result.Message;
+            NeedsActivation = result.Message.Contains("chưa được xác minh", StringComparison.OrdinalIgnoreCase);
             return Page();
         }
 
         await SignInUserAsync(result.Data, Input.RememberMe);
+
+        if (!string.IsNullOrWhiteSpace(ReturnUrl) && Url.IsLocalUrl(ReturnUrl))
+        {
+            return LocalRedirect(ReturnUrl);
+        }
+
         return Redirect(await ResolvePostLoginRedirectAsync(result.Data, cancellationToken));
     }
 
@@ -71,6 +94,16 @@ public sealed class LoginModel(
         if (!IsProviderSupported(provider))
         {
             ErrorMessage = "Nhà cung cấp đăng nhập không hợp lệ.";
+            return Page();
+        }
+
+        var option = await systemSettings.GetSocialLoginConfigurationAsync(provider, HttpContext.RequestAborted);
+        var isRegistration = string.Equals(mode, "register", StringComparison.OrdinalIgnoreCase);
+        var roleEnabled = string.Equals(role, "Brand", StringComparison.OrdinalIgnoreCase) ? option.BrandEnabled : option.KocEnabled;
+        if (!(isRegistration ? option.RegistrationEnabled : option.LoginEnabled) || !roleEnabled)
+        {
+            ErrorMessage = $"Đăng nhập bằng {provider} đang tạm tắt.";
+            await LoadSocialOptionsAsync(HttpContext.RequestAborted);
             return Page();
         }
 
@@ -83,14 +116,14 @@ public sealed class LoginModel(
         var redirectUrl = Url.Page(
             "/Public/Login",
             "ExternalCallback",
-            new { returnUrl = returnUrl ?? "/", mode, role });
+            new { returnUrl = returnUrl ?? "/", provider, mode, role });
 
         return Challenge(
             new AuthenticationProperties { RedirectUri = redirectUrl },
             provider);
     }
 
-    public async Task<IActionResult> OnGetExternalCallbackAsync(string? returnUrl = null, string mode = "login", string role = "Koc", CancellationToken cancellationToken = default)
+    public async Task<IActionResult> OnGetExternalCallbackAsync(string? returnUrl = null, string provider = "Google", string mode = "login", string role = "Koc", CancellationToken cancellationToken = default)
     {
         var externalResult = await HttpContext.AuthenticateAsync("External");
         if (!externalResult.Succeeded || externalResult.Principal is null)
@@ -131,9 +164,14 @@ public sealed class LoginModel(
                 return RedirectToPage("/Public/Login");
             }
 
+            if (!existing.EmailConfirmed)
+            {
+                await authRepository.ConfirmEmailAsync(existing.UserId, cancellationToken);
+            }
+
             user = MapToAuthenticated(existing);
         }
-        else if (!string.Equals(mode, "register", StringComparison.OrdinalIgnoreCase))
+        else if (!CanCreateExternalAccount(provider, mode))
         {
             await HttpContext.SignOutAsync("External");
             FlashMessage = "Email này chưa có tài khoản. Vui lòng đăng ký nhanh bằng Google/Facebook ở trang đăng ký.";
@@ -142,6 +180,15 @@ public sealed class LoginModel(
         else
         {
             var userRole = ParseRole(role);
+            var option = await systemSettings.GetSocialLoginConfigurationAsync(provider, cancellationToken);
+            var roleEnabled = userRole == UserRoleType.Brand ? option.BrandEnabled : option.KocEnabled;
+            if (!option.RegistrationEnabled || !roleEnabled)
+            {
+                await HttpContext.SignOutAsync("External");
+                FlashMessage = $"Email này chưa có tài khoản và đăng ký bằng {provider} đang tạm tắt.";
+                return RedirectToPage("/Public/Login");
+            }
+
             var generatedPassword = GenerateStrongPassword();
             var register = await authService.RegisterAsync(
                 new RegisterRequest(
@@ -164,6 +211,7 @@ public sealed class LoginModel(
             }
 
             user = register.Data;
+            await authRepository.ConfirmEmailAsync(user.UserId, cancellationToken);
         }
 
         await HttpContext.SignOutAsync("External");
@@ -200,6 +248,18 @@ public sealed class LoginModel(
     private static bool IsProviderSupported(string provider)
         => string.Equals(provider, "Google", StringComparison.OrdinalIgnoreCase)
            || string.Equals(provider, "Facebook", StringComparison.OrdinalIgnoreCase);
+
+    private static bool CanCreateExternalAccount(string provider, string mode)
+        => string.Equals(mode, "register", StringComparison.OrdinalIgnoreCase)
+           || (string.Equals(provider, "Google", StringComparison.OrdinalIgnoreCase)
+               && string.Equals(mode, "login-or-register", StringComparison.OrdinalIgnoreCase));
+
+    private async Task LoadSocialOptionsAsync(CancellationToken cancellationToken)
+    {
+        var options = await systemSettings.GetSocialLoginConfigurationsAsync(cancellationToken);
+        GoogleLoginEnabled = options.First(x => x.Provider == "Google").LoginEnabled;
+        FacebookLoginEnabled = options.First(x => x.Provider == "Facebook").LoginEnabled;
+    }
 
     private static UserRoleType ParseRole(string? role)
         => role?.Trim().ToUpperInvariant() switch

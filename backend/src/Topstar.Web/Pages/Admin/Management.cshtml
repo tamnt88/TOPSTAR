@@ -1,0 +1,52 @@
+@page
+@model Topstar.Web.Pages.Admin.ManagementModel
+@{
+    ViewData["Title"] = "Quản trị hệ thống";
+    ViewData["Description"] = "Các công cụ quản trị, nội dung và cấu hình ít dùng.";
+}
+
+<main class="admin-management-page">
+    <header class="admin-management-heading">
+        <div><span class="admin-page-eyebrow"><i class="fa-solid fa-sliders"></i> QUẢN TRỊ</span><h1>Công cụ quản trị</h1><p>Các chức năng ít dùng được gom tại đây để menu chính luôn ngắn gọn.</p></div>
+    </header>
+
+    <div class="admin-management-groups">
+        <section class="admin-management-group">
+            <div class="admin-management-group-title"><i class="fa-solid fa-chart-line"></i><div><h2>Báo cáo và giám sát</h2><p>Theo dõi hệ thống, lịch sử và lịch vận hành.</p></div></div>
+            <div class="admin-management-links">
+                <a asp-page="/Admin/Reports"><i class="fa-solid fa-chart-column"></i><span><strong>Báo cáo</strong><small>Số liệu tổng hợp</small></span><i class="fa-solid fa-chevron-right"></i></a>
+                <a asp-page="/Admin/Settings/SocialSync"><i class="fa-solid fa-arrows-rotate"></i><span><strong>Đồng bộ mạng xã hội</strong><small>Kết nối và cập nhật dữ liệu KOC</small></span><i class="fa-solid fa-chevron-right"></i></a>
+                <a asp-page="/Admin/AuditLogs"><i class="fa-solid fa-clock-rotate-left"></i><span><strong>Nhật ký hệ thống</strong><small>Lịch sử thao tác</small></span><i class="fa-solid fa-chevron-right"></i></a>
+            </div>
+        </section>
+
+        <section class="admin-management-group">
+            <div class="admin-management-group-title"><i class="fa-solid fa-pen-ruler"></i><div><h2>Nội dung</h2><p>Quản lý nội dung công khai và danh mục.</p></div></div>
+            <div class="admin-management-links">
+                <a asp-page="/Admin/Academy"><i class="fa-solid fa-graduation-cap"></i><span><strong>Học viện KOC</strong><small>Nội dung đào tạo</small></span><i class="fa-solid fa-chevron-right"></i></a>
+                <a asp-page="/Admin/Settings/HomepageContent"><i class="fa-solid fa-house"></i><span><strong>Trang chủ</strong><small>Nội dung website</small></span><i class="fa-solid fa-chevron-right"></i></a>
+                <a asp-page="/Admin/Settings/Partners"><i class="fa-solid fa-handshake"></i><span><strong>Logo đối tác</strong><small>Thêm, sửa và sắp xếp đối tác</small></span><i class="fa-solid fa-chevron-right"></i></a>
+                <a asp-page="/Admin/Settings/SeoSocial"><i class="fa-solid fa-magnifying-glass"></i><span><strong>SEO và chia sẻ</strong><small>Hiển thị trên công cụ tìm kiếm</small></span><i class="fa-solid fa-chevron-right"></i></a>
+                <a asp-page="/Admin/Settings/Tracking"><i class="fa-solid fa-code"></i><span><strong>Mã tracking</strong><small>Mã đo lường trong head và body website</small></span><i class="fa-solid fa-chevron-right"></i></a>
+                <a asp-page="/Admin/Settings/NotificationTemplates"><i class="fa-regular fa-message"></i><span><strong>Mẫu thông báo</strong><small>Nội dung gửi tự động</small></span><i class="fa-solid fa-chevron-right"></i></a>
+                <a asp-page="/Admin/Settings/KocCategories"><i class="fa-solid fa-tags"></i><span><strong>Lĩnh vực KOC</strong><small>Danh mục chuyên môn</small></span><i class="fa-solid fa-chevron-right"></i></a>
+            </div>
+        </section>
+
+        <section class="admin-management-group">
+            <div class="admin-management-group-title"><i class="fa-solid fa-gears"></i><div><h2>Cấu hình hệ thống</h2><p>Tài khoản tích hợp, giao nhận và chính sách vận hành.</p></div></div>
+            <div class="admin-management-links">
+                <a asp-page="/Admin/Settings/EmailAccounts"><i class="fa-regular fa-envelope"></i><span><strong>Tài khoản email</strong><small>SMTP và hộp thư nhận</small></span><i class="fa-solid fa-chevron-right"></i></a>
+                <a asp-page="/Admin/Settings/SocialLogin"><i class="fa-solid fa-right-to-bracket"></i><span><strong>Google và Facebook</strong><small>Bật/tắt đăng nhập mạng xã hội</small></span><i class="fa-solid fa-chevron-right"></i></a>
+                <a asp-page="/Admin/Settings/Shipping"><i class="fa-solid fa-truck"></i><span><strong>Giao nhận</strong><small>Nhà cung cấp vận chuyển</small></span><i class="fa-solid fa-chevron-right"></i></a>
+                <a asp-page="/Admin/Settings/OperationalSetup"><i class="fa-solid fa-screwdriver-wrench"></i><span><strong>Thiết lập vận hành</strong><small>Danh mục và SLA</small></span><i class="fa-solid fa-chevron-right"></i></a>
+                <a asp-page="/Admin/Settings/PackagePolicies"><i class="fa-solid fa-boxes-stacked"></i><span><strong>Cấu hình gói KOC</strong><small>Giá bán, số KOC và quyền lựa chọn</small></span><i class="fa-solid fa-chevron-right"></i></a>
+                <a asp-page="/Admin/Settings/WebsiteInfo"><i class="fa-solid fa-globe"></i><span><strong>Thông tin website</strong><small>Tên miền và liên hệ</small></span><i class="fa-solid fa-chevron-right"></i></a>
+                <a asp-page="/Admin/Settings/Branding"><i class="fa-solid fa-palette"></i><span><strong>Nhận diện</strong><small>Logo và hình ảnh</small></span><i class="fa-solid fa-chevron-right"></i></a>
+                <a asp-page="/Admin/Settings/MenuManagement"><i class="fa-solid fa-sitemap"></i><span><strong>Quản lý menu</strong><small>Menu theo vai trò người dùng</small></span><i class="fa-solid fa-chevron-right"></i></a>
+                <a asp-page="/Admin/Settings/SampleData"><i class="fa-solid fa-flask"></i><span><strong>Dữ liệu mẫu</strong><small>Công cụ dành cho môi trường thử nghiệm</small></span><i class="fa-solid fa-chevron-right"></i></a>
+                <a asp-page="/Admin/MyAccount"><i class="fa-solid fa-user-shield"></i><span><strong>Tài khoản Admin</strong><small>Thông tin đăng nhập và đổi mật khẩu</small></span><i class="fa-solid fa-chevron-right"></i></a>
+            </div>
+        </section>
+    </div>
+</main>

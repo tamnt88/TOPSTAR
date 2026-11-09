@@ -10,6 +10,17 @@ public sealed class WebsiteContentService(TopstarDbContext db) : IWebsiteContent
     {
         var entity = await db.SystemWebsiteConfigs.AsNoTracking()
             .OrderByDescending(x => x.UpdatedAtUtc ?? x.CreatedAtUtc)
+            .Select(x => new WebsiteContentItem(
+                x.WebsiteName,
+                x.ShortName,
+                x.Domain,
+                x.Address,
+                x.ContactEmail,
+                x.Hotline,
+                x.LogoUrl,
+                x.FaviconUrl,
+                x.DefaultShareImageUrl,
+                x.CopyrightText))
             .FirstOrDefaultAsync(cancellationToken);
 
         if (entity is null)
@@ -27,17 +38,6 @@ public sealed class WebsiteContentService(TopstarDbContext db) : IWebsiteContent
                 null);
         }
 
-        return new WebsiteContentItem(
-            entity.WebsiteName,
-            entity.ShortName,
-            entity.Domain,
-            entity.Address,
-            entity.ContactEmail,
-            entity.Hotline,
-            entity.LogoUrl,
-            entity.FaviconUrl,
-            entity.DefaultShareImageUrl,
-            entity.CopyrightText);
+        return entity;
     }
 }
-

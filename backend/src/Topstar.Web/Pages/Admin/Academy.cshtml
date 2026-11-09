@@ -1,23 +1,73 @@
-﻿@page
-@{
-    ViewData["Title"] = "Admin Academy";
-    ViewData["AdminHeaderTitle"] = "Admin Dashboard";
-    ViewData["AdminHeaderSubtitle"] = "Quản trị học viện";
+@page
+@model Topstar.Web.Pages.Admin.AcademyModel
+@using Topstar.Application.Academy
+@{ ViewData["Title"] = "Quản lý Học viện KOC"; ViewData["AdminHeaderTitle"] = "Học viện KOC"; ViewData["AdminHeaderSubtitle"] = "Nội dung công khai, khóa học và tiến độ học viên"; }
+
+@section Styles { <link rel="stylesheet" href="~/css/admin/academy.css" asp-append-version="true" /> }
+
+<main class="admin-academy" data-academy-root>
+ <header class="academy-admin-heading">
+  <div><p class="academy-kicker"><i class="fa-solid fa-graduation-cap"></i> TRUNG TÂM ĐÀO TẠO</p><h1>Quản lý Học viện KOC</h1><p>Quản trị nội dung trang công khai, chương trình học và tiến độ thật tại một nơi.</p></div>
+  <a asp-page="/Public/Academy" target="_blank" class="btn btn-outline-primary"><i class="fa-solid fa-arrow-up-right-from-square"></i> Xem trang công khai</a>
+ </header>
+
+ @if(!string.IsNullOrWhiteSpace(Model.Message)){<div class="alert @(Model.MessageSuccess?"alert-success":"alert-danger")"><i class="fa-solid @(Model.MessageSuccess?"fa-circle-check":"fa-circle-exclamation")"></i> @Model.Message</div>}
+ <div asp-validation-summary="ModelOnly" class="academy-summary-validation"></div>
+
+ <section class="academy-kpis">
+  <article><i class="fa-solid fa-book-open"></i><span>Tổng khóa học<strong>@Model.Items.Count</strong></span></article>
+  <article><i class="fa-solid fa-bullhorn"></i><span>Đang công khai<strong>@Model.Items.Count(x=>x.Status=="Published")</strong></span></article>
+  <article><i class="fa-solid fa-users"></i><span>Lượt đăng ký<strong>@Model.Enrollments.Count</strong></span></article>
+  <article><i class="fa-solid fa-award"></i><span>Đã hoàn thành<strong>@Model.Enrollments.Count(x=>x.CompletedAtUtc.HasValue)</strong></span></article>
+ </section>
+
+ <nav class="ts-tabs academy-tabs" aria-label="Nhiệm vụ quản trị">
+  <button type="button" data-academy-tab="content"><i class="fa-solid fa-pen-ruler"></i> Nội dung trang</button>
+  <button type="button" data-academy-tab="courses"><i class="fa-solid fa-book"></i> Khóa học & bài học <span>@Model.Items.Count</span></button>
+  <button type="button" data-academy-tab="learners"><i class="fa-solid fa-user-graduate"></i> Học viên <span>@Model.Enrollments.Count</span></button>
+  <button type="button" data-academy-tab="history"><i class="fa-solid fa-clock-rotate-left"></i> Lịch sử</button>
+ </nav>
+
+ <section data-academy-panel="content">
+  <form method="post" asp-page-handler="Landing" novalidate data-academy-content-form>
+   @Html.AntiForgeryToken()
+   <div class="academy-panel-head"><div><h2>Nội dung trang /hoc-vien-koc</h2><p>Chỉ nội dung đã xuất bản mới hiển thị trên trang công khai.</p></div><label class="academy-switch"><input asp-for="Landing.IsPublished"/><span></span> Xuất bản</label></div>
+   <div class="academy-form-card">
+    <h3><i class="fa-solid fa-image"></i> Banner chính</h3>
+    <div class="academy-grid two"><label>Định hướng ngắn<input asp-for="Landing.Eyebrow" class="form-control" maxlength="100"/></label><label>Phần nhấn mạnh<input asp-for="Landing.HeroHighlight" class="form-control" maxlength="100"/></label></div>
+    <label>Tiêu đề *<input asp-for="Landing.HeroTitle" class="form-control" data-rule="10,180"/><span asp-validation-for="Landing.HeroTitle"></span></label>
+    <label>Mô tả *<textarea asp-for="Landing.HeroDescription" class="form-control" rows="3" data-rule="20,600"></textarea><span asp-validation-for="Landing.HeroDescription"></span></label>
+    <div class="academy-image-field"><img src="@Model.Landing.HeroImageUrl" data-academy-image-preview alt="Ảnh banner"/><div><input asp-for="Landing.HeroImageUrl" type="hidden" data-academy-image-url/><label class="academy-upload"><i class="fa-solid fa-cloud-arrow-up"></i><span>Chọn ảnh banner</span><input type="file" accept="image/jpeg,image/png,image/webp" data-academy-upload/></label><small>JPG, PNG hoặc WEBP; tối đa 5 MB.</small><span class="field-validation-error" data-upload-error></span></div></div>
+    <div class="academy-grid two"><label>Nút chính<input asp-for="Landing.PrimaryCtaText" class="form-control"/></label><label>Liên kết<input asp-for="Landing.PrimaryCtaUrl" class="form-control"/></label><label>Nút phụ<input asp-for="Landing.SecondaryCtaText" class="form-control"/></label><label>Liên kết<input asp-for="Landing.SecondaryCtaUrl" class="form-control"/></label></div>
+   </div>
+
+   @RenderTextList("Stats","Số liệu nổi bật","fa-chart-column")
+   @RenderRoadmap()
+   @RenderCardList("TrustItems","Chuẩn đầu ra","fa-certificate")
+   @RenderCardList("QualityItems","Quy tắc chất lượng","fa-shield-halved")
+   @RenderCardList("Outcomes","Năng lực sau lộ trình","fa-bullseye")
+   @RenderResourceList()
+
+   <div class="academy-form-card"><h3><i class="fa-solid fa-flag-checkered"></i> Kêu gọi hành động cuối trang</h3><label>Tiêu đề<input asp-for="Landing.FinalCtaTitle" class="form-control"/></label><label>Mô tả<textarea asp-for="Landing.FinalCtaDescription" class="form-control" rows="2"></textarea></label><div class="academy-grid two"><label>Nội dung nút<input asp-for="Landing.FinalCtaText" class="form-control"/></label><label>Liên kết<input asp-for="Landing.FinalCtaUrl" class="form-control"/></label></div></div>
+   <div class="academy-savebar"><span><i class="fa-solid fa-clock-rotate-left"></i> Lịch sử cập nhật được lưu tự động.</span><button class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Lưu nội dung</button></div>
+  </form>
+ </section>
+
+ <section data-academy-panel="courses" hidden>
+  <div class="academy-panel-head"><div><h2>Khóa học và bài học</h2><p>Khóa công khai xuất hiện trên trang Học viện; khóa cũ được lưu trữ thay vì xóa.</p></div><button type="button" class="btn btn-primary" data-academy-toggle="create-course"><i class="fa-solid fa-plus"></i> Thêm khóa học</button></div>
+  <form method="post" asp-page-handler="Create" novalidate class="academy-form-card academy-course-create" data-academy-target="create-course" hidden><div class="academy-grid four"><label>Tên khóa học *<input name="title" class="form-control" data-rule="3,160"/></label><label>Cấp độ *<input name="level" class="form-control" data-rule="2,50"/></label><label>Số tuần *<input name="durationWeeks" type="number" min="1" max="104" value="4" class="form-control"/></label><label>Thứ tự<input name="orderNo" type="number" min="0" max="10000" value="0" class="form-control"/></label></div><label>Mô tả *<textarea name="summary" rows="2" class="form-control" data-rule="10,1000"></textarea></label><label>Nội dung chính<textarea name="syllabus" rows="3" class="form-control" maxlength="4000"></textarea></label><button class="btn btn-primary"><i class="fa-solid fa-plus"></i> Tạo khóa học</button></form>
+  <div class="academy-course-list">@foreach(var item in Model.Items){<article><div class="academy-course-title"><div><h3>@item.Title</h3><p>@item.Level · @item.DurationWeeks tuần · @item.Lessons.Count bài học</p></div><span class="academy-status @item.Status.ToLowerInvariant()">@(item.Status=="Published"?"Đang công khai":item.Status=="Archived"?"Đã lưu trữ":"Bản nháp")</span></div><p>@item.Summary</p><details><summary><i class="fa-solid fa-pen"></i> Chỉnh sửa và quản lý bài học</summary><div class="academy-course-tools"><form method="post" asp-page-handler="Update" novalidate><input type="hidden" name="id" value="@item.Id"/><div class="academy-grid two"><label>Tên khóa<input name="title" value="@item.Title" class="form-control"/></label><label>Cấp độ<input name="level" value="@item.Level" class="form-control"/></label></div><label>Mô tả<textarea name="summary" class="form-control">@item.Summary</textarea></label><input type="hidden" name="durationWeeks" value="@item.DurationWeeks"/><input type="hidden" name="orderNo" value="@item.OrderNo"/><textarea name="syllabus" hidden>@item.Syllabus</textarea><button class="btn btn-outline-primary"><i class="fa-solid fa-floppy-disk"></i> Lưu khóa học</button></form><div class="academy-lessons"><h4>Bài học (@item.Lessons.Count)</h4>@foreach(var lesson in item.Lessons){<div><i class="fa-solid fa-circle-play"></i><span><strong>@lesson.Title</strong><small>@(lesson.IsActive?"Đang hiển thị":"Đã ẩn")</small></span></div>}<form method="post" asp-page-handler="Lesson" novalidate><input type="hidden" name="courseId" value="@item.Id"/><input type="hidden" name="orderNo" value="@item.Lessons.Count"/><input type="hidden" name="isActive" value="true"/><label>Tên bài học mới *<input name="title" class="form-control" data-rule="3,200"/></label><label>URL nội dung<input name="contentUrl" class="form-control"/></label><button class="btn btn-primary"><i class="fa-solid fa-plus"></i> Thêm bài học</button></form></div></div></details></article>}</div>
+ </section>
+
+ <section data-academy-panel="learners" hidden><div class="academy-panel-head"><div><h2>Học viên và tiến độ</h2><p>Dữ liệu đăng ký, hoàn thành bài học và chứng nhận thực tế.</p></div></div><div class="academy-table-card"><table id="academyLearnerTable"><thead><tr><th>STT</th><th>Học viên</th><th>Khóa học</th><th>Tiến độ</th><th>Ngày đăng ký</th><th>Chứng nhận</th></tr></thead><tbody>@foreach(var e in Model.Enrollments){<tr><td></td><td><strong>@e.KocDisplayName</strong><small>@e.KocEmail</small></td><td>@e.CourseTitle</td><td data-order="@e.ProgressPercent"><strong>@e.ProgressPercent%</strong><small>@e.CompletedLessons/@e.RequiredLessons bài</small></td><td data-order="@e.EnrolledAtUtc.Ticks">@e.EnrolledAtUtc.AddHours(7).ToString("dd/MM/yyyy HH:mm")</td><td>@if(e.CertificateCode is not null){<a asp-page="/Public/VerifyCertificate" asp-route-code="@e.CertificateCode" target="_blank" class="academy-status published">Đã cấp</a>}else{<span class="academy-status draft">Đang học</span>}</td></tr>}</tbody></table></div></section>
+ <section data-academy-panel="history" hidden><div class="academy-panel-head"><div><h2>Lịch sử thay đổi nội dung</h2><p>Mỗi lần lưu tạo một phiên bản audit, không ghi đè lịch sử cũ.</p></div></div><div class="academy-history">@if(Model.LandingHistory.Count==0){<p>Chưa có lịch sử thay đổi.</p>}else{@foreach(var h in Model.LandingHistory){<article><i class="fa-solid fa-clock-rotate-left"></i><div><strong>@h.Reason</strong><span>@h.CreatedAtUtc.AddHours(7).ToString("dd/MM/yyyy HH:mm")</span></div></article>}}</div></section>
+</main>
+
+@functions {
+ Microsoft.AspNetCore.Html.IHtmlContent RenderTextList(string name,string title,string icon){var list=Model.Landing.Stats;var sw=new System.IO.StringWriter();sw.Write($"<div class='academy-form-card'><div class='academy-list-head'><h3><i class='fa-solid {icon}'></i> {title}</h3><button type='button' data-list-add='{name}'><i class='fa-solid fa-plus'></i> Thêm mục</button></div><div data-dynamic-list='{name}' data-max-items='8'>");for(var i=0;i<list.Count;i++){var x=list[i];sw.Write($"<div data-list-item><input type='hidden' name='Landing.{name}[{i}].DisplayOrder' value='{i+1}' data-display-order/><input type='hidden' name='Landing.{name}[{i}].IsVisible' value='true'/><input name='Landing.{name}[{i}].Value' value='{System.Net.WebUtility.HtmlEncode(x.Value)}' placeholder='Giá trị'/><input name='Landing.{name}[{i}].Label' value='{System.Net.WebUtility.HtmlEncode(x.Label)}' placeholder='Nhãn'/><button type='button' data-list-remove><i class='fa-solid fa-trash'></i></button></div>");}sw.Write("</div></div>");return new Microsoft.AspNetCore.Html.HtmlString(sw.ToString());}
+ Microsoft.AspNetCore.Html.IHtmlContent RenderRoadmap(){var list=Model.Landing.Roadmap;var sw=new System.IO.StringWriter();sw.Write("<div class='academy-form-card'><div class='academy-list-head'><h3><i class='fa-solid fa-route'></i> Lộ trình phát triển</h3><button type='button' data-list-add='Roadmap'><i class='fa-solid fa-plus'></i> Thêm giai đoạn</button></div><div data-dynamic-list='Roadmap' data-max-items='8'>");for(var i=0;i<list.Count;i++){var x=list[i];sw.Write($"<div data-list-item class='academy-list-wide'><input type='hidden' name='Landing.Roadmap[{i}].DisplayOrder' value='{i+1}' data-display-order/><input type='hidden' name='Landing.Roadmap[{i}].IsVisible' value='true'/><input name='Landing.Roadmap[{i}].Stage' value='{System.Net.WebUtility.HtmlEncode(x.Stage)}' placeholder='Giai đoạn'/><input name='Landing.Roadmap[{i}].Title' value='{System.Net.WebUtility.HtmlEncode(x.Title)}' placeholder='Tiêu đề'/><textarea name='Landing.Roadmap[{i}].Description' placeholder='Mô tả'>{System.Net.WebUtility.HtmlEncode(x.Description)}</textarea><button type='button' data-list-remove><i class='fa-solid fa-trash'></i></button></div>");}sw.Write("</div></div>");return new Microsoft.AspNetCore.Html.HtmlString(sw.ToString());}
+ Microsoft.AspNetCore.Html.IHtmlContent RenderCardList(string name,string title,string icon){var list=name=="TrustItems"?Model.Landing.TrustItems:name=="QualityItems"?Model.Landing.QualityItems:Model.Landing.Outcomes;var sw=new System.IO.StringWriter();sw.Write($"<div class='academy-form-card'><div class='academy-list-head'><h3><i class='fa-solid {icon}'></i> {title}</h3><button type='button' data-list-add='{name}'><i class='fa-solid fa-plus'></i> Thêm mục</button></div><div data-dynamic-list='{name}' data-max-items='8'>");for(var i=0;i<list.Count;i++){var x=list[i];sw.Write($"<div data-list-item class='academy-list-wide'><input type='hidden' name='Landing.{name}[{i}].DisplayOrder' value='{i+1}' data-display-order/><input type='hidden' name='Landing.{name}[{i}].IsVisible' value='true'/><input name='Landing.{name}[{i}].Icon' value='{System.Net.WebUtility.HtmlEncode(x.Icon)}' placeholder='Icon Font Awesome'/><input name='Landing.{name}[{i}].Title' value='{System.Net.WebUtility.HtmlEncode(x.Title)}' placeholder='Tiêu đề'/><textarea name='Landing.{name}[{i}].Description' placeholder='Mô tả'>{System.Net.WebUtility.HtmlEncode(x.Description)}</textarea><button type='button' data-list-remove><i class='fa-solid fa-trash'></i></button></div>");}sw.Write("</div></div>");return new Microsoft.AspNetCore.Html.HtmlString(sw.ToString());}
+ Microsoft.AspNetCore.Html.IHtmlContent RenderResourceList(){var list=Model.Landing.Resources;var sw=new System.IO.StringWriter();sw.Write("<div class='academy-form-card'><div class='academy-list-head'><h3><i class='fa-solid fa-folder-open'></i> Tài nguyên học tập</h3><button type='button' data-list-add='Resources'><i class='fa-solid fa-plus'></i> Thêm tài nguyên</button></div><div data-dynamic-list='Resources' data-max-items='8'>");for(var i=0;i<list.Count;i++){var x=list[i];sw.Write($"<div data-list-item><input type='hidden' name='Landing.Resources[{i}].DisplayOrder' value='{i+1}' data-display-order/><input type='hidden' name='Landing.Resources[{i}].IsVisible' value='true'/><input name='Landing.Resources[{i}].Icon' value='{System.Net.WebUtility.HtmlEncode(x.Icon)}' placeholder='Icon'/><input name='Landing.Resources[{i}].Title' value='{System.Net.WebUtility.HtmlEncode(x.Title)}' placeholder='Tiêu đề'/><button type='button' data-list-remove><i class='fa-solid fa-trash'></i></button></div>");}sw.Write("</div></div>");return new Microsoft.AspNetCore.Html.HtmlString(sw.ToString());}
 }
-<div class="page-wrap card-list">
-  <div class="d-flex justify-content-between align-items-end"><div><h1 class="section-title mb-0">Quan ly Hoc vien KOC</h1><div class="kpi-title">Quan ly khoa hoc, hoc vien va thong ke</div></div></div>
-  <div class="kpi-grid">
-    <div class="kpi-box"><div class="kpi-title">Tong khoa hoc</div><div class="kpi-value">6</div></div>
-    <div class="kpi-box"><div class="kpi-title">Hoc vien</div><div class="kpi-value">3</div></div>
-    <div class="kpi-box"><div class="kpi-title">Ty le hoan thanh TB</div><div class="kpi-value">73%</div></div>
-    <div class="kpi-box"><div class="kpi-title">Danh gia TB</div><div class="kpi-value">4.8</div></div>
-  </div>
-  <div class="card-x">
-    <div class="grid-2">
-      <div class="list-row"><div><b>Khoi dau voi KOC Marketing</b><div class="kpi-title">145 hoc vien • 78%</div></div><button class="btn-x btn-orange">Xem</button></div>
-      <div class="list-row"><div><b>Social Media Analytics</b><div class="kpi-title">76 hoc vien • 82%</div></div><button class="btn-x btn-orange">Xem</button></div>
-      <div class="list-row"><div><b>Brand Collaboration Mastery</b><div class="kpi-title">52 hoc vien • 71%</div></div><button class="btn-x btn-orange">Xem</button></div>
-      <div class="list-row"><div><b>Video Production cho KOC</b><div class="kpi-title">123 hoc vien • 88%</div></div><button class="btn-x btn-orange">Xem</button></div>
-    </div>
-  </div>
-</div>
+
+@section Scripts { <script src="~/js/admin/academy.js" asp-append-version="true"></script> }

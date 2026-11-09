@@ -1,0 +1,5 @@
+@page
+@model Topstar.Web.Pages.Admin.Settings.MenuDeleteModel
+@{ViewData["Title"]="Xóa menu";ViewData["AdminHeaderTitle"]=ViewData["Title"];ViewData["AdminActivePath"]="/Admin/Settings/MenuManagement";}
+@section Styles{<link rel="stylesheet" href="~/css/admin/menu-management.css" asp-append-version="true"/><link rel="stylesheet" href="~/css/admin/menu-delete.css" asp-append-version="true"/>}
+<main class="menu-delete-page"><header><a asp-page="MenuManagement"><i class="fa-solid fa-arrow-left"></i> Quay lại danh sách</a><h1>Xóa menu</h1><p>Xác nhận trước khi xóa menu khỏi hệ thống.</p></header><section class="menu-delete-card"><div><i class="fa-solid fa-triangle-exclamation"></i><span><strong>Bạn có chắc muốn xóa “@Model.Title”?</strong><p>Đường dẫn: <code>@(string.IsNullOrWhiteSpace(Model.Path)?"Không có":Model.Path)</code>. Các liên kết đang sử dụng có thể ngăn thao tác này.</p></span></div><form method="post"><input type="hidden" name="id" value="@Model.Id"/><a asp-page="MenuManagement" class="btn btn-light">Hủy</a><button class="btn btn-danger"><i class="fa-solid fa-trash"></i> Xóa menu</button></form></section></main>

@@ -1,19 +1,315 @@
-﻿@page
+@page
 @model Topstar.Web.Pages.Koc.ProfileModel
-@{ ViewData["Title"] = "KOC Profile"; }
-<div class="page-wrap card-list">
-  <div class="d-flex justify-content-between align-items-center">
-    <h1 class="section-title mb-0">Ho so cua toi</h1>
-    <a asp-page="/Koc/EditProfile" class="btn btn-warning">Edit Profile</a>
-  </div>
-  <div class="card-x" style="background:#ff7a00;color:#fff"><div class="kpi-value">Minh Anh</div><div>KOC Profile • 4.9 ? • 25k followers</div></div>
-  <div class="grid-2">
-    <div class="card-x"><h2 class="h5">Thong tin ca nhan</h2><div class="kpi-title">Ho ten: Minh Anh</div><div class="kpi-title">Khu vuc: TP HCM</div><div class="kpi-title">Ngay sinh: 1999</div><div class="kpi-title">SDT: 090xxxxxxx</div></div>
-    <div class="card-x"><h2 class="h5">Mang xa hoi</h2><div class="list-row"><div>TikTok</div><div>25k followers</div></div><div class="list-row"><div>Instagram</div><div>18k followers</div></div><div class="list-row"><div>YouTube</div><div>6k subscribers</div></div></div>
-  </div>
-  <div class="card-x">
-    <h2 class="h5">Portfolio / Chien dich da thuc hien</h2>
-    <div class="list-row"><div><b>L'Oreal Paris - Holiday Collection</b><div class="kpi-title">Views 55k • ER 8.7%</div></div><span class="badge-x badge-green">Hoan thanh</span></div>
-    <div class="list-row"><div><b>Shopee - Flash Sale 11.11</b><div class="kpi-title">Views 22k • ER 6.4%</div></div><span class="badge-x badge-green">Hoan thanh</span></div>
-  </div>
+@{
+    ViewData["Title"] = "Hồ sơ KOC";
+    var dobText = Model.Data.DateOfBirth?.ToString("dd/MM/yyyy") ?? "Chưa cập nhật";
+    var locationText = string.Join(", ", new[] { Model.Data.WardName, Model.Data.ProvinceName }.Where(x => !string.IsNullOrWhiteSpace(x)));
+    string SocialBg(string p) => p.ToLowerInvariant() switch
+    {
+        "tiktok" => "koc-social-tiktok",
+        "instagram" => "koc-social-instagram",
+        "facebook" => "koc-social-facebook",
+        "youtube" => "koc-social-youtube",
+        _ => "koc-social-default"
+    };
+}
+
+<div class="card-list koc-profile-page">
+    @if (!string.IsNullOrWhiteSpace(Model.SyncMessage))
+    {
+        <div class="alert alert-info py-2">@Model.SyncMessage</div>
+    }
+
+    <div class="koc-profile-toolbar">
+        <h1 class="section-title mb-0"><i class="fa-regular fa-address-card me-2"></i>Hồ sơ của tôi</h1>
+        <div class="koc-profile-actions">
+            @if (Model.BrandPreview)
+            {
+                <a asp-page="/Koc/Profile" class="btn btn-outline-primary koc-edit-btn"><i class="fa-solid fa-arrow-left me-1"></i>Thoát xem trước</a>
+            }
+            else
+            {
+                <a asp-page="/Koc/Profile" asp-route-brandPreview="true" class="btn btn-outline-primary koc-edit-btn"><i class="fa-regular fa-eye me-1"></i>Xem như Brand</a>
+                <a asp-page="/Koc/EditProfile" class="btn btn-warning koc-edit-btn"><i class="fa-solid fa-pen-to-square me-1"></i>Chỉnh sửa</a>
+            }
+        </div>
+    </div>
+
+    @if (Model.BrandPreview)
+    {
+        <div class="alert alert-info mt-3 mb-3"><i class="fa-solid fa-user-shield me-1"></i><strong>Chế độ xem của Brand:</strong> email, số điện thoại, ngày sinh và địa chỉ chi tiết được ẩn trước khi xác nhận cộng tác.</div>
+    }
+
+    @if (!Model.Completion.IsComplete || !Model.Completion.IsApproved)
+    {
+        <section class="koc-completion-card" id="profile-completion">
+            <div class="koc-completion-summary">
+                <div>
+                    <span class="koc-completion-eyebrow"><i class="fa-solid fa-list-check"></i> Mức độ hoàn thiện hồ sơ</span>
+                    <div class="koc-completion-score"><strong>@Model.Completion.Percent%</strong><span>@Model.Completion.StatusLabel</span></div>
+                    <p>Hoàn thành các mục bên dưới để mở toàn bộ tính năng và giúp Brand đánh giá hồ sơ chính xác hơn.</p>
+                </div>
+                <div class="koc-completion-ring" style="--completion:@Model.Completion.Percent" aria-label="Hồ sơ hoàn thiện @Model.Completion.Percent phần trăm"><span>@Model.Completion.Percent%</span></div>
+            </div>
+            <div class="koc-completion-progress" role="progressbar" aria-valuenow="@Model.Completion.Percent" aria-valuemin="0" aria-valuemax="100">
+                <span style="width:@Model.Completion.Percent%"></span>
+            </div>
+            @if (Model.Completion.MissingItems.Count > 0)
+            {
+                <div class="koc-missing-head">
+                    <div><strong>Cần cập nhật @Model.Completion.MissingItems.Count mục</strong><span>Nhấn vào từng mục để tới đúng biểu mẫu.</span></div>
+                    <a asp-page="/Koc/EditProfile" asp-fragment="pane-@Model.Completion.MissingItems[0].Tab" class="btn btn-sm btn-warning"><i class="fa-solid fa-wand-magic-sparkles me-1"></i>Cập nhật ngay</a>
+                </div>
+                <div class="koc-missing-grid">
+                    @foreach (var item in Model.Completion.MissingItems)
+                    {
+                        <a asp-page="/Koc/EditProfile" asp-fragment="pane-@item.Tab" class="koc-missing-item">
+                            <span><i class="fa-solid @item.Icon"></i></span>
+                            <div><strong>@item.Label</strong><small>@item.Detail</small></div>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </a>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="koc-review-waiting"><i class="fa-solid fa-hourglass-half"></i><div><strong>Thông tin đã đầy đủ</strong><span>Hồ sơ đang ở trạng thái “@Model.Completion.StatusLabel”. Bạn chưa cần bổ sung thêm thông tin.</span></div></div>
+            }
+        </section>
+    }
+
+    <nav class="ts-tabs koc-profile-tabs" role="tablist" aria-label="Nhóm thông tin hồ sơ">
+        <button class="active" id="profile-overview-tab" data-bs-toggle="tab" data-bs-target="#profile-overview-pane"
+                type="button" role="tab" aria-controls="profile-overview-pane" aria-selected="true">
+            <i class="fa-solid fa-address-card"></i><span>Tổng quan</span>
+        </button>
+        <button id="profile-social-tab" data-bs-toggle="tab" data-bs-target="#profile-social-pane"
+                type="button" role="tab" aria-controls="profile-social-pane" aria-selected="false">
+            <i class="fa-solid fa-share-nodes"></i><span>Mạng xã hội</span>
+            <b>@Model.Data.SocialChannels.Count</b>
+        </button>
+        <button id="profile-media-tab" data-bs-toggle="tab" data-bs-target="#profile-media-pane"
+                type="button" role="tab" aria-controls="profile-media-pane" aria-selected="false">
+            <i class="fa-regular fa-images"></i><span>Thư viện</span>
+            <b>@(Model.Data.GalleryImages.Count + Model.Data.Videos.Count)</b>
+        </button>
+    </nav>
+
+    <div class="tab-content koc-profile-tab-content">
+    <section class="tab-pane fade show active" id="profile-overview-pane" role="tabpanel" aria-labelledby="profile-overview-tab" tabindex="0">
+    <div class="card-x">
+        <h2 class="h5 koc-card-title"><i class="fa-solid fa-user"></i>Thông tin cá nhân</h2>
+        <div class="koc-subsection-title"><i class="fa-solid fa-id-card"></i><span>Thông tin cơ bản</span></div>
+        <div class="koc-info-grid mb-3">
+            <div><label>Email</label><div>@(Model.BrandPreview ? "Ẩn đến khi xác nhận cộng tác" : Model.Data.Email)</div></div>
+            <div><label>Số điện thoại</label><div>@(Model.BrandPreview ? "Ẩn đến khi xác nhận cộng tác" : Model.Data.Phone)</div></div>
+            <div><label>Ngày sinh</label><div>@(Model.BrandPreview ? "Thông tin riêng tư" : dobText)</div></div>
+            <div><label>Địa chỉ</label><div>@(Model.BrandPreview ? "Ẩn địa chỉ chi tiết" : (string.IsNullOrWhiteSpace(Model.Data.StreetAddress) ? "Chưa cập nhật" : Model.Data.StreetAddress))</div></div>
+            <div><label>Giới tính</label><div>@Model.Data.GenderDisplay</div></div>
+            <div><label>Khu vực</label><div>@(string.IsNullOrWhiteSpace(locationText) ? "Chưa cập nhật" : locationText)</div></div>
+        </div>
+
+        <div class="koc-subsection-title"><i class="fa-solid fa-person-rays"></i><span>Thông tin thể trạng</span></div>
+        <div class="koc-profile-extra mb-3">
+            <div>
+                <strong>Chiều cao:</strong> @(Model.Data.HeightCm?.ToString("0.#") ?? "-")cm
+                <span class="mx-2">|</span>
+                <strong>Cân nặng:</strong> @(Model.Data.WeightKg?.ToString("0.#") ?? "-")kg
+            </div>
+            <div><strong>Tình trạng hôn nhân:</strong> @Model.Data.MaritalStatus</div>
+            <div><strong>Có con:</strong> @(Model.Data.HasChildren.HasValue ? (Model.Data.HasChildren.Value ? "Có" : "Không") : "Chưa cập nhật")</div>
+            @if (Model.Data.HasChildren == true && Model.Data.Children.Count > 0)
+            {
+                <div>
+                    <strong>Thông tin con:</strong>
+                    @string.Join("; ", Model.Data.Children.Select((x, i) => $"Con {i + 1}: {(x.Age.HasValue ? x.Age.Value + " tuổi" : "Chưa cập nhật tuổi")} - {x.GenderDisplay}"))
+                </div>
+            }
+        </div>
+
+        <div class="koc-subsection-title"><i class="fa-solid fa-folder-open"></i><span>CV / Hồ sơ năng lực</span></div>
+        <div class="koc-cv-box">
+            @if (!string.IsNullOrWhiteSpace(Model.Data.ProfileDocumentUrl))
+            {
+                <a href="@Model.Data.ProfileDocumentUrl" target="_blank" rel="noopener" class="koc-cv-link">
+                    <span class="koc-cv-icon"><i class="fa-regular fa-file-lines"></i></span>
+                    <span>
+                        <b>Hồ sơ năng lực KOC</b>
+                        <small class="d-block">Click để xem chi tiết CV</small>
+                    </span>
+                    <i class="fa-solid fa-chevron-right ms-auto"></i>
+                </a>
+            }
+            else
+            {
+                <div class="text-muted">Chưa tải lên CV/hồ sơ năng lực.</div>
+            }
+        </div>
+    </div>
+    </section>
+
+    <section class="tab-pane fade" id="profile-social-pane" role="tabpanel" aria-labelledby="profile-social-tab" tabindex="0">
+    <div class="card-x">
+        <h2 class="h5 koc-card-title"><i class="fa-solid fa-share-nodes"></i>Mạng xã hội</h2>
+        <div class="koc-platform-sync-summary">
+            <span><i class="fa-solid fa-arrows-rotate"></i></span>
+            <div>
+                <strong>Đồng bộ dữ liệu nền tảng</strong>
+                @if (Model.Data.PlatformConnections.Count == 0)
+                {
+                    <p>Các kênh bên dưới đang được khai báo thủ công. Kết nối nền tảng để tự động cập nhật số liệu.</p>
+                }
+                else
+                {
+                    <p>@Model.Data.PlatformConnections.Count kết nối tự động đang được quản lý.</p>
+                    @foreach (var connectionItem in Model.Data.PlatformConnections)
+                    {
+                        <small>
+                            <b>@connectionItem.Platform:</b> @PortalFormat.Status(connectionItem.Status)
+                            · @(connectionItem.LastSyncedAtUtc.HasValue ? $"đồng bộ {connectionItem.LastSyncedAtUtc.Value.ToVietnamTime():dd/MM/yyyy HH:mm}" : "chưa đồng bộ")
+                        </small>
+                        @if (!string.IsNullOrWhiteSpace(connectionItem.LastError))
+                        {
+                            <small class="text-danger">@connectionItem.LastError</small>
+                        }
+                    }
+                }
+            </div>
+        </div>
+        @if (Model.Data.SocialChannels.Count == 0)
+        {
+            <div class="kpi-title">Chưa có kênh mạng xã hội.</div>
+        }
+        else
+        {
+            <div class="koc-social-grid">
+                @foreach (var social in Model.Data.SocialChannels)
+                {
+                    var connection = Model.Data.PlatformConnections.FirstOrDefault(x => x.Platform.Equals(social.Platform, StringComparison.OrdinalIgnoreCase));
+                    var connected = connection is not null && connection.Status.Equals("Active", StringComparison.OrdinalIgnoreCase);
+                    <div class="koc-social-card @SocialBg(social.Platform)">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="koc-social-name">@social.Platform</div>
+                                @if (!string.IsNullOrWhiteSpace(social.Handle))
+                                {
+                                    <div class="koc-social-handle">@social.Handle</div>
+                                }
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge-x @(connected ? "badge-green" : "badge-blue") social-connect-badge">
+                                    @(connected ? "Đồng bộ tự động" : "Khai báo thủ công")
+                                </span>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-light koc-social-menu-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fa-solid fa-ellipsis"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end koc-social-dropdown-menu">
+                                        @if (connected)
+                                        {
+                                            <li>
+                                                <form method="post" asp-page-handler="SyncPlatform" class="m-0">
+                                                    <input type="hidden" name="platform" value="@social.Platform" />
+                                                    <button type="submit" class="dropdown-item koc-social-dropdown-item">
+                                                        <i class="fa-solid fa-rotate me-1"></i>Đồng bộ dữ liệu
+                                                    </button>
+                                                </form>
+                                            </li>
+                                            <li>
+                                                <form method="post" asp-page-handler="DisconnectPlatform" class="m-0">
+                                                    <input type="hidden" name="platform" value="@social.Platform" />
+                                                    <button type="submit" class="dropdown-item koc-social-dropdown-item text-danger">
+                                                        <i class="fa-solid fa-link-slash me-1"></i>Ngắt kết nối
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        }
+                                        else
+                                        {
+                                            <li>
+                                                <a class="dropdown-item koc-social-dropdown-item" asp-page="/Koc/Profile" asp-page-handler="ConnectPlatform" asp-route-platform="@social.Platform">
+                                                    <i class="fa-solid fa-link me-1"></i>Kết nối @social.Platform
+                                                </a>
+                                            </li>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(social.ChannelUrl))
+                                        {
+                                            <li>
+                                                <a class="dropdown-item koc-social-dropdown-item" href="@social.ChannelUrl" target="_blank" rel="noopener">
+                                                    <i class="fa-solid fa-up-right-from-square me-1"></i>Xem trang cá nhân
+                                                </a>
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        @if (social.Categories.Count > 0)
+                        {
+                            <div class="koc-social-categories">
+                                @foreach (var cate in social.Categories)
+                                {
+                                    <span class="badge-x badge-blue">@cate</span>
+                                }
+                            </div>
+                        }
+                        <div class="koc-social-metrics">
+                            <div><span>Followers</span><b>@social.Followers.ToString("N0", PortalFormat.Vietnamese)</b></div>
+                            <div><span>Engagement</span><b>@(social.AvgEngagementRate.HasValue ? $"{social.AvgEngagementRate.Value:0.##}%" : "-")</b></div>
+                            <div><span>Reach</span><b>@(social.AvgViews.HasValue ? social.AvgViews.Value.ToString("N0", PortalFormat.Vietnamese) : "-")</b></div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+    </section>
+
+    <section class="tab-pane fade" id="profile-media-pane" role="tabpanel" aria-labelledby="profile-media-tab" tabindex="0">
+    <div class="card-x">
+        <h2 class="h5 koc-card-title"><i class="fa-regular fa-images"></i>Thư viện hình ảnh</h2>
+        @if (Model.Data.GalleryImages.Count == 0)
+        {
+            <div class="kpi-title">Chưa có hình ảnh.</div>
+        }
+        else
+        {
+            <div class="koc-media-grid">
+                @for (var imageIndex = 0; imageIndex < Model.Data.GalleryImages.Count; imageIndex++)
+                {
+                    var image = Model.Data.GalleryImages[imageIndex];
+                    <a href="@image.FileUrl"
+                       target="_blank"
+                       rel="noopener"
+                       class="koc-media-item"
+                       data-koc-colorbox
+                       data-gallery="koc-profile-library"
+                       data-caption="Ảnh hồ sơ KOC @(imageIndex + 1)">
+                        <img src="@image.FileUrl" alt="Ảnh KOC" />
+                    </a>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="card-x">
+        <h2 class="h5 koc-card-title"><i class="fa-solid fa-video"></i>Video</h2>
+        @if (Model.Data.Videos.Count == 0)
+        {
+            <div class="kpi-title">Chưa có video.</div>
+        }
+        else
+        {
+            <div class="koc-media-grid">
+                @foreach (var video in Model.Data.Videos)
+                {
+                    <div class="koc-media-item">
+                        <video src="@video.FileUrl" controls preload="metadata"></video>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+    </section>
+    </div>
 </div>

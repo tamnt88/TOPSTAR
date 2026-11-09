@@ -1,0 +1,64 @@
+@page
+@model Topstar.Web.Pages.Admin.CampaignsModel
+@{ ViewData["Title"] = "Quản lý chiến dịch"; ViewData["AdminHeaderTitle"] = "Quản lý chiến dịch"; }
+
+<div class="admin-campaign-page">
+    <header class="admin-campaign-heading">
+        <div><span><i class="fa-solid fa-bullhorn"></i> QUẢN LÝ CHIẾN DỊCH</span><h1>Quản lý chiến dịch</h1><p>Theo dõi toàn bộ vòng đời chiến dịch và xử lý hàng đợi duyệt tại một nơi.</p></div>
+    </header>
+    <nav class="admin-module-shortcuts" aria-label="Công cụ chiến dịch"><a asp-page="/Admin/Matching"><i class="fa-solid fa-wand-magic-sparkles"></i> Ghép KOC</a><a asp-page="/Admin/Collaborations"><i class="fa-solid fa-handshake"></i> Lịch sử hợp tác</a><a asp-page="/Admin/Calendar"><i class="fa-regular fa-calendar"></i> Lịch chiến dịch</a></nav>
+    @if (!string.IsNullOrWhiteSpace(Model.Message)) { <div class="alert @(Model.MessageSuccess ? "alert-success" : "alert-danger")"><i class="fa-solid @(Model.MessageSuccess ? "fa-circle-check" : "fa-circle-exclamation")"></i> @Model.Message</div> }
+    <section class="admin-campaign-stats" aria-label="Thống kê chiến dịch">
+        <article data-campaign-card-scope="" role="button" tabindex="0"><i class="fa-solid fa-bullhorn is-total"></i><div><small>Tổng chiến dịch</small><strong id="adminCampaignTotal">0</strong></div></article>
+        <article data-campaign-card-scope="Draft" role="button" tabindex="0"><i class="fa-regular fa-pen-to-square is-draft"></i><div><small>Bản nháp</small><strong id="adminCampaignDraft">0</strong></div></article>
+        <article data-campaign-card-scope="Submitted" role="button" tabindex="0"><i class="fa-regular fa-clock is-pending"></i><div><small>Chờ duyệt</small><strong id="adminCampaignPending">0</strong></div></article>
+        <article data-campaign-card-scope="Active" role="button" tabindex="0"><i class="fa-solid fa-play is-running"></i><div><small>Đang hoạt động</small><strong id="adminCampaignRunning">0</strong></div></article>
+        <article data-campaign-card-scope="Completed" role="button" tabindex="0"><i class="fa-solid fa-circle-check is-completed"></i><div><small>Đã hoàn thành</small><strong id="adminCampaignCompleted">0</strong></div></article>
+        <article data-campaign-card-scope="Attention" role="button" tabindex="0"><i class="fa-solid fa-triangle-exclamation is-attention"></i><div><small>Cần xử lý</small><strong id="adminCampaignAttention">0</strong></div></article>
+    </section>
+    <nav class="ts-tabs admin-campaign-tabs" aria-label="Phạm vi chiến dịch">
+        <button type="button" class="is-active" data-campaign-scope=""><i class="fa-solid fa-list"></i> Tất cả chiến dịch <span id="adminCampaignAllBadge">0</span></button>
+        <button type="button" data-campaign-scope="Draft"><i class="fa-regular fa-pen-to-square"></i> Bản nháp <span id="adminCampaignDraftBadge">0</span></button>
+        <button type="button" data-campaign-scope="Submitted"><i class="fa-solid fa-clock-rotate-left"></i> Chờ duyệt <span id="adminCampaignQueueBadge">0</span></button>
+        <button type="button" data-campaign-scope="Active"><i class="fa-solid fa-play"></i> Đang hoạt động <span id="adminCampaignActiveBadge">0</span></button>
+        <button type="button" data-campaign-scope="Completed"><i class="fa-solid fa-circle-check"></i> Hoàn thành <span id="adminCampaignDoneBadge">0</span></button>
+        <button type="button" data-campaign-scope="Attention"><i class="fa-solid fa-triangle-exclamation"></i> Cần xử lý <span id="adminCampaignAttentionBadge">0</span></button>
+    </nav>
+    <section class="admin-campaign-panel">
+        <div class="admin-campaign-panel-heading"><div><h2>Danh sách chiến dịch</h2><p id="adminCampaignScopeText">Tất cả chiến dịch trong hệ thống.</p></div></div>
+        <div class="admin-campaign-filters">
+            <div class="filter-keyword"><label for="adminCampaignKeyword">Từ khóa</label><div><i class="fa-solid fa-magnifying-glass"></i><input id="adminCampaignKeyword" class="form-control" placeholder="Tên chiến dịch, Brand hoặc mã gói" /></div></div>
+            <div><label for="adminCampaignStatus">Trạng thái</label><select id="adminCampaignStatus" class="form-select"><option value="">Tất cả trạng thái</option><option value="Draft">Bản nháp</option><option value="Submitted">Chờ duyệt</option><option value="NeedEdit">Cần cập nhật</option><option value="Published">Đang tuyển KOC</option><option value="InProgress">Đang thực hiện</option><option value="Completed">Đã hoàn thành</option><option value="Rejected">Bị từ chối</option><option value="Cancelled">Đã hủy</option></select></div>
+            <div><label for="adminCampaignLength">Hiển thị</label><select id="adminCampaignLength" class="form-select"><option value="10">10 dòng</option><option value="20">20 dòng</option><option value="50">50 dòng</option></select></div>
+            <button type="button" id="adminCampaignFilter" class="btn admin-campaign-filter-button"><i class="fa-solid fa-filter"></i> Lọc</button>
+        </div>
+        <div class="table-responsive"><table id="adminCampaignTable" class="table w-100" data-list-actions="false"><thead><tr><th>STT</th><th>Chiến dịch</th><th>Brand</th><th>Ngân sách</th><th>Thời gian</th><th>KOC đăng ký</th><th>Trạng thái</th><th class="text-center">Thao tác</th></tr></thead><tbody></tbody></table></div>
+    </section>
+</div>
+
+<div class="modal fade" id="campaignDeleteModal" tabindex="-1" aria-labelledby="campaignDeleteTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content campaign-delete-modal">
+            <form method="post" asp-page-handler="Delete">
+                <div class="modal-header">
+                    <div class="campaign-delete-modal__title"><span><i class="fa-solid fa-trash-can"></i></span><div><h2 class="modal-title" id="campaignDeleteTitle">Xóa chiến dịch</h2><p>Thao tác không thể hoàn tác</p></div></div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="id" id="campaignDeleteId" />
+                    <p>Bạn sắp xóa <strong id="campaignDeleteName"></strong> cùng toàn bộ hồ sơ liên quan.</p>
+                    <div class="campaign-delete-warning"><i class="fa-solid fa-triangle-exclamation"></i><span>Ứng tuyển, KOC tham gia, nội dung bàn giao, giao nhận, lịch hẹn, tranh chấp, đánh giá và dữ liệu tài chính liên quan cũng sẽ bị xóa.</span></div>
+                    <label for="campaignDeleteReason" class="form-label">Lý do xóa <span>*</span></label>
+                    <textarea id="campaignDeleteReason" name="reason" class="form-control" rows="3" minlength="10" maxlength="1000" required placeholder="Nhập lý do từ 10 ký tự để lưu nhật ký kiểm toán"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn campaign-delete-confirm"><i class="fa-solid fa-trash-can"></i>Xóa chiến dịch</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Styles { <link rel="stylesheet" href="~/css/admin/campaign-management.css" asp-append-version="true" /> }
+@section Scripts { <script src="~/lib/datatables/js/dataTables.min.js?v=2.3.8"></script><script src="~/lib/datatables/js/dataTables.bootstrap5.min.js?v=2.3.8"></script><script src="~/js/admin/campaign-management.js" asp-append-version="true"></script> }

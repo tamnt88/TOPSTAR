@@ -1,32 +1,237 @@
-﻿@page
+@page
 @model Topstar.Web.Pages.Koc.DashboardModel
 @{
-  ViewData["Title"] = "KOC Overview";
+    ViewData["Title"] = "Tổng quan KOC";
+    var hour = DateTime.Now.Hour;
+    var greeting = hour < 11 ? "Chào buổi sáng" : hour < 18 ? "Chào buổi chiều" : "Chào buổi tối";
+    var profileStatus = PortalStatusLabels.Of(Model.Data.ProfileStatus, "Đang hoàn thiện");
+    string JobStatus(string status) => PortalFormat.Status(status);
+    string ScheduleStatus(string status) => PortalFormat.Status(status);
 }
-<div class="page-wrap card-list">
-  <div><h1 class="section-title mb-0">KOC Dashboard</h1><div class="kpi-title">@Model.Data.DisplayName</div></div>
-  @if (Model.Data.NeedsProfileCompletion || (Request.Query["completeProfile"] == "1"))
-  {
-    <div class="alert alert-warning mb-0">Tài khoản đã tạo nhanh. Vui lòng cập nhật đầy đủ hồ sơ KOC để nhận job và được xét duyệt.</div>
-  }
-  <div class="kpi-grid">
-    <div class="kpi-box"><div class="kpi-title">Job cho xac nhan</div><div class="kpi-value">@Model.Data.PendingConfirmJobs</div></div>
-    <div class="kpi-box"><div class="kpi-title">Job dang thuc hien</div><div class="kpi-value">@Model.Data.ActiveJobs</div></div>
-    <div class="kpi-box"><div class="kpi-title">Thu nhap uoc tinh</div><div class="kpi-value">@Model.Data.EstimatedIncome.ToString("N0")</div></div>
-    <div class="kpi-box"><div class="kpi-title">Rating</div><div class="kpi-value">@Model.Data.AverageRating.ToString("0.0")</div></div>
-  </div>
-  <div class="card-x">
-    <h2 class="h5">Viec can lam</h2>
-    @if (Model.Data.TodoJobs.Count == 0)
-    {
-      <div class="list-row"><div><b>Chua co cong viec</b></div></div>
-    }
-    else
-    {
-      foreach (var row in Model.Data.TodoJobs)
-      {
-        <div class="list-row"><div><b>@row.CampaignTitle</b><div class="kpi-title">@row.Budget.ToString("N0") VND • @row.Status</div></div></div>
-      }
-    }
-  </div>
+
+@{
+    var workflowCount = Model.Data.PendingConfirmJobs + Model.Data.ActiveJobs + Model.Data.RevisionRequiredCount;
+    var workflowTotal = Math.Max(1, workflowCount);
+    var pendingPercent = Model.Data.PendingConfirmJobs * 100m / workflowTotal;
+    var activePercent = Model.Data.ActiveJobs * 100m / workflowTotal;
+    var revisionPercent = Model.Data.RevisionRequiredCount * 100m / workflowTotal;
+    var ratingPercent = Math.Clamp(Model.Data.AverageRating * 20m, 0m, 100m);
+    var profilePercent = Math.Clamp(Model.Data.ProfileScore, 0m, 100m);
+    var priority = !Model.CanUseProtectedFeatures
+        ? (Kind: "opportunity", Icon: "fa-hourglass-half", Title: "Hồ sơ đang chờ duyệt", Description: "Bạn có thể xem trước các cơ hội phù hợp trong khi chờ kích hoạt đầy đủ tính năng.", Url: "/Koc/Jobs", Action: "Xem cơ hội")
+        : Model.Data.RevisionRequiredCount > 0
+        ? (Kind: "urgent", Icon: "fa-pen-ruler", Title: $"{Model.Data.RevisionRequiredCount} nội dung cần chỉnh sửa", Description: "Brand đang chờ phiên bản mới. Hãy xử lý sớm để không ảnh hưởng tiến độ chiến dịch.", Url: "/Koc/Tasks?Status=NeedRevision", Action: "Chỉnh sửa ngay")
+        : Model.Data.NeedsProfileCompletion
+            ? (Kind: "profile", Icon: "fa-user-check", Title: "Hoàn thiện hồ sơ để mở khóa cơ hội", Description: "Bổ sung các mục còn thiếu để Brand có đủ thông tin đánh giá và lựa chọn bạn.", Url: "/Koc/Profile#profile-completion", Action: "Hoàn thiện hồ sơ")
+            : Model.Data.UpcomingBookingCount > 0
+                ? (Kind: "booking", Icon: "fa-calendar-check", Title: $"{Model.Data.UpcomingBookingCount} lịch booking sắp tới", Description: "Kiểm tra thời gian, địa điểm và yêu cầu chuẩn bị trước khi tham gia.", Url: "/Koc/Bookings", Action: "Xem lịch booking")
+                : Model.Data.UnreadNotificationCount > 0
+                    ? (Kind: "notice", Icon: "fa-bell", Title: $"{Model.Data.UnreadNotificationCount} thông báo chưa đọc", Description: "Xem các cập nhật mới nhất liên quan đến tài khoản và chiến dịch của bạn.", Url: "/Koc/Notifications", Action: "Xem thông báo")
+                    : (Kind: "opportunity", Icon: "fa-wand-magic-sparkles", Title: "Bạn đã xử lý xong các việc ưu tiên", Description: "Khám phá chiến dịch mới phù hợp với thế mạnh nội dung của bạn.", Url: "/Koc/Jobs", Action: "Tìm cơ hội mới");
+}
+
+<div class="koc-dashboard-page">
+    <section class="koc-dashboard-hero">
+        <div>
+            <span class="koc-dashboard-eyebrow"><i class="fa-solid fa-sparkles"></i> Không gian làm việc KOC</span>
+            <h1>@greeting, @Model.Data.DisplayName!</h1>
+            <p>Theo dõi công việc, lịch booking và thu nhập của bạn tại một nơi.</p>
+        </div>
+        <div class="koc-dashboard-hero-actions">
+            <a asp-page="/Koc/Jobs" class="btn btn-light btn-sm"><i class="fa-solid fa-magnifying-glass me-1"></i>Tìm công việc</a>
+            @if (Model.CanUseProtectedFeatures)
+            {
+                <a asp-page="/Koc/Tasks" class="btn btn-warning btn-sm"><i class="fa-solid fa-list-check me-1"></i>Xem đầu việc</a>
+            }
+            else
+            {
+                <a asp-page="/Koc/Academy" class="btn btn-warning btn-sm"><i class="fa-solid fa-graduation-cap me-1"></i>Vào học viện</a>
+            }
+        </div>
+    </section>
+
+    <section class="koc-next-priority is-@priority.Kind" aria-labelledby="kocPriorityTitle">
+        <span class="koc-next-priority-icon"><i class="fa-solid @priority.Icon"></i></span>
+        <div><small>ƯU TIÊN TIẾP THEO</small><h2 id="kocPriorityTitle">@priority.Title</h2><p>@priority.Description</p></div>
+        <a href="@priority.Url" class="btn"><span>@priority.Action</span><i class="fa-solid fa-arrow-right"></i></a>
+    </section>
+
+    <section class="koc-dashboard-kpis" aria-label="Chỉ số công việc">
+        <a asp-page="/Koc/Jobs" asp-route-section="applications" asp-fragment="my-applications" class="koc-dashboard-kpi is-pending">
+            <span><i class="fa-solid fa-hourglass-half"></i></span>
+            <div><small>Chờ phản hồi</small><strong>@Model.Data.PendingConfirmJobs</strong><em>Hồ sơ ứng tuyển</em></div>
+            <i class="fa-solid fa-arrow-right"></i>
+        </a>
+        <a asp-page="/Koc/Tasks" class="koc-dashboard-kpi is-active">
+            <span><i class="fa-solid fa-briefcase"></i></span>
+            <div><small>Đang thực hiện</small><strong>@Model.Data.ActiveJobs</strong><em>Chiến dịch đang chạy</em></div>
+            <i class="fa-solid fa-arrow-right"></i>
+        </a>
+        <a asp-page="/Koc/Wallet" class="koc-dashboard-kpi is-income">
+            <span><i class="fa-solid fa-wallet"></i></span>
+            <div><small>Số dư khả dụng</small><strong>@PortalFormat.Money(Model.Data.AvailableBalance)</strong><em>Phân bổ dự kiến: @PortalFormat.Money(Model.Data.EstimatedIncome)</em></div>
+            <i class="fa-solid fa-arrow-right"></i>
+        </a>
+        <a asp-page="/Koc/Reviews" class="koc-dashboard-kpi is-rating">
+            <span><i class="fa-solid fa-star"></i></span>
+            <div><small>Điểm uy tín</small><strong>@Model.Data.AverageRating.ToString("0.0")<b>/5</b></strong><em>Từ đánh giá đối tác</em></div>
+            <i class="fa-solid fa-arrow-right"></i>
+        </a>
+    </section>
+
+    <section class="koc-dashboard-analytics" aria-label="Thống kê tổng quan">
+        <article class="koc-insight-card">
+            <header>
+                <span class="koc-insight-icon is-work"><i class="fa-solid fa-chart-pie"></i></span>
+                <div>
+                    <h2>Nhịp công việc</h2>
+                    <p>Phân bổ các đầu việc cần bạn theo dõi ngay lúc này.</p>
+                </div>
+            </header>
+            <div class="koc-work-chart">
+                <div class="koc-donut-chart @(workflowCount == 0 ? "is-empty" : "")"
+                     style="--pending:@pendingPercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);--active:@activePercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);--revision:@revisionPercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)"
+                     role="img"
+                     aria-label="@Model.Data.ActiveJobs chiến dịch đang thực hiện, @Model.Data.PendingConfirmJobs hồ sơ chờ phản hồi, @Model.Data.RevisionRequiredCount nội dung cần sửa">
+                    <span><strong>@workflowCount</strong><small>cần theo dõi</small></span>
+                </div>
+                <div class="koc-chart-legend">
+                    <div><i class="is-active"></i><span>Đang thực hiện</span><strong>@Model.Data.ActiveJobs</strong></div>
+                    <div><i class="is-pending"></i><span>Chờ phản hồi</span><strong>@Model.Data.PendingConfirmJobs</strong></div>
+                    <div><i class="is-revision"></i><span>Cần chỉnh sửa</span><strong>@Model.Data.RevisionRequiredCount</strong></div>
+                </div>
+            </div>
+        </article>
+
+        <article class="koc-insight-card">
+            <header>
+                <span class="koc-insight-icon is-reputation"><i class="fa-solid fa-chart-simple"></i></span>
+                <div>
+                    <h2>Sức khỏe hồ sơ</h2>
+                    <p>Hai chỉ số giúp Brand đánh giá mức độ sẵn sàng hợp tác.</p>
+                </div>
+            </header>
+            <div class="koc-score-chart">
+                <div class="koc-score-row">
+                    <div><span>Độ hoàn thiện hồ sơ</span><strong>@Model.Data.ProfileScore.ToString("0.#")/100</strong></div>
+                    <div class="koc-score-track"><i style="width:@profilePercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%"></i></div>
+                </div>
+                <div class="koc-score-row is-rating">
+                    <div><span>Điểm đánh giá đối tác</span><strong>@Model.Data.AverageRating.ToString("0.0")/5</strong></div>
+                    <div class="koc-score-track"><i style="width:@ratingPercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%"></i></div>
+                </div>
+                <div class="koc-score-foot">
+                    <span><i class="fa-solid fa-users"></i><strong>@Model.Data.Followers.ToString("N0", PortalFormat.Vietnamese)</strong> follower đã đồng bộ</span>
+                    <a asp-page="/Koc/Profile">Tối ưu hồ sơ <i class="fa-solid fa-arrow-right"></i></a>
+                </div>
+            </div>
+        </article>
+    </section>
+
+    <div class="koc-dashboard-grid">
+        <div class="koc-dashboard-main">
+            <section class="koc-dashboard-card">
+                <header>
+                    <div><span class="koc-card-heading-icon"><i class="fa-solid fa-list-check"></i></span><div><h2>Việc cần xử lý</h2><p>Ưu tiên các chiến dịch đang thực hiện và hồ sơ chờ phản hồi.</p></div></div>
+                    <a asp-page="/Koc/Tasks">Xem tất cả <i class="fa-solid fa-arrow-right"></i></a>
+                </header>
+                @if (Model.Data.TodoJobs.Count == 0)
+                {
+                    <div class="koc-dashboard-empty">
+                        <span><i class="fa-solid fa-mug-hot"></i></span>
+                        <div><strong>Bạn đã xử lý hết công việc</strong><p>Khám phá thêm chiến dịch phù hợp để tăng cơ hội hợp tác.</p></div>
+                        <a asp-page="/Koc/Jobs" class="btn btn-outline-primary btn-sm">Tìm chiến dịch</a>
+                    </div>
+                }
+                else
+                {
+                    <div class="koc-dashboard-list">
+                    @foreach (var row in Model.Data.TodoJobs)
+                    {
+                        var remaining = row.DueAtUtc.HasValue ? row.DueAtUtc.Value - DateTime.UtcNow : (TimeSpan?)null;
+                        var deadlineClass = remaining.HasValue && remaining.Value.TotalSeconds < 0 ? "is-overdue" : remaining.HasValue && remaining.Value.TotalHours <= 24 ? "is-urgent" : remaining.HasValue && remaining.Value.TotalDays <= 3 ? "is-soon" : null;
+                        var deadlineLabel = remaining.HasValue && remaining.Value.TotalSeconds < 0
+                            ? $"Quá hạn {Math.Max(1, (int)Math.Ceiling(-remaining.Value.TotalDays))} ngày"
+                            : remaining.HasValue && remaining.Value.TotalHours <= 24
+                                ? $"Còn {Math.Max(1, (int)Math.Ceiling(remaining.Value.TotalHours))} giờ"
+                                : remaining.HasValue && remaining.Value.TotalDays <= 3
+                                    ? $"Còn {Math.Max(1, (int)Math.Ceiling(remaining.Value.TotalDays))} ngày"
+                                    : null;
+                        <a href="@row.TargetUrl" class="@deadlineClass">
+                            <span class="is-job"><i class="fa-solid fa-bullhorn"></i></span>
+                            <div><strong>@row.CampaignTitle</strong><small>@row.BrandName · @JobStatus(row.Status)@if(row.DueAtUtc.HasValue){<text> · hạn @row.DueAtUtc.Value.ToVietnamTime().ToString("dd/MM HH:mm")</text>}</small>@if(deadlineLabel is not null){<em class="koc-task-deadline">@deadlineLabel</em>}</div>
+                            <b>@row.ActionLabel</b>
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                    }
+                    </div>
+                }
+            </section>
+
+            <section class="koc-dashboard-card">
+                <header>
+                    <div><span class="koc-card-heading-icon is-calendar"><i class="fa-regular fa-calendar"></i></span><div><h2>Lịch booking sắp tới</h2><p>Chuẩn bị sớm cho các lịch đã xác nhận hoặc đang đề xuất.</p></div></div>
+                    <a asp-page="/Koc/Bookings">Xem lịch <i class="fa-solid fa-arrow-right"></i></a>
+                </header>
+                @if (Model.Data.UpcomingSchedules.Count == 0)
+                {
+                    <div class="koc-dashboard-empty is-compact"><span><i class="fa-regular fa-calendar-xmark"></i></span><div><strong>Chưa có lịch sắp tới</strong><p>Lịch booking mới sẽ xuất hiện tại đây.</p></div></div>
+                }
+                else
+                {
+                    <div class="koc-schedule-list">
+                    @foreach (var schedule in Model.Data.UpcomingSchedules)
+                    {
+                        <article id="dashboard-booking-@schedule.ScheduleId">
+                            <time><strong>@schedule.StartsAtUtc.ToVietnamTime().ToString("dd")</strong><span>Th@(((int)schedule.StartsAtUtc.ToVietnamTime().DayOfWeek + 1))</span></time>
+                            <div><strong>@schedule.CampaignTitle</strong><small>@schedule.BrandName · @schedule.StartsAtUtc.ToVietnamTime().ToString("HH:mm")</small></div>
+                            <a asp-page="/Koc/Bookings" asp-fragment="booking-@schedule.ScheduleId">@ScheduleStatus(schedule.Status) <i class="fa-solid fa-arrow-right"></i></a>
+                        </article>
+                    }
+                    </div>
+                }
+            </section>
+        </div>
+
+        <aside class="koc-dashboard-side">
+            <section class="koc-dashboard-card koc-profile-health">
+                <header><div><span class="koc-card-heading-icon is-profile"><i class="fa-solid fa-user-shield"></i></span><div><h2>Hồ sơ & uy tín</h2><p>Nền tảng để Brand tin tưởng lựa chọn bạn.</p></div></div></header>
+                <div class="koc-profile-health-score">
+                    <span><strong>@Model.Data.ProfileScore.ToString("0.#")</strong><small>điểm hồ sơ</small></span>
+                    <div><b>@profileStatus</b><small>@Model.Data.Followers.ToString("N0", PortalFormat.Vietnamese) follower đã đồng bộ</small></div>
+                </div>
+                <a asp-page="/Koc/Profile" class="btn btn-outline-primary btn-sm w-100"><i class="fa-regular fa-address-card me-1"></i>Xem hồ sơ công khai</a>
+            </section>
+
+            <section class="koc-dashboard-card">
+                <header><div><span class="koc-card-heading-icon is-notice"><i class="fa-regular fa-bell"></i></span><div><h2>Thông báo mới</h2><p>Cập nhật gần nhất liên quan đến tài khoản.</p></div></div></header>
+                @if (Model.Data.RecentNotifications.Count == 0)
+                {
+                    <div class="koc-dashboard-empty is-compact"><span><i class="fa-regular fa-bell-slash"></i></span><div><strong>Chưa có thông báo</strong><p>Các cập nhật mới sẽ xuất hiện tại đây.</p></div></div>
+                }
+                else
+                {
+                    <div class="koc-notification-list">
+                    @foreach (var notice in Model.Data.RecentNotifications)
+                    {
+                        <a href="@(string.IsNullOrWhiteSpace(notice.TargetUrl) ? "/Koc/Notifications" : notice.TargetUrl)" class="@(!notice.IsRead ? "is-unread" : "")">
+                            <span></span><div><strong>@notice.Title</strong><small>@notice.Body</small><time>@notice.CreatedAtUtc.ToVietnamTime().ToString("dd/MM HH:mm")</time></div>
+                        </a>
+                    }
+                    </div>
+                }
+                <a asp-page="/Koc/Notifications" class="koc-card-footer-link">Xem tất cả thông báo <i class="fa-solid fa-arrow-right"></i></a>
+            </section>
+
+            <section class="koc-quick-actions">
+                <h2>Truy cập nhanh</h2>
+                <div>
+                    <a asp-page="/Koc/EditProfile"><i class="fa-solid fa-user-pen"></i><span>Cập nhật hồ sơ</span></a>
+                    <a asp-page="/Koc/Wallet"><i class="fa-solid fa-money-bill-transfer"></i><span>Rút thu nhập</span></a>
+                    <a asp-page="/Koc/Reviews"><i class="fa-solid fa-star"></i><span>Đánh giá Brand</span></a>
+                    <a asp-page="/Koc/Disputes"><i class="fa-solid fa-scale-balanced"></i><span>Hỗ trợ tranh chấp</span></a>
+                </div>
+            </section>
+        </aside>
+    </div>
 </div>

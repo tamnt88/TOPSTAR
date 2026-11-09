@@ -8,7 +8,12 @@
     var isBrand = Model.ActiveTab == "brand";
 }
 
-<div class="login-page">
+@section Styles {
+    <link rel="stylesheet" href="~/css/public/register-theme.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/public/auth-polish.css" asp-append-version="true" />
+}
+
+<div class="login-page register-page-theme">
     <section class="login-section section-flow reveal-up py-5">
         <div class="container">
             <div class="row justify-content-center">
@@ -19,18 +24,18 @@
                                 <div class="login-aside-content">
                                     <p class="login-eyebrow"><i class="fa-solid fa-star"></i> TopStar Platform</p>
                                     <h1>Đăng ký<br><span>tài khoản</span></h1>
-                                    <p>Tạo tài khoản để vào dashboard ngay. Hệ thống sẽ nhắc hoàn thiện hồ sơ đầy đủ sau khi đăng nhập.</p>
+                                    <p>Tạo tài khoản nhanh để vào dashboard. Thông tin chuyên môn, liên hệ và pháp lý sẽ được bổ sung trong hồ sơ.</p>
                                     <ul>
-                                        <li><i class="fa-solid fa-circle-check"></i> Đăng ký dành cho KOC và Brand</li>
+                                        <li><i class="fa-solid fa-circle-check"></i> Chỉ nhập thông tin tạo tài khoản</li>
                                         <li><i class="fa-solid fa-circle-check"></i> Hỗ trợ đăng ký bằng Google/Facebook</li>
-                                        <li><i class="fa-solid fa-circle-check"></i> Bổ sung hồ sơ chi tiết trong dashboard</li>
+                                        <li><i class="fa-solid fa-circle-check"></i> Hoàn thiện hồ sơ sau khi đăng nhập</li>
                                     </ul>
                                 </div>
                             </div>
                             <div class="col-lg-7 login-main">
                                 <div class="login-main-content">
                                     <h2>Tạo tài khoản TopStar</h2>
-                                    <p class="text-muted mb-4">Chọn tab phù hợp để đăng ký.</p>
+                                    <p class="text-muted mb-4">Chọn loại tài khoản và nhập thông tin cơ bản.</p>
 
                                     @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
                                     {
@@ -45,6 +50,8 @@
                                     @if (isKoc)
                                     {
                                         <form method="post" asp-page-handler="QuickKoc" class="register-quick-form">
+                                            <input type="hidden" asp-for="FormStartedAt" />
+                                            <div class="register-honeypot" aria-hidden="true"><label asp-for="Website">Website</label><input asp-for="Website" tabindex="-1" autocomplete="off" /></div>
                                             <div class="mb-3">
                                                 <label asp-for="KocInput.FullName" class="form-label"></label>
                                                 <input asp-for="KocInput.FullName" class="form-control" placeholder="Nguyễn Văn A" />
@@ -56,28 +63,6 @@
                                                 <span asp-validation-for="KocInput.Email" class="text-danger"></span>
                                             </div>
                                             <div class="mb-3">
-                                                <label asp-for="KocInput.Phone" class="form-label"></label>
-                                                <input asp-for="KocInput.Phone" class="form-control" placeholder="09xxxxxxxx" />
-                                                <span asp-validation-for="KocInput.Phone" class="text-danger"></span>
-                                            </div>
-                                            <div class="row g-3">
-                                                <div class="col-md-6">
-                                                    <label asp-for="KocInput.Gender" class="form-label"></label>
-                                                    <select asp-for="KocInput.Gender" class="form-select">
-                                                        <option value="">-- Chọn giới tính --</option>
-                                                        <option value="Male">Nam</option>
-                                                        <option value="Female">Nữ</option>
-                                                        <option value="Other">Khác</option>
-                                                    </select>
-                                                    <span asp-validation-for="KocInput.Gender" class="text-danger"></span>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label asp-for="KocInput.BirthDate" class="form-label"></label>
-                                                    <input asp-for="KocInput.BirthDate" type="date" class="form-control" />
-                                                    <span asp-validation-for="KocInput.BirthDate" class="text-danger"></span>
-                                                </div>
-                                            </div>
-                                            <div class="mb-3 mt-3">
                                                 <label asp-for="KocInput.Password" class="form-label"></label>
                                                 <input asp-for="KocInput.Password" type="password" class="form-control" placeholder="Tối thiểu 8 ký tự" />
                                                 <span asp-validation-for="KocInput.Password" class="text-danger"></span>
@@ -85,10 +70,10 @@
                                             <button type="submit" class="btn login-submit-btn w-100"><i class="fa-solid fa-user-plus me-2"></i>Đăng ký KOC</button>
                                         </form>
 
-                                        <div class="social-auth-block mt-3">
+                                        @if (Model.GoogleRegistrationEnabled || Model.FacebookRegistrationEnabled) { <div class="social-auth-block mt-3">
                                             <p class="social-auth-title">Hoặc đăng ký với</p>
                                             <div class="social-auth-grid">
-                                                <form method="post" asp-page="/Public/Login" asp-page-handler="External" class="m-0">
+                                                @if (Model.FacebookRegistrationEnabled) { <form method="post" asp-page="/Public/Login" asp-page-handler="External" class="m-0">
                                                     <input type="hidden" name="provider" value="Facebook" />
                                                     <input type="hidden" name="mode" value="register" />
                                                     <input type="hidden" name="role" value="Koc" />
@@ -96,8 +81,8 @@
                                                         <img src="~/images/icon/facebook.png" alt="Facebook" />
                                                         <span>Facebook</span>
                                                     </button>
-                                                </form>
-                                                <form method="post" asp-page="/Public/Login" asp-page-handler="External" class="m-0">
+                                                </form> }
+                                                @if (Model.GoogleRegistrationEnabled) { <form method="post" asp-page="/Public/Login" asp-page-handler="External" class="m-0">
                                                     <input type="hidden" name="provider" value="Google" />
                                                     <input type="hidden" name="mode" value="register" />
                                                     <input type="hidden" name="role" value="Koc" />
@@ -105,13 +90,15 @@
                                                         <img src="~/images/icon/google.png" alt="Google" />
                                                         <span>Google</span>
                                                     </button>
-                                                </form>
+                                                </form> }
                                             </div>
-                                        </div>
+                                        </div> }
                                     }
                                     else
                                     {
                                         <form method="post" asp-page-handler="QuickBrand" class="register-quick-form">
+                                            <input type="hidden" asp-for="FormStartedAt" />
+                                            <div class="register-honeypot" aria-hidden="true"><label asp-for="Website">Website</label><input asp-for="Website" tabindex="-1" autocomplete="off" /></div>
                                             <div class="mb-3">
                                                 <label asp-for="BrandInput.FullName" class="form-label"></label>
                                                 <input asp-for="BrandInput.FullName" class="form-control" placeholder="Người đại diện" />
@@ -128,32 +115,6 @@
                                                 <span asp-validation-for="BrandInput.Email" class="text-danger"></span>
                                             </div>
                                             <div class="mb-3">
-                                                <label asp-for="BrandInput.Phone" class="form-label"></label>
-                                                <input asp-for="BrandInput.Phone" class="form-control" placeholder="Số điện thoại liên hệ" />
-                                                <span asp-validation-for="BrandInput.Phone" class="text-danger"></span>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label asp-for="BrandInput.StreetAddress" class="form-label"></label>
-                                                <input asp-for="BrandInput.StreetAddress" class="form-control" placeholder="Số nhà + tên đường" />
-                                                <span asp-validation-for="BrandInput.StreetAddress" class="text-danger"></span>
-                                            </div>
-                                            <div class="row g-3">
-                                                <div class="col-md-6">
-                                                    <label asp-for="BrandInput.ProvinceId" class="form-label"></label>
-                                                    <select asp-for="BrandInput.ProvinceId" asp-items="Model.ProvinceOptions" class="form-select" id="brand-province">
-                                                        <option value="">Chọn Tỉnh/Thành phố</option>
-                                                    </select>
-                                                    <span asp-validation-for="BrandInput.ProvinceId" class="text-danger"></span>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label asp-for="BrandInput.WardId" class="form-label"></label>
-                                                    <select asp-for="BrandInput.WardId" asp-items="Model.WardOptions" class="form-select" id="brand-ward">
-                                                        <option value="">Chọn Phường/Xã</option>
-                                                    </select>
-                                                    <span asp-validation-for="BrandInput.WardId" class="text-danger"></span>
-                                                </div>
-                                            </div>
-                                            <div class="mb-3 mt-3">
                                                 <label asp-for="BrandInput.Password" class="form-label"></label>
                                                 <input asp-for="BrandInput.Password" type="password" class="form-control" placeholder="Tối thiểu 8 ký tự" />
                                                 <span asp-validation-for="BrandInput.Password" class="text-danger"></span>
@@ -161,10 +122,10 @@
                                             <button type="submit" class="btn login-submit-btn w-100"><i class="fa-solid fa-building-circle-check me-2"></i>Đăng ký Brand</button>
                                         </form>
 
-                                        <div class="social-auth-block mt-3">
+                                        @if (Model.GoogleRegistrationEnabled || Model.FacebookRegistrationEnabled) { <div class="social-auth-block mt-3">
                                             <p class="social-auth-title">Hoặc đăng ký với</p>
                                             <div class="social-auth-grid">
-                                                <form method="post" asp-page="/Public/Login" asp-page-handler="External" class="m-0">
+                                                @if (Model.FacebookRegistrationEnabled) { <form method="post" asp-page="/Public/Login" asp-page-handler="External" class="m-0">
                                                     <input type="hidden" name="provider" value="Facebook" />
                                                     <input type="hidden" name="mode" value="register" />
                                                     <input type="hidden" name="role" value="Brand" />
@@ -172,8 +133,8 @@
                                                         <img src="~/images/icon/facebook.png" alt="Facebook" />
                                                         <span>Facebook</span>
                                                     </button>
-                                                </form>
-                                                <form method="post" asp-page="/Public/Login" asp-page-handler="External" class="m-0">
+                                                </form> }
+                                                @if (Model.GoogleRegistrationEnabled) { <form method="post" asp-page="/Public/Login" asp-page-handler="External" class="m-0">
                                                     <input type="hidden" name="provider" value="Google" />
                                                     <input type="hidden" name="mode" value="register" />
                                                     <input type="hidden" name="role" value="Brand" />
@@ -181,9 +142,9 @@
                                                         <img src="~/images/icon/google.png" alt="Google" />
                                                         <span>Google</span>
                                                     </button>
-                                                </form>
+                                                </form> }
                                             </div>
-                                        </div>
+                                        </div> }
                                     }
 
                                     <div class="text-center mt-4">
@@ -201,36 +162,4 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        (function () {
-            var $province = $("#brand-province");
-            var $ward = $("#brand-ward");
-            if (!$province.length || !$ward.length) return;
-
-            function reloadWardOptions(items) {
-                var current = $ward.val();
-                $ward.empty().append($("<option/>", { value: "", text: "Chọn Phường/Xã" }));
-                $.each(items || [], function (_, ward) {
-                    $ward.append($("<option/>", { value: ward.id, text: ward.name }));
-                });
-
-                if (current && $ward.find('option[value="' + current + '"]').length > 0) {
-                    $ward.val(current);
-                } else {
-                    $ward.val("");
-                }
-            }
-
-            $province.on("change", function () {
-                var provinceId = ($province.val() || "").trim();
-                reloadWardOptions([]);
-                if (!provinceId) return;
-
-                $.get(window.location.pathname + "?handler=WardsByProvince", { provinceId: provinceId })
-                    .done(function (res) {
-                        reloadWardOptions((res && res.data) ? res.data : []);
-                    });
-            });
-        })();
-    </script>
 }

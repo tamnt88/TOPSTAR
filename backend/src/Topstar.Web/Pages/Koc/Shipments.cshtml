@@ -1,0 +1,44 @@
+@page
+@model Topstar.Web.Pages.Koc.ShipmentsModel
+@using Topstar.Application.Shipments
+@{
+    Layout = "_KocLayout";
+    ViewData["Title"] = "Sản phẩm chiến dịch";
+    var inTransit = Model.Window.Counts.GetValueOrDefault(ShipmentStatuses.InTransit);
+    var delivered = Model.Window.Counts.GetValueOrDefault(ShipmentStatuses.Delivered);
+    var issues = (Model.Window.Counts.GetValueOrDefault(ShipmentStatuses.Issue)+Model.Window.Counts.GetValueOrDefault(ShipmentStatuses.Returned));
+    var waiting = Model.Window.Counts.GetValueOrDefault(ShipmentStatuses.Created);
+}
+<main class="shipment-page">
+    @if (!string.IsNullOrWhiteSpace(Model.Message)) { <div data-koc-flash data-type="@(Model.MessageSuccess ? "success" : "error")" data-message="@Model.Message" hidden></div> }
+    <header class="shipment-heading">
+        <div><div class="shipment-eyebrow"><i class="fa-solid fa-box-open"></i> QUẢN LÝ SẢN PHẨM</div><h1>Sản phẩm từ chiến dịch</h1><p>Theo dõi hành trình, xác nhận nhận hàng và lưu bằng chứng giao nhận tại một nơi.</p></div>
+        <a asp-page="/Koc/Tasks" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-list-check"></i> Xem đầu việc</a>
+    </header>
+    <section class="shipment-stats" aria-label="Tổng quan vận đơn">
+        <article><span class="stat-icon is-blue"><i class="fa-solid fa-truck-fast"></i></span><div><small>Đang giao</small><strong>@inTransit</strong><p>Cần theo dõi hành trình</p></div></article>
+        <article><span class="stat-icon is-amber"><i class="fa-regular fa-clock"></i></span><div><small>Chờ Brand gửi</small><strong>@waiting</strong><p>Đã chốt thông tin nhận</p></div></article>
+        <article><span class="stat-icon is-green"><i class="fa-solid fa-circle-check"></i></span><div><small>Đã nhận</small><strong>@delivered</strong><p>Hoàn tất giao nhận</p></div></article>
+        <article><span class="stat-icon is-red"><i class="fa-solid fa-triangle-exclamation"></i></span><div><small>Ngoại lệ giao nhận</small><strong>@issues</strong><p>Sự cố hoặc đơn đã hoàn hàng</p></div></article>
+    </section>
+    <section class="shipment-panel">
+        <div class="shipment-list-heading"><div><h2><i class="fa-solid fa-boxes-stacked"></i> Danh sách sản phẩm</h2><p>Mở từng dòng để xem hành trình, ảnh và thao tác giao nhận.</p></div><span><i class="fa-solid fa-shield-halved"></i> Địa chỉ được lưu theo thời điểm tạo đơn</span></div>
+        <partial name="_ListWindow" model='new Topstar.Web.Features.Common.Paging.ListWindowViewModel("kocShipmentTable", Model.Window, ShowReset: false)' />
+        <script id="kocShipmentRows" type="application/json">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Items, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web)))</script>
+        <div class="shipment-table-wrap">
+            <table data-list-rows="kocShipmentRows" id="kocShipmentTable" class="table shipment-table" data-ajax-url="@Url.Page("/Koc/Shipments", "Data")">
+                <thead><tr><th>STT</th><th>Chiến dịch</th><th>Vận chuyển</th><th>Cập nhật gần nhất</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </section>
+
+    <div class="modal fade shipment-modal" id="deliveredShipmentModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><form method="post" asp-page-handler="Delivered" enctype="multipart/form-data" class="shipment-validate-form" novalidate><div class="modal-header"><h2><i class="fa-solid fa-box-open"></i> Xác nhận đã nhận hàng</h2><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="hidden" name="id"/><p>Bạn xác nhận đã nhận sản phẩm của chiến dịch <strong data-shipment-campaign></strong>.</p><div class="shipment-form-field"><label class="form-label" for="sharedReceiptFile">Ảnh sản phẩm đã nhận</label><input id="sharedReceiptFile" type="file" name="receiptFile" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="form-control" data-required-file><div class="invalid-feedback"><i class="fa-regular fa-circle-exclamation"></i> Vui lòng chọn ảnh JPG, PNG hoặc WEBP không quá 5 MB.</div></div><div class="shipment-form-field mt-3"><label class="form-label" for="sharedReceiptNote">Ghi chú nhận hàng</label><textarea id="sharedReceiptNote" name="receiptNote" class="form-control" rows="3" maxlength="500" data-minlength="10" placeholder="Mô tả tình trạng kiện hàng và sản phẩm khi nhận"></textarea><div class="invalid-feedback"><i class="fa-regular fa-circle-exclamation"></i> Vui lòng nhập ghi chú từ 10 đến 500 ký tự.</div></div><div class="shipment-confirm-note mt-3"><i class="fa-solid fa-circle-info"></i> Ảnh, ghi chú và trạng thái được lưu cùng một lần xác nhận vào lịch sử.</div></div><div class="modal-footer"><button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Hủy</button><button class="btn btn-success btn-sm"><i class="fa-solid fa-check"></i> Xác nhận đã nhận</button></div></form></div></div></div>
+    <div class="modal fade shipment-modal" id="issueShipmentModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><form method="post" asp-page-handler="Issue" class="shipment-validate-form" novalidate><div class="modal-header"><h2><i class="fa-solid fa-triangle-exclamation"></i> Báo sự cố giao hàng</h2><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="hidden" name="id"/><p class="mb-3">Chiến dịch: <strong data-shipment-campaign></strong></p><label class="form-label" for="sharedIssueNote">Mô tả sự cố</label><textarea id="sharedIssueNote" name="issueNote" class="form-control" maxlength="1000" rows="4" placeholder="Mô tả hàng thất lạc, hư hỏng hoặc sai sản phẩm" data-minlength="10"></textarea><div class="invalid-feedback"><i class="fa-regular fa-circle-exclamation"></i> Vui lòng mô tả sự cố từ 10 đến 1.000 ký tự.</div><p class="form-text">Thông tin được gửi đến Brand và lưu trong lịch sử xử lý.</p></div><div class="modal-footer"><button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Hủy</button><button class="btn btn-danger btn-sm"><i class="fa-solid fa-paper-plane"></i> Gửi sự cố</button></div></form></div></div></div>
+    <div class="modal fade shipment-modal" id="evidenceShipmentModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><form method="post" asp-page-handler="Evidence" enctype="multipart/form-data" class="shipment-validate-form" novalidate><div class="modal-header"><h2><i class="fa-solid fa-camera"></i> Thêm ảnh giao nhận</h2><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="hidden" name="id"/><p class="mb-3">Chiến dịch: <strong data-shipment-campaign></strong></p><label class="form-label" for="sharedEvidenceFile">Ảnh bằng chứng</label><input id="sharedEvidenceFile" type="file" name="evidenceFile" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="form-control" data-required-file><div class="invalid-feedback">Vui lòng chọn ảnh JPG, PNG hoặc WEBP không quá 5 MB.</div><label class="form-label mt-3" for="sharedEvidenceCaption">Ghi chú ảnh</label><textarea id="sharedEvidenceCaption" name="caption" maxlength="500" class="form-control" rows="3" placeholder="Mô tả tình trạng sản phẩm hoặc sự cố"></textarea><p class="form-text">Ảnh được lưu theo lịch sử, không ghi đè chứng từ cũ.</p></div><div class="modal-footer"><button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Hủy</button><button class="btn btn-primary btn-sm"><i class="fa-solid fa-cloud-arrow-up"></i> Tải ảnh lên</button></div></form></div></div></div>
+</main>
+@section Scripts {
+    <script src="~/lib/datatables/js/dataTables.min.js" asp-append-version="true"></script>
+    <script src="~/lib/datatables/js/dataTables.bootstrap5.min.js" asp-append-version="true"></script>
+    <script src="~/js/koc/shipments.js" asp-append-version="true"></script>
+}

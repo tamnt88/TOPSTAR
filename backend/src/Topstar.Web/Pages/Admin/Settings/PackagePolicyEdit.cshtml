@@ -1,0 +1,13 @@
+@page "{id:guid}"
+@model Topstar.Web.Pages.Admin.Settings.PackagePolicyEditModel
+@{ ViewData["Title"]="Sửa gói KOC"; ViewData["AdminHeaderTitle"]="Sửa gói KOC"; ViewData["Editing"]=true; ViewData["UseCkEditor"]=true; }
+<div class="package-editor-page">
+    <header class="package-editor-heading"><div><span class="admin-page-eyebrow"><i class="fa-solid fa-boxes-stacked"></i> CẤU HÌNH GÓI KOC</span><h1 class="section-title mb-1">Sửa gói KOC</h1><p class="text-muted mb-0">Cấu hình ngân sách, số KOC và cách tuyển cho chiến dịch.</p></div><a asp-page="./PackagePolicies" class="btn btn-outline-secondary package-back-button"><i class="fa-solid fa-arrow-left"></i> Danh sách gói</a></header>
+    <form method="post" enctype="multipart/form-data" class="card-x package-editor-card" novalidate>
+        <partial name="_PackagePolicyForm" for="Input" view-data="ViewData" />
+        <div class="package-editor-actions"><a asp-page="./PackagePolicies" class="btn btn-light"><i class="fa-solid fa-xmark me-1"></i>Hủy</a><button class="btn btn-primary"><i class="fa-solid fa-floppy-disk me-1"></i>Lưu</button></div>
+    </form>
+    @if(Model.History.Count>0){<section class="card-x mt-4 package-history-card"><h2><i class="fa-solid fa-clock-rotate-left me-2"></i>Lịch sử thay đổi</h2>@foreach(var h in Model.History){<article><div><strong>Ngân sách tham khảo: @((h.ReferenceBudget ?? 0).ToString("N0", PortalFormat.Vietnamese)) ₫</strong><span class="badge @(h.IsActive?"text-bg-success":"text-bg-secondary") ms-2">@(h.IsActive?"Đang áp dụng":"Tạm dừng")</span></div><p>@h.Description</p><p><strong>Ngân sách campaign:</strong> @h.MinBudgetAmount.ToString("N0", PortalFormat.Vietnamese) ₫ – @(h.MaxBudgetAmount?.ToString("N0", PortalFormat.Vietnamese) ?? "Không giới hạn")</p><p><strong>Lý do:</strong> @h.Reason</p><time>@h.CreatedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm")</time></article>}</section>}
+</div>
+<partial name="_ValidationScriptsPartial" />
+@section Scripts { <script src="~/lib/ckeditor5/ckeditor5.umd.js"></script><script src="~/lib/ckeditor5/translations/vi.umd.js"></script><script src="~/js/admin/package-policy-form.js" asp-append-version="true"></script> }

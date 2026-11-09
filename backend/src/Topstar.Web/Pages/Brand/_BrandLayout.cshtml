@@ -1,10 +1,22 @@
 ﻿@using System.Security.Claims
 @using Topstar.Application.Dashboard
-@using Topstar.Application.Navigation
+@using Microsoft.EntityFrameworkCore
+@inject Topstar.Infrastructure.Persistence.TopstarDbContext HeaderDbContext
+@using Topstar.Application.Profiles
 @using Topstar.Application.Website
+@using Topstar.Application.Notifications
 @inject IDashboardDataService DashboardDataService
-@inject INavigationService NavigationService
+@inject IProfileAccessService ProfileAccessService
 @inject IWebsiteContentService WebsiteContentService
+@inject INotificationInboxService NotificationInboxService
+@if (Context.Request.Headers["X-Topstar-Workspace"] == "native")
+{
+    <div data-workspace-assets>@await RenderSectionAsync("Styles", required: false)</div>
+    @RenderBody()
+    <div data-workspace-scripts>@await RenderSectionAsync("Scripts", required: false)</div>
+}
+else
+{
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -23,12 +35,25 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Arimo:ital,wght@0,400..700;1,400..700&family=Saira+Stencil:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/lib/fontawesome/css/all.min.css" />
-    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="/lib/fontawesome/css/all.min.css" />
+    <link rel="stylesheet" href="/css/dashboard.css" />
+    <link rel="stylesheet" href="~/css/brand/brand.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/shared/portal-footer.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/shared/impersonation.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/shared/file-picker.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/shared/notifications.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/select2/select2.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/jquery-ui/jquery-ui.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/shared/form-controls.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/shared/statistics.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
+    <link rel="stylesheet" href="~/css/shared/lists.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/shared/ui-standard.css" asp-append-version="true" />
 </head>
 <body class="dashboard-body dashboard-body-brand">
+    <partial name="/Pages/Shared/_ImpersonationBanner.cshtml" />
     @{
         var websiteBody = await WebsiteContentService.GetWebsiteContentAsync(Context?.RequestAborted ?? default);
         var websiteNameBody = websiteBody?.WebsiteName ?? "TopStar";
@@ -39,6 +64,15 @@
             ?? User?.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value
             ?? "Brand";
 
+        var headerUserIdRaw = User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var headerBrand = Guid.TryParse(headerUserIdRaw, out var headerUserId)
+            ? await HeaderDbContext.BrandProfiles.AsNoTracking()
+                .Where(x => x.UserId == headerUserId)
+                .Select(x => new { x.CompanyName, x.LogoUrl })
+                .FirstOrDefaultAsync(Context?.RequestAborted ?? default)
+            : null;
+        var headerAvatarUrl = headerBrand?.LogoUrl;
+        if (!string.IsNullOrWhiteSpace(headerBrand?.CompanyName)) displayName = headerBrand.CompanyName;
         var parts = displayName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         var initials = parts.Length switch
         {
@@ -47,142 +81,89 @@
             _ => string.Concat(parts[0][..1], parts[^1][..1]).ToUpperInvariant()
         };
 
-        var menus = await NavigationService.GetMenusByRoleAsync(roleCode, Context?.RequestAborted ?? default);
-        var parents = menus.Where(x => x.ParentId == null).OrderBy(x => x.OrderNo).ThenBy(x => x.Title).ToList();
-
         var isProfileLocked = false;
+        var missingProfileFieldCount = 0;
+        var isProfileComplete = false;
+        var isProfileApproved = false;
+        var unreadBrandNotifications = 0;
         var brandUserIdRaw = User?.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
         if (Guid.TryParse(brandUserIdRaw, out var brandUserId))
         {
-            var brandData = await DashboardDataService.GetBrandDashboardAsync(brandUserId, Context?.RequestAborted ?? default);
-            isProfileLocked = brandData.NeedsProfileCompletion;
+            var access = await ProfileAccessService.CheckBrandAsync(brandUserId, Context?.RequestAborted ?? default);
+            isProfileLocked = !access.CanUseFeatures;
+            missingProfileFieldCount = access.MissingFields.Count;
+            isProfileComplete = access.IsComplete;
+            isProfileApproved = access.IsApproved;
+            unreadBrandNotifications = await NotificationInboxService.GetUnreadCountAsync(brandUserId, "BRAND", Context?.RequestAborted ?? default);
         }
     }
 
-    <header class="dashboard-topbar">
-        <div class="dashboard-topbar-inner container">
-            <a class="dashboard-brand dashboard-brand-stack" asp-page="/Brand/Dashboard">
+    <header class="brand-header">
+        <div class="brand-header-inner container">
+            <a class="brand-logo" asp-page="/Brand/Dashboard" aria-label="Về tổng quan Brand">
                 <img src="@logoPathBody" alt="@websiteNameBody" />
-                <small>Brand Dashboard</small>
             </a>
-            <div class="dashboard-user-actions">
-                <div class="admin-user-chip"><span>@initials</span> @displayName</div>
-                <a asp-page="/Public/Logout" class="dashboard-logout"><i class="fa-solid fa-right-from-bracket"></i> Đăng xuất</a>
+            <button class="brand-nav-mobile" type="button" aria-label="Mở menu" aria-expanded="false">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <nav class="brand-nav" aria-label="Điều hướng Brand">
+                <a class="brand-nav-link @(path.StartsWith("/brand/dashboard") ? "active" : "")" asp-page="/Brand/Dashboard"><i class="fa-solid fa-chart-pie"></i><span>Tổng quan</span></a>
+                <a class="brand-nav-link @(path.StartsWith("/brand/profile") || path.StartsWith("/brand/editprofile") ? "active" : "")" asp-page="/Brand/Profile"><i class="fa-solid fa-building-user"></i><span>Hồ sơ Brand</span></a>
+                <a class="brand-nav-link @(((path.StartsWith("/brand/campaign") && !path.StartsWith("/brand/campaignfunding")) || path.StartsWith("/brand/shortlist") || path.StartsWith("/brand/booking") || path.StartsWith("/brand/shipment") || path.StartsWith("/brand/deliverable") || path.StartsWith("/brand/report") || path.StartsWith("/brand/review") || path.StartsWith("/brand/collaboration")) ? "active" : "")" asp-page="/Brand/Campaigns"><i class="fa-solid fa-bullhorn"></i><span>Chiến dịch</span></a>
+                <a class="brand-nav-link @(path.StartsWith("/brand/campaignfunding") ? "active" : "")" asp-page="/Brand/CampaignFunding"><i class="fa-solid fa-shield-halved"></i><span>Thanh toán</span></a>
+                <div class="brand-nav-group @(path.StartsWith("/brand/billing") || path.StartsWith("/brand/balance") ? "active" : "")">
+                    <button class="brand-nav-link brand-nav-toggle" type="button" aria-expanded="false" aria-controls="brandFinanceMenu"><i class="fa-solid fa-wallet"></i><span>Tài chính <small aria-hidden="true">▾</small></span></button>
+                    <div class="brand-nav-menu" id="brandFinanceMenu">
+                        <a asp-page="/Brand/Billing" class="@(path.StartsWith("/brand/billing") ? "active" : null)" aria-current="@(path.StartsWith("/brand/billing") ? "page" : null)"><i class="fa-solid fa-file-invoice-dollar"></i><span><strong>Tài chính và hóa đơn</strong><small>Gói đã mua, phí dịch vụ và chứng từ</small></span></a>
+                        <a asp-page="/Brand/Balance" class="@(path.StartsWith("/brand/balance") ? "active" : null)" aria-current="@(path.StartsWith("/brand/balance") ? "page" : null)"><i class="fa-solid fa-money-bill-transfer"></i><span><strong>Số dư</strong><small>Số dư khả dụng và yêu cầu rút tiền</small></span></a>
+                    </div>
+                </div>
+                <a class="brand-nav-link @(path.StartsWith("/brand/dispute") ? "active" : "")" asp-page="/Brand/Disputes"><i class="fa-solid fa-headset"></i><span>Hỗ trợ</span></a>
+            </nav>
+            <a asp-page="/Brand/Notifications" class="brand-notification-bell" aria-label="Thông báo, @unreadBrandNotifications chưa đọc"><i class="fa-regular fa-bell"></i>@if(unreadBrandNotifications>0){<b>@(unreadBrandNotifications>99?"99+":unreadBrandNotifications)</b>}</a>
+            <div class="dropdown brand-account-dropdown">
+                <button class="brand-account-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <span class="brand-avatar brand-header-avatar">@if (!string.IsNullOrWhiteSpace(headerAvatarUrl)) { <img src="@headerAvatarUrl" alt="Ảnh đại diện @displayName" /> } else { @initials }</span>
+                    <strong>@displayName</strong>
+                    <i class="fa-solid fa-chevron-down"></i>
+                </button>
+                <div class="dropdown-menu dropdown-menu-end brand-account-menu">
+                    <div class="brand-account-summary">
+                        <span class="brand-header-avatar">@if (!string.IsNullOrWhiteSpace(headerAvatarUrl)) { <img src="@headerAvatarUrl" alt="Ảnh đại diện @displayName" /> } else { @initials }</span>
+                        <div><strong>@displayName</strong><small>Tài khoản Brand</small></div>
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#brandChangePasswordModal">
+                        <i class="fa-solid fa-key"></i>Đổi mật khẩu
+                    </button>
+                    <div class="dropdown-divider"></div>
+                    <a asp-page="/Public/Logout" class="dropdown-item brand-account-logout"><i class="fa-solid fa-right-from-bracket"></i>Đăng xuất</a>
+                </div>
             </div>
         </div>
     </header>
 
-    <nav class="dashboard-subnav">
-        <div class="container dashboard-subnav-inner admin-dashboard-tabs admin-tabs-dynamic">
-            @foreach (var parent in parents)
-            {
-                var children = menus.Where(x => x.ParentId == parent.Id).OrderBy(x => x.OrderNo).ThenBy(x => x.Title).ToList();
-                var parentPath = parent.Path?.ToLowerInvariant() ?? string.Empty;
-                var parentIsProfile = parentPath.StartsWith("/brand/profile", StringComparison.OrdinalIgnoreCase)
-                    || parentPath.StartsWith("/brand/editprofile", StringComparison.OrdinalIgnoreCase);
-                var parentDisabled = isProfileLocked && !parentIsProfile;
-
-                var isParentActive = !string.IsNullOrWhiteSpace(parent.Path) &&
-                                     path.StartsWith(parent.Path.ToLowerInvariant(), StringComparison.OrdinalIgnoreCase);
-                var isChildActive = children.Any(c => !string.IsNullOrWhiteSpace(c.Path) &&
-                                                      path.StartsWith(c.Path!.ToLowerInvariant(), StringComparison.OrdinalIgnoreCase));
-                var isActive = isParentActive || isChildActive;
-
-                if (children.Count == 0)
-                {
-                    if (string.IsNullOrWhiteSpace(parent.Path) || parentDisabled)
-                    {
-                        <span class="admin-tab-link @(isActive ? "active" : string.Empty) @(parentDisabled ? "disabled" : string.Empty)">
-                            @if (!string.IsNullOrWhiteSpace(parent.Icon))
-                            {
-                                <i class="@parent.Icon"></i>
-                            }
-                            @parent.Title
-                        </span>
-                    }
-                    else
-                    {
-                        <a class="admin-tab-link @(isActive ? "active" : string.Empty)" href="@parent.Path">
-                            @if (!string.IsNullOrWhiteSpace(parent.Icon))
-                            {
-                                <i class="@parent.Icon"></i>
-                            }
-                            @parent.Title
-                        </a>
-                    }
-                }
-                else
-                {
-                    <div class="admin-tab-dropdown">
-                        <button type="button"
-                                class="admin-tab-link admin-tab-toggle @(isActive ? "active" : string.Empty) @(parentDisabled ? "disabled" : string.Empty)"
-                                aria-expanded="false"
-                                disabled="@parentDisabled">
-                            @if (!string.IsNullOrWhiteSpace(parent.Icon))
-                            {
-                                <i class="@parent.Icon"></i>
-                            }
-                            @parent.Title
-                            <i class="fa-solid fa-chevron-down admin-tab-caret"></i>
-                        </button>
-                        <ul class="admin-tab-menu">
-                            @foreach (var child in children)
-                            {
-                                if (string.IsNullOrWhiteSpace(child.Path))
-                                {
-                                    <li>
-                                        <span class="admin-tab-item">
-                                            @if (!string.IsNullOrWhiteSpace(child.Icon))
-                                            {
-                                                <i class="@child.Icon"></i>
-                                            }
-                                            @child.Title
-                                        </span>
-                                    </li>
-                                }
-                                else
-                                {
-                                    var childPath = child.Path!.ToLowerInvariant();
-                                    var childIsProfile = childPath.StartsWith("/brand/profile", StringComparison.OrdinalIgnoreCase)
-                                        || childPath.StartsWith("/brand/editprofile", StringComparison.OrdinalIgnoreCase);
-                                    var childDisabled = isProfileLocked && !childIsProfile;
-                                    var childActive = path.StartsWith(child.Path.ToLowerInvariant(), StringComparison.OrdinalIgnoreCase);
-                                    <li>
-                                        @if (childDisabled)
-                                        {
-                                            <span class="admin-tab-item disabled @(childActive ? "active" : string.Empty)">
-                                                @if (!string.IsNullOrWhiteSpace(child.Icon))
-                                                {
-                                                    <i class="@child.Icon"></i>
-                                                }
-                                                @child.Title
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <a class="admin-tab-item @(childActive ? "active" : string.Empty)" href="@child.Path">
-                                                @if (!string.IsNullOrWhiteSpace(child.Icon))
-                                                {
-                                                    <i class="@child.Icon"></i>
-                                                }
-                                                @child.Title
-                                            </a>
-                                        }
-                                    </li>
-                                }
-                            }
-                        </ul>
-                    </div>
-                }
-            }
-        </div>
-    </nav>
-
-    @if (isProfileLocked)
+    @if (isProfileLocked && !path.StartsWith("/brand/editprofile"))
     {
-        <div class="container mt-3">
-            <div class="alert alert-warning mb-0">
-                Hồ sơ Brand chưa đầy đủ pháp lý/thuế. Vui lòng cập nhật hồ sơ trước khi sử dụng các chức năng khác.
+        <div class="container brand-profile-alert-wrap">
+            <div class="brand-profile-alert">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                @if (!isProfileComplete)
+                {
+                    <div>
+                        <strong>Hồ sơ Brand còn thiếu @missingProfileFieldCount mục</strong>
+                        <span>Mở checklist để biết chính xác thông tin nào cần bổ sung và cập nhật đúng ô.</span>
+                    </div>
+                    <a asp-page="/Brand/EditProfile">Xem checklist <i class="fa-solid fa-arrow-right"></i></a>
+                }
+                else if (!isProfileApproved)
+                {
+                    <div>
+                        <strong>Hồ sơ Brand đang chờ duyệt</strong>
+                        <span>Thông tin bắt buộc đã đầy đủ. Bạn có thể xem lại hồ sơ và theo dõi trạng thái duyệt.</span>
+                    </div>
+                    <a asp-page="/Brand/EditProfile">Xem trạng thái <i class="fa-solid fa-arrow-right"></i></a>
+                }
             </div>
         </div>
     }
@@ -193,9 +174,66 @@
         </div>
     </main>
 
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/dashboard.js" asp-append-version="true"></script>
+    <partial name="_PortalFooter" model='"Brand"' />
+
+    <nav class="brand-mobile-bottom-nav" aria-label="Truy cập nhanh Brand trên điện thoại">
+        <a asp-page="/Brand/Dashboard" asp-fragment="brand-action-inbox" class="@(path.StartsWith("/brand/dashboard") ? "active" : null)"><i class="fa-solid fa-list-check"></i><span>Việc cần làm</span></a>
+        <a asp-page="/Brand/Campaigns" class="@(((path.StartsWith("/brand/campaign") && !path.StartsWith("/brand/campaignfunding")) || path.StartsWith("/brand/shortlist") || path.StartsWith("/brand/booking") || path.StartsWith("/brand/shipment") || path.StartsWith("/brand/deliverable")) ? "active" : null)"><i class="fa-solid fa-bullhorn"></i><span>Chiến dịch</span></a>
+        <a asp-page="/Brand/Billing" class="@(path.StartsWith("/brand/billing") || path.StartsWith("/brand/balance") || path.StartsWith("/brand/package") || path.StartsWith("/brand/campaignfunding") ? "active" : null)"><i class="fa-solid fa-wallet"></i><span>Tài chính</span></a>
+        <a asp-page="/Brand/Profile" class="@(path.StartsWith("/brand/profile") || path.StartsWith("/brand/editprofile") ? "active" : null)"><i class="fa-solid fa-building-user"></i><span>Hồ sơ</span></a>
+    </nav>
+
+    <div class="modal fade brand-security-modal" id="brandChangePasswordModal" tabindex="-1"
+         data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="brandChangePasswordModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form id="brandChangePasswordForm" method="post" action="/Brand/AccountSecurity?handler=ChangePassword" novalidate>
+                    @Html.AntiForgeryToken()
+                    <div class="modal-header">
+                        <div class="brand-modal-heading">
+                            <span><i class="fa-solid fa-shield-halved"></i></span>
+                            <div><h2 class="modal-title" id="brandChangePasswordModalTitle">Đổi mật khẩu</h2><p>Cập nhật mật khẩu bảo vệ tài khoản Brand.</p></div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="brand-password-field">
+                            <label for="brandCurrentPassword">Mật khẩu hiện tại <span>*</span></label>
+                            <div class="brand-password-input"><i class="fa-solid fa-lock"></i><input id="brandCurrentPassword" name="currentPassword" type="password" autocomplete="current-password" /><button type="button" data-password-toggle aria-label="Hiện mật khẩu"><i class="fa-regular fa-eye"></i></button></div>
+                            <div class="brand-field-error" data-error-for="currentPassword"></div>
+                        </div>
+                        <div class="brand-password-field">
+                            <label for="brandNewPassword">Mật khẩu mới <span>*</span></label>
+                            <div class="brand-password-input"><i class="fa-solid fa-key"></i><input id="brandNewPassword" name="newPassword" type="password" autocomplete="new-password" /><button type="button" data-password-toggle aria-label="Hiện mật khẩu"><i class="fa-regular fa-eye"></i></button></div>
+                            <small>Tối thiểu 8 ký tự, gồm chữ hoa, chữ thường và chữ số.</small>
+                            <div class="brand-field-error" data-error-for="newPassword"></div>
+                        </div>
+                        <div class="brand-password-field">
+                            <label for="brandConfirmPassword">Xác nhận mật khẩu mới <span>*</span></label>
+                            <div class="brand-password-input"><i class="fa-solid fa-check"></i><input id="brandConfirmPassword" name="confirmPassword" type="password" autocomplete="new-password" /><button type="button" data-password-toggle aria-label="Hiện mật khẩu"><i class="fa-regular fa-eye"></i></button></div>
+                            <div class="brand-field-error" data-error-for="confirmPassword"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Hủy</button>
+                        <button type="submit" class="btn brand-btn-primary"><i class="fa-solid fa-shield-halved"></i> Cập nhật mật khẩu</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/select2/select2.min.js" asp-append-version="true"></script>
+    <script src="~/lib/jquery-ui/jquery-ui.min.js" asp-append-version="true"></script>
+    <script src="~/js/shared/form-controls.js" asp-append-version="true"></script>
+    <script src="~/js/shared/notifications.js" asp-append-version="true"></script>
+    <script src="/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/dashboard.js"></script>
+    <script src="~/js/brand/brand.js" asp-append-version="true"></script>
+    <script src="~/js/shared/file-picker.js" asp-append-version="true"></script>
+    <script src="~/js/shared/lists.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+}

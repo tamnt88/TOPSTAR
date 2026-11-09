@@ -1,0 +1,237 @@
+﻿@page
+@model Topstar.Web.Pages.Brand.PackageCheckoutModel
+@{
+    ViewData["Title"] = Model.Purchase is null ? "Xác nhận mua gói" : "Hướng dẫn thanh toán";
+}
+
+<div class="brand-checkout-page">
+    <header class="brand-page-heading brand-checkout-heading">
+        <div>
+            <span class="brand-page-eyebrow"><i class="fa-solid fa-shield-halved"></i> THANH TOÁN AN TOÀN</span>
+            <h1>@(Model.Purchase is null ? "Xác nhận mua gói" : "Hoàn tất thanh toán")</h1>
+            <p>@(Model.Purchase is null ? "Kiểm tra thông tin trước khi tạo đơn mua gói." : "Đơn đã được ghi nhận và đang chờ Topstar đối soát.")</p>
+        </div>
+        <div class="brand-page-actions"><a asp-page="/Brand/Packages" class="btn btn-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Quay lại danh sách gói</a></div>
+    </header>
+
+    @if (Model.Purchase is null)
+    {
+        <form method="post" class="brand-checkout-layout" id="brandCheckoutForm" data-native-navigation novalidate>
+            <input type="hidden" name="Input.ExpectedTotal" value="@Model.CheckoutTotal.ToString("0",System.Globalization.CultureInfo.InvariantCulture)"/>
+            <input asp-for="PackageId" type="hidden" />
+            <input asp-for="Input.Operation" type="hidden" />
+            <section class="brand-checkout-main">
+                <div asp-validation-summary="ModelOnly" class="brand-validation-summary"></div>
+                <article class="brand-campaign-card">
+                    <h2><i class="fa-solid fa-box-open"></i> Gói đã chọn</h2>
+                    <div class="brand-checkout-package">
+                        <div><h3>@PackagesModel.DisplayPackageName(Model.Package!)</h3><p>@Model.Package!.Description</p></div>
+                        <strong>@Model.CheckoutTotal.ToString("N0", PortalFormat.Vietnamese) ₫</strong>
+                    </div>
+                    <div class="brand-checkout-detail"><span>Thời hạn sử dụng</span><strong>@(Model.Package.ValidityDays.HasValue ? $"{Model.Package.ValidityDays} ngày kể từ khi xác nhận thanh toán" : "Không giới hạn")</strong></div>
+                    <div class="brand-checkout-detail"><span>Hình thức và giới hạn KOC</span><strong>@(Model.Package.BrandSelectionEnabled ? $"Doanh nghiệp chủ động chọn tối đa {Model.Package.SelectionQuota} KOC" : $"Topstar tuyển chọn và phân công tối đa {Model.Package.SelectionQuota} KOC")</strong></div>
+                </article>
+                <article class="brand-campaign-card">
+                    <h2><i class="fa-solid fa-money-check-dollar"></i> Phương thức thanh toán</h2>
+                    <div class="brand-payment-options brand-payment-options-premium">
+                                                <div class="brand-payment-choice brand-balance-choice">
+                            <label class="brand-payment-method"><input asp-for="Input.PaymentMethod" type="radio" value="BrandBalance" disabled="@(Model.AvailableBalance<Model.CheckoutTotal)"/><i class="fa-solid fa-wallet"></i><div><strong>Thanh toán bằng số dư</strong><span>Trừ tiền từ số dư và kích hoạt gói ngay sau khi xác nhận.</span></div><i class="fa-solid fa-circle-check payment-check"></i></label>
+                            <div class="brand-balance-breakdown">
+                                <div><span>Số dư khả dụng</span><strong>@PortalFormat.Money(Model.AvailableBalance)</strong></div>
+                                <div><span>Thanh toán gói</span><strong>@PortalFormat.Money(Model.CheckoutTotal)</strong></div>
+                                @if(Model.AvailableBalance>=Model.CheckoutTotal){<div class="is-remaining"><span>Số dư sau thanh toán</span><strong>@PortalFormat.Money(Model.AvailableBalance-Model.CheckoutTotal)</strong></div>}
+                                else{<div class="is-insufficient"><span>Còn thiếu</span><strong>@PortalFormat.Money(Model.CheckoutTotal-Model.AvailableBalance)</strong></div>}
+                            </div>
+                            @if(Model.AvailableBalance<Model.CheckoutTotal){<p class="brand-balance-insufficient"><i class="fa-solid fa-circle-info"></i> Số dư chưa đủ. Vui lòng chọn chuyển khoản hoặc thanh toán online.</p>}
+                        </div>
+                        @if (Model.PaymentConfig.BankTransferEnabled)
+                        {
+                            <div class="brand-payment-choice">
+                                <label class="brand-payment-method">
+                                    <input asp-for="Input.PaymentMethod" type="radio" value="BankTransfer" />
+                                    <i class="fa-solid fa-building-columns"></i>
+                                    <div><strong>Chuyển khoản ngân hàng</strong><span>Chuyển khoản theo thông tin của Topstar và lưu chứng từ để đối soát.</span></div>
+                                    <i class="fa-solid fa-circle-check payment-check"></i>
+                                </label>
+                                <div class="brand-bank-account">
+                                    <div><span>Ngân hàng</span><strong>@(string.IsNullOrWhiteSpace(Model.PaymentConfig.BankName) ? "Chưa cấu hình" : Model.PaymentConfig.BankName)</strong></div>
+                                    <div><span>Số tài khoản</span><strong class="brand-bank-number">@(string.IsNullOrWhiteSpace(Model.PaymentConfig.BankAccountNumber) ? "Chưa cấu hình" : Model.PaymentConfig.BankAccountNumber)</strong></div>
+                                    <div><span>Chủ tài khoản</span><strong>@(string.IsNullOrWhiteSpace(Model.PaymentConfig.BankAccountHolder) ? "Chưa cấu hình" : Model.PaymentConfig.BankAccountHolder)</strong></div>
+                                    <small><i class="fa-solid fa-circle-info"></i> Nội dung chuyển khoản sẽ được tạo riêng sau khi xác nhận đơn.</small>
+                                </div>
+                            </div>
+                        }
+                        @if (Model.PaymentConfig.VnPayEnabled)
+                        {
+                            <label class="brand-payment-method"><input asp-for="Input.PaymentMethod" type="radio" value="VnPay"/><i class="fa-solid fa-credit-card"></i><div><strong>Thanh toán online</strong><span>Thanh toán nhanh chóng, an toàn và xác nhận tự động.</span></div><i class="fa-solid fa-circle-check payment-check"></i></label>
+                        }
+                        @if (Model.PaymentConfig.OnePayEnabled && !Model.PaymentConfig.VnPayEnabled)
+                        {
+                            <div class="brand-payment-choice">
+                                <label class="brand-payment-method brand-payment-onepay">
+                                    <input asp-for="Input.PaymentMethod" type="radio" value="OnePay" />
+                                    <i class="fa-solid fa-credit-card"></i>
+                                    <div><strong>Thanh toán online</strong><span>Được bảo mật và xử lý trên cổng thanh toán.</span></div>
+                                    <i class="fa-solid fa-circle-check payment-check"></i>
+                                </label>
+                                <div class="brand-onepay-channels">
+                                    @if(Model.PaymentConfig.OnePayDomesticEnabled){<label><input asp-for="Input.OnePayChannel" type="radio" value="DOMESTIC"/><span><i class="fa-solid fa-building-columns"></i><b>Thẻ nội địa</b><small>ATM / Internet Banking</small></span></label>}
+                                    @if(Model.PaymentConfig.OnePayInternationalEnabled){<label><input asp-for="Input.OnePayChannel" type="radio" value="INTERNATIONAL"/><span><i class="fa-regular fa-credit-card"></i><b>Thẻ quốc tế</b><small>Visa / Mastercard / JCB</small></span></label>}
+                                    @if(Model.PaymentConfig.OnePayEWalletEnabled){<label><input asp-for="Input.OnePayChannel" type="radio" value="EWALLET"/><span><i class="fa-solid fa-wallet"></i><b>Ví điện tử</b><small>Thanh toán qua ví hỗ trợ</small></span></label>}
+                                </div>
+                                <div class="brand-onepay-trust"><i class="fa-solid fa-shield-halved"></i> Topstar không lưu thông tin thẻ của doanh nghiệp.</div>
+                            </div>
+                        }
+                    </div>
+                    <span asp-validation-for="Input.PaymentMethod" class="text-danger small"></span>
+                    <span asp-validation-for="Input.OnePayChannel" class="text-danger small"></span>
+                </article>
+            </section>
+            <aside class="brand-checkout-summary">
+                <h2>Tóm tắt thanh toán</h2>
+                <div><span>Giá gói</span><strong>@Model.Package.SalePrice.ToString("N0", PortalFormat.Vietnamese) ₫</strong></div>
+                @if(Model.Purchase is { VatMode: not "None" } paidTax){<div><span>Thuế GTGT @paidTax.VatRate% @(paidTax.VatMode=="Included"?"(đã gồm)":"")</span><strong>@PortalFormat.Money(paidTax.VatAmount)</strong></div>}
+                else if(Model.Purchase is null && Model.TaxQuote is { Mode: not "None" } tax){<div><span>Thuế GTGT @tax.Rate% @(tax.Mode=="Included"?"(đã gồm)":"")</span><strong>@PortalFormat.Money(tax.Vat)</strong></div>}
+                <div class="brand-checkout-total"><span>Tổng thanh toán</span><strong>@Model.CheckoutTotal.ToString("N0", PortalFormat.Vietnamese) ₫</strong></div>
+                <label class="brand-checkout-terms"><input asp-for="Input.AcceptedTerms" aria-describedby="acceptedTermsError" /> <span>Tôi xác nhận thông tin gói và đồng ý với điều khoản sử dụng dịch vụ.</span></label>
+                <span asp-validation-for="Input.AcceptedTerms" id="acceptedTermsError" class="text-danger small brand-checkout-terms-error"></span>
+                <button class="btn brand-btn-primary w-100" type="submit"><i class="fa-solid fa-lock"></i> Tạo đơn mua gói</button>
+                <p class="brand-checkout-safe"><i class="fa-solid fa-shield-halved"></i> Gói được kích hoạt sau khi Topstar xác nhận thanh toán thành công.</p>
+            </aside>
+        </form>
+    }
+    else
+    {
+        <div class="brand-payment-result">
+            <section class="brand-campaign-card">
+                @if(TempData["PackagePaymentMessage"] is string paymentMessage){<div class="brand-shortlist-message"><i class="fa-solid fa-circle-info"></i><span>@paymentMessage</span></div>}
+                <div class="brand-payment-success"><i class="fa-solid fa-circle-check"></i><div><h2>Đã tạo yêu cầu mua gói</h2><p>Đây chưa phải trạng thái đã thanh toán.</p></div></div>
+                <div class="brand-payment-method-summary">
+                    <span><i class="fa-solid @(Model.Purchase.PaymentMethod == "BankTransfer" ? "fa-building-columns" : "fa-credit-card")"></i></span>
+                    <div><small>Phương thức thanh toán</small><strong>@(Model.Purchase.PaymentMethod == "BankTransfer" ? "Chuyển khoản ngân hàng" : "Thanh toán online")</strong></div>
+                    <a asp-page="/Brand/Billing" asp-fragment="service-fees"><i class="fa-solid fa-circle-info"></i> Xem chi tiết đơn</a>
+                </div>
+                @if (Model.Purchase.PaymentMethod == "BankTransfer")
+                {
+                    <div class="brand-payment-reference"><span>Nội dung chuyển khoản</span><strong>@Model.Purchase.OrderNumber</strong><small>Vui lòng ghi chính xác nội dung này để Topstar đối soát.</small></div>
+                    <div class="brand-pending-payment-account">
+                        <header><span><i class="fa-solid fa-building-columns"></i></span><div><h3>Thanh toán bằng chuyển khoản</h3><p>Chuyển đúng số tiền và nội dung để đơn được xác nhận nhanh chóng.</p></div></header>
+                        <div><span>Ngân hàng</span><strong>@(string.IsNullOrWhiteSpace(Model.PaymentConfig.BankName) ? "Chưa cấu hình" : Model.PaymentConfig.BankName)</strong></div>
+                        <div><span>Số tài khoản</span><strong class="brand-bank-number">@(string.IsNullOrWhiteSpace(Model.PaymentConfig.BankAccountNumber) ? "Chưa cấu hình" : Model.PaymentConfig.BankAccountNumber)</strong></div>
+                        <div><span>Chủ tài khoản</span><strong>@(string.IsNullOrWhiteSpace(Model.PaymentConfig.BankAccountHolder) ? "Chưa cấu hình" : Model.PaymentConfig.BankAccountHolder)</strong></div>
+                        <div><span>Số tiền</span><strong class="brand-pending-payment-amount">@Model.Purchase.Amount.ToString("N0", PortalFormat.Vietnamese) ₫</strong></div>
+                        <div><span>Nội dung</span><strong>@Model.Purchase.OrderNumber</strong></div>
+                    </div>
+                }
+                @if (Model.Purchase.Status == Topstar.Application.Matching.BrandPackagePurchaseStatuses.Pending && Model.Purchase.PaymentMethod == "BankTransfer")
+                {
+                    <section class="brand-payment-proof">
+                        <div class="brand-payment-proof-head"><span><i class="fa-solid fa-receipt"></i></span><div><h3>Chứng từ chuyển khoản</h3><p>Gửi ảnh giao dịch để Topstar kiểm tra và đối soát đơn mua gói.</p></div>@if(!string.IsNullOrWhiteSpace(Model.Purchase.PaymentProofUrl)){<em><i class="fa-solid fa-circle-check"></i> Đã gửi</em>}</div>
+                        @if(!string.IsNullOrWhiteSpace(Model.Purchase.PaymentProofUrl)){<div class="brand-payment-proof-existing"><a href="@Model.Purchase.PaymentProofUrl" target="_blank" rel="noopener"><img src="@Model.Purchase.PaymentProofUrl" alt="Chứng từ chuyển khoản"><span><i class="fa-solid fa-up-right-from-square"></i> Xem chứng từ</span></a><div><strong>Đã gửi lúc @Model.Purchase.PaymentProofSubmittedAtUtc?.ToVietnamTime().ToString("dd/MM/yyyy HH:mm")</strong><p>@Model.Purchase.PaymentProofNote</p><small>Có thể gửi lại nếu ảnh hiện tại chưa rõ.</small></div></div>}
+                        <form method="post" asp-page-handler="PaymentProof" enctype="multipart/form-data" class="brand-package-proof-form js-package-payment-proof-form" novalidate>
+                            <input asp-for="PackageId" type="hidden"><input asp-for="PurchaseId" type="hidden">
+                            <div class="brand-payment-proof-file">
+                                <label for="packageProofFile">Ảnh giao dịch <em>*</em></label>
+                                <input id="packageProofFile" type="file" name="proofFile" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required>
+                                <span><span class="brand-proof-upload-icon"><i class="fa-solid fa-cloud-arrow-up"></i></span><span class="brand-proof-file-copy"><b>Chọn ảnh chứng từ</b><small>JPG, PNG hoặc WEBP · tối đa 5 MB</small></span><img class="brand-proof-preview" alt="Ảnh chứng từ đã chọn"></span>
+                                <div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Vui lòng chọn ảnh JPG, PNG hoặc WEBP không quá 5 MB.</div>
+                            </div>
+                            <div class="brand-validation-field brand-payment-proof-note">
+                                <label for="packageProofNote">Thông tin chuyển khoản <em>*</em></label>
+                                <textarea id="packageProofNote" name="proofNote" minlength="10" maxlength="500" rows="3" placeholder="Ví dụ: Chuyển lúc 10:30 ngày 15/09/2026 từ tài khoản NGUYEN VAN A" required></textarea>
+                                <i class="fa-solid fa-circle-exclamation brand-field-error-icon"></i><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Vui lòng nhập từ 10 đến 500 ký tự.</div>
+                            </div>
+                            <button class="btn brand-btn-primary brand-payment-proof-submit"><i class="fa-solid fa-paper-plane"></i> @(!string.IsNullOrWhiteSpace(Model.Purchase.PaymentProofUrl) ? "Gửi lại" : "Gửi chứng từ")</button>
+                        </form>
+                    </section>
+                }
+                @if (Model.Purchase.PaymentMethod == "BankTransfer")
+                {
+                    <div class="brand-payment-process-head"><div><i class="fa-solid fa-list-check"></i><span><strong>Quy trình xác nhận thanh toán</strong><small>Hoàn thành ba bước để gói được kích hoạt.</small></span></div></div>
+                    <ol class="brand-payment-steps">
+                        <li><span>1</span><div><strong>Kiểm tra thông tin thanh toán</strong><p>Đối chiếu số tài khoản, số tiền và mã đơn hiển thị phía trên.</p></div></li>
+                        <li><span>2</span><div><strong>Chuyển khoản và gửi chứng từ</strong><p>Ghi đúng nội dung chuyển khoản, sau đó tải ảnh giao dịch lên để Topstar đối soát.</p></div></li>
+                        <li><span>3</span><div><strong>Chờ xác nhận</strong><p>Sau khi đối soát, gói chuyển sang “Đã thanh toán” và Brand có thể bắt đầu chiến dịch.</p></div></li>
+                    </ol>
+                }
+                else if(Model.Purchase.PaymentMethod=="VnPay")
+                {
+                    <form method="post" asp-page-handler="VnPay" data-native-navigation>
+                        <input type="hidden" name="PackageId" value="@Model.PackageId"/><input type="hidden" name="PurchaseId" value="@Model.PurchaseId"/>
+                        <button type="submit" class="btn brand-btn-primary"><i class="fa-solid fa-credit-card"></i> Thanh toán online</button>
+                    </form>
+                }
+                else
+                {
+                    <div class="brand-shortlist-message"><i class="fa-solid fa-circle-info"></i><span>Đơn đã ghi nhận phương thức thanh toán online. Vui lòng theo dõi trạng thái tại trang Tài chính hoặc liên hệ Topstar nếu giao dịch chưa được cập nhật.</span></div>
+                }
+                <div class="brand-payment-result-actions"><a asp-page="/Brand/Packages" class="btn brand-btn-primary btn-sm"><i class="fa-solid fa-box"></i> Theo dõi đơn</a><a asp-page="/Brand/Billing" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-wallet"></i> Tài chính</a></div>
+            </section>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const form = document.getElementById('brandCheckoutForm');
+            const terms = document.getElementById('Input_AcceptedTerms');
+            const error = document.getElementById('acceptedTermsError');
+            if (!form || !terms || !error) return;
+            const setTermsError = message => {
+                error.textContent = message;
+                error.hidden = !message;
+                terms.closest('.brand-checkout-terms')?.classList.toggle('has-error', Boolean(message));
+                error.classList.toggle('field-validation-error', Boolean(message));
+                error.classList.toggle('field-validation-valid', !message);
+                terms.classList.toggle('input-validation-error', Boolean(message));
+                if (message) terms.setAttribute('aria-invalid', 'true'); else terms.removeAttribute('aria-invalid');
+            };
+            terms.addEventListener('change', () => {
+                setTermsError(terms.checked ? '' : 'Vui lòng xác nhận thông tin và điều khoản mua gói.');
+            });
+            form.addEventListener('submit', event => {
+                if (terms.checked) return;
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                setTermsError('Vui lòng xác nhận thông tin và điều khoản mua gói.');
+                terms.focus();
+            }, true);
+        })();
+        (() => {
+            const form = document.querySelector('.js-package-payment-proof-form');
+            if (!form) return;
+            const file = form.querySelector('[name="proofFile"]');
+            const note = form.querySelector('[name="proofNote"]');
+            const fileBox = form.querySelector('.brand-payment-proof-file');
+            const fileName = fileBox?.querySelector('.brand-proof-file-copy b');
+            const preview = fileBox?.querySelector('.brand-proof-preview');
+            let previewUrl;
+            file?.addEventListener('change', () => {
+                if (previewUrl) URL.revokeObjectURL(previewUrl);
+                const selected = file.files?.[0];
+                fileBox?.classList.remove('is-invalid', 'has-file');
+                if (fileName) fileName.textContent = selected?.name || 'Chọn ảnh chứng từ';
+                if (selected && preview) {
+                    previewUrl = URL.createObjectURL(selected);
+                    preview.src = previewUrl;
+                    fileBox?.classList.add('has-file');
+                }
+            });
+            note?.addEventListener('input', () => note.classList.remove('is-invalid'));
+            form.addEventListener('submit', event => {
+                const selected = file?.files?.[0];
+                const validFile = !!selected && selected.size <= 5 * 1024 * 1024 && /\.(jpe?g|png|webp)$/i.test(selected.name);
+                const validNote = !!note && note.value.trim().length >= 10 && note.value.trim().length <= 500;
+                fileBox?.classList.toggle('is-invalid', !validFile);
+                note?.classList.toggle('is-invalid', !validNote);
+                if (!validFile || !validNote) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    (!validFile ? file : note)?.focus();
+                }
+            });
+        })();
+    </script>
+}

@@ -1,0 +1,97 @@
+.ts-file-picker {
+    --ts-file-accent: var(--bs-primary, #6f35d5);
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-height: 48px;
+    overflow: hidden;
+    border: 1px solid #d8ddea;
+    border-radius: 10px;
+    background: #fff;
+    color: #182038;
+    transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+.ts-file-picker:hover,
+.ts-file-picker:focus-within,
+.ts-file-picker.is-dragging {
+    border-color: var(--ts-file-accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ts-file-accent) 13%, transparent);
+}
+
+.ts-file-picker.is-dragging { background: color-mix(in srgb, var(--ts-file-accent) 5%, #fff); }
+.ts-file-picker.is-invalid { border-color: #dc3545; }
+.ts-file-picker.is-disabled { opacity: .65; cursor: not-allowed; }
+
+.ts-file-picker__input {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+.ts-file-picker__summary {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 9px 14px;
+}
+
+.ts-file-picker__icon {
+    flex: 0 0 30px;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--ts-file-accent) 11%, #fff);
+    color: var(--ts-file-accent);
+}
+
+.ts-file-picker__copy { min-width: 0; display: grid; gap: 1px; }
+.ts-file-picker__name {
+    overflow: hidden;
+    color: #59647a;
+    font-size: .88rem;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.ts-file-picker__meta { color: #8a94a8; font-size: .74rem; line-height: 1.2; }
+.ts-file-picker.has-file .ts-file-picker__name { color: #17213a; }
+
+.ts-file-picker__button {
+    align-self: stretch;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-width: 126px;
+    padding: 0 16px;
+    border: 0;
+    border-left: 1px solid #e2e6ef;
+    background: #f7f8fc;
+    color: var(--ts-file-accent);
+    font-size: .84rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .18s ease, color .18s ease;
+}
+.ts-file-picker__button:hover { background: var(--ts-file-accent); color: #fff; }
+.ts-file-picker__button:focus-visible { outline: 3px solid color-mix(in srgb, var(--ts-file-accent) 25%, transparent); outline-offset: -3px; }
+
+.admin-portal .ts-file-picker { --ts-file-accent: #6d32d1; }
+.dashboard-body-brand .ts-file-picker { --ts-file-accent: #108c84; }
+.dashboard-body-koc .ts-file-picker { --ts-file-accent: #d73683; }
+
+@media (max-width: 575.98px) {
+    .ts-file-picker { grid-template-columns: minmax(0, 1fr); }
+    .ts-file-picker__button { min-height: 42px; border-top: 1px solid #e2e6ef; border-left: 0; }
+}
+

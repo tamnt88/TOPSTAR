@@ -9,12 +9,16 @@ public sealed class BrandProfileEntity
     public string ContactPhone { get; set; } = string.Empty;
     public string? Industry { get; set; }
     public string? Website { get; set; }
+    public string? LogoUrl { get; set; }
     public string? StreetAddress { get; set; }
     public Guid? WardId { get; set; }
     public Guid? ProvinceId { get; set; }
     public string? TaxCompanyName { get; set; }
     public string? TaxCode { get; set; }
     public string? TaxInvoiceAddress { get; set; }
+    public string? RefundBankName { get; set; }
+    public string? RefundAccountNumber { get; set; }
+    public string? RefundAccountHolder { get; set; }
     public string? BusinessLicenseFileUrl { get; set; }
     public string? AddressV2 { get; set; }
     public string? WardCodeV2 { get; set; }
@@ -29,11 +33,22 @@ public sealed class BrandProfileEntity
     public UserEntity User { get; set; } = null!;
 }
 
+public sealed class BrandProfileStatusHistoryEntity
+{
+    public Guid Id { get; set; }
+    public Guid BrandProfileId { get; set; }
+    public string? FromStatus { get; set; }
+    public string ToStatus { get; set; } = string.Empty;
+    public string? ReviewNote { get; set; }
+    public DateTime CreatedAtUtc { get; set; }
+}
+
 public sealed class KocProfileEntity
 {
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
     public string DisplayName { get; set; } = string.Empty;
+    public string? AvatarUrl { get; set; }
     public string? Gender { get; set; }
     public string? Region { get; set; }
     public string? StreetAddress { get; set; }
@@ -52,6 +67,16 @@ public sealed class KocProfileEntity
     public DateTime? UpdatedAtUtc { get; set; }
 
     public UserEntity User { get; set; } = null!;
+}
+
+public sealed class KocProfileStatusHistoryEntity
+{
+    public Guid Id { get; set; }
+    public Guid KocProfileId { get; set; }
+    public string? FromStatus { get; set; }
+    public string ToStatus { get; set; } = string.Empty;
+    public string? ReviewNote { get; set; }
+    public DateTime CreatedAtUtc { get; set; }
 }
 
 public sealed class KocBodyProfileEntity
@@ -104,13 +129,35 @@ public sealed class KocCategoryEntity
     public Guid Id { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
+    public int SortOrder { get; set; }
+    public bool IsActive { get; set; } = true;
     public DateTime CreatedAtUtc { get; set; }
     public DateTime? UpdatedAtUtc { get; set; }
+}
+
+public sealed class KocCategoryHistoryEntity
+{
+    public long Id { get; set; }
+    public Guid? KocCategoryId { get; set; }
+    public string ActionName { get; set; } = string.Empty;
+    public string PreviousJson { get; set; } = string.Empty;
+    public string CurrentJson { get; set; } = string.Empty;
+    public string Reason { get; set; } = string.Empty;
+    public Guid ActorUserId { get; set; }
+    public DateTime CreatedAtUtc { get; set; }
 }
 
 public sealed class KocProfileCategoryEntity
 {
     public Guid KocProfileId { get; set; }
+    public Guid CategoryId { get; set; }
+    public DateTime CreatedAtUtc { get; set; }
+    public DateTime? UpdatedAtUtc { get; set; }
+}
+
+public sealed class KocSocialAccountCategoryEntity
+{
+    public Guid SocialAccountId { get; set; }
     public Guid CategoryId { get; set; }
     public DateTime CreatedAtUtc { get; set; }
     public DateTime? UpdatedAtUtc { get; set; }
@@ -166,6 +213,18 @@ public sealed class KocPortfolioEntity
     public long Shares { get; set; }
     public long ViewCount { get; set; }
     public bool IsVisible { get; set; }
+    public DateTime CreatedAtUtc { get; set; }
+    public DateTime? UpdatedAtUtc { get; set; }
+}
+
+public sealed class KocMediaAssetEntity
+{
+    public Guid Id { get; set; }
+    public Guid KocProfileId { get; set; }
+    public string MediaType { get; set; } = "GalleryImage";
+    public string FileUrl { get; set; } = string.Empty;
+    public int SortOrder { get; set; }
+    public bool IsVisible { get; set; } = true;
     public DateTime CreatedAtUtc { get; set; }
     public DateTime? UpdatedAtUtc { get; set; }
 }

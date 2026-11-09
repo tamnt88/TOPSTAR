@@ -1,0 +1,45 @@
+@page
+@model Topstar.Web.Pages.Brand.BalanceModel
+@{ViewData["Title"]="Số dư";}
+<div class="brand-balance-page">
+<header class="brand-page-heading"><div><span class="brand-page-eyebrow"><i class="fa-solid fa-wallet"></i> TÀI CHÍNH</span><h1>Số dư</h1><p>Quản lý tiền có thể sử dụng, yêu cầu rút tiền và lịch sử giao dịch.</p></div><button class="btn brand-btn-primary" data-bs-toggle="modal" data-bs-target="#withdrawModal" disabled="@(!Model.Ready||!Model.Policy.WithdrawalsEnabled||Model.Balance.Available<Model.Policy.MinimumWithdrawal)"><i class="fa-solid fa-money-bill-transfer"></i> Rút tiền</button></header>
+@if(Model.Message is not null){<div hidden data-ts-notification="@(Model.Success?"success":"error")">@Model.Message</div>}
+@if(!Model.Ready){<p class="alert alert-info">Chức năng số dư đang chờ cập nhật dữ liệu.</p>}else{
+<div class="balance-overview">
+<section class="brand-funding-stats">
+<article><span><i class="fa-solid fa-wallet"></i></span><div><small>Số dư khả dụng</small><strong>@PortalFormat.Money(Model.Balance.Available)</strong><small>Thanh toán chiến dịch hoặc rút tiền</small></div></article>
+<article><span><i class="fa-solid fa-lock"></i></span><div><small>Đang giữ để rút tiền</small><strong>@PortalFormat.Money(Model.Balance.Reserved)</strong><small>Chưa thể sử dụng trong lúc chờ xử lý</small></div></article>
+</section>
+<section class="balance-shortcuts" aria-label="Sử dụng số dư">
+<a asp-page="/Brand/CampaignNeeds"><span><i class="fa-solid fa-bag-shopping"></i></span><div><strong>Tạo chiến dịch</strong><small>Dùng số dư thanh toán ngân sách và chi phí.</small></div><i class="fa-solid fa-chevron-right"></i></a>
+<a asp-page="/Brand/CampaignFunding"><span><i class="fa-solid fa-shield-halved"></i></span><div><strong>Thanh toán chiến dịch</strong><small>Xem các khoản thanh toán và dùng số dư.</small></div><i class="fa-solid fa-chevron-right"></i></a>
+</section>
+ </div>
+<div class="balance-records">
+<nav class="ts-tabs nav balance-tabs" role="tablist"><button class="active" type="button" data-balance-view="requests" role="tab" aria-selected="true"><i class="fa-solid fa-money-bill-transfer"></i> Yêu cầu rút tiền</button><button type="button" data-balance-view="history" role="tab" aria-selected="false"><i class="fa-solid fa-clock-rotate-left"></i> Lịch sử giao dịch</button></nav>
+@foreach(var tab in new[]{("requests","Yêu cầu rút tiền"),("history","Lịch sử giao dịch")}){
+<section data-balance-section="@tab.Item1" hidden="@(tab.Item1!="requests")">
+<div class="balance-section-heading"><h2>@tab.Item2</h2><p>@(tab.Item1=="requests"?"Theo dõi tiến độ xử lý tiền rút về ngân hàng.":"Các khoản cộng, trừ và số dư sau từng giao dịch.")</p></div>
+<form class="balance-filter" data-balance-filter="@tab.Item1" novalidate><div class="balance-keyword"><label for="@(tab.Item1)Keyword">Từ khóa</label><input id="@(tab.Item1)Keyword" class="form-control" placeholder="@(tab.Item1=="requests"?"Ngân hàng hoặc mã giao dịch":"Tìm theo nội dung giao dịch")"/></div>
+@if(tab.Item1=="requests"){<div><label for="requestsStatus">Trạng thái</label><select id="requestsStatus" class="form-select"><option value="">Tất cả trạng thái</option><option value="Pending">Chờ duyệt</option><option value="Approved">Chờ chuyển tiền</option><option value="Paid">Đã chuyển tiền</option><option value="Rejected">Đã từ chối</option><option value="Cancelled">Đã hủy</option></select></div>}
+<div><label for="@(tab.Item1)PageLength">Hiển thị</label><select id="@(tab.Item1)PageLength" class="form-select"><option value="20">20 dòng</option></select></div><button class="btn brand-btn-primary"><i class="fa-solid fa-filter"></i> Lọc</button></form>
+<div class="table-responsive"><table id="@(tab.Item1)Table" class="table brand-data-table w-100" data-list-actions="false"><thead><tr>
+@if(tab.Item1=="requests"){<th>Ngày yêu cầu</th><th>Số tiền rút</th><th>Thực nhận</th><th>Tài khoản nhận</th><th>Trạng thái</th><th>Thao tác</th>}else{<th>Thời gian</th><th>Nội dung</th><th>Biến động</th><th>Số dư khả dụng</th><th>Đang giữ</th>}
+</tr></thead><tbody></tbody></table></div></section>}
+</div>
+<p class="balance-footnote"><i class="fa-solid fa-circle-info"></i> Tiền ký quỹ cho chiến dịch được theo dõi riêng, không tính vào số dư khả dụng trên trang này.</p>
+<div class="modal fade" id="withdrawModal" tabindex="-1" aria-labelledby="withdrawTitle" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+<form method="post" asp-page-handler="Withdraw" id="brandWithdrawForm" novalidate data-available="@Model.Balance.Available.ToString("0",System.Globalization.CultureInfo.InvariantCulture)" data-minimum="@Model.Policy.MinimumWithdrawal.ToString("0",System.Globalization.CultureInfo.InvariantCulture)" data-fee="@Model.Policy.WithdrawalFee.ToString("0",System.Globalization.CultureInfo.InvariantCulture)">
+<div class="modal-header"><h2 class="modal-title fs-5" id="withdrawTitle"><i class="fa-solid fa-money-bill-transfer"></i> Rút tiền về ngân hàng</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div>
+<div class="modal-body"><div class="withdraw-available"><span>Số dư có thể rút</span><strong>@PortalFormat.Money(Model.Balance.Available)</strong></div><input type="hidden" name="operation" value="@Guid.NewGuid()"/>
+<label class="form-label" for="withdrawAmount">Số tiền rút (đ)</label><input id="withdrawAmount" name="amount" class="form-control text-end" inputmode="numeric" placeholder="Nhập số tiền muốn rút" aria-describedby="withdrawAmountError"/><div id="withdrawAmountError" class="invalid-feedback"></div>
+<small class="text-muted">Tối thiểu @PortalFormat.Money(Model.Policy.MinimumWithdrawal). Phí được trừ từ số tiền rút.</small>
+<dl class="withdraw-summary"><div><dt>Phí rút tiền</dt><dd>@PortalFormat.Money(Model.Policy.WithdrawalFee)</dd></div><div><dt>Tiền về tài khoản</dt><dd id="withdrawNet">0 đ</dd></div><div><dt>Số dư còn lại</dt><dd id="withdrawRemaining">@PortalFormat.Money(Model.Balance.Available)</dd></div></dl>
+<a asp-page="/Brand/Profile" class="withdraw-profile" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-building-columns"></i> Kiểm tra tài khoản nhận tiền trong hồ sơ <i class="fa-solid fa-arrow-up-right-from-square"></i></a><p class="small text-muted mt-3 mb-0">Dự kiến xử lý trong @Model.Policy.ProcessingDays ngày. Khi tạo yêu cầu, tiền sẽ được giữ riêng cho đến khi chuyển thành công hoặc yêu cầu được hủy.</p></div>
+<div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Đóng</button><button class="btn brand-btn-primary"><i class="fa-solid fa-check"></i> Tạo yêu cầu rút tiền</button></div></form>
+</div></div></div>
+<form method="post" asp-page-handler="Cancel" id="cancelWithdrawalForm" hidden><input name="id"/><button></button></form>
+}
+</div>
+@section Styles{<link rel="stylesheet" href="~/css/brand/balance.css" asp-append-version="true"/>}
+@section Scripts{<script src="~/lib/datatables/js/dataTables.min.js"></script><script src="~/lib/datatables/js/dataTables.bootstrap5.min.js"></script><script src="~/js/brand/balance.js" asp-append-version="true"></script>}

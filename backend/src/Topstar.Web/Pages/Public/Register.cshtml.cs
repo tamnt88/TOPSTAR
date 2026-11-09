@@ -1,18 +1,22 @@
 using System.ComponentModel.DataAnnotations;
-using System.Globalization;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.RateLimiting;
 using Topstar.Application;
-using Topstar.Application.KocRegistration;
+using Topstar.Application.SystemSettings;
+using Topstar.Web.Services.Email;
 
 namespace Topstar.Web.Pages.Public;
 
 [AllowAnonymous]
-public sealed class RegisterModel(IAuthService authService, IKocRegistrationService kocRegistrationService) : AuthPageBase
+[EnableRateLimiting("registration")]
+public sealed class RegisterModel(
+    IAuthService authService,
+    ISystemSettingsAdminService systemSettings,
+    IAccountActivationService accountActivationService,
+    IEmailSender emailSender,
+    IEmailTemplateRenderer emailTemplateRenderer,
+    IConfiguration configuration) : AuthPageBase
 {
     [BindProperty]
     public QuickKocInput KocInput { get; set; } = new();
@@ -22,8 +26,10 @@ public sealed class RegisterModel(IAuthService authService, IKocRegistrationServ
 
     public string? ErrorMessage { get; private set; }
     public string ActiveTab { get; private set; } = "koc";
-    public List<SelectListItem> ProvinceOptions { get; private set; } = new();
-    public List<SelectListItem> WardOptions { get; private set; } = new();
+    public bool GoogleRegistrationEnabled { get; private set; }
+    public bool FacebookRegistrationEnabled { get; private set; }
+    [BindProperty] public string? Website { get; set; }
+    [BindProperty] public long FormStartedAt { get; set; }
 
     public sealed class QuickKocInput
     {
@@ -35,18 +41,6 @@ public sealed class RegisterModel(IAuthService authService, IKocRegistrationServ
         [Required(ErrorMessage = "Vui lòng nhập email.")]
         [EmailAddress(ErrorMessage = "Email không hợp lệ.")]
         public string Email { get; set; } = string.Empty;
-
-        [Display(Name = "Số điện thoại")]
-        [Required(ErrorMessage = "Vui lòng nhập số điện thoại.")]
-        public string Phone { get; set; } = string.Empty;
-
-        [Display(Name = "Giới tính")]
-        [Required(ErrorMessage = "Vui lòng chọn giới tính.")]
-        public string Gender { get; set; } = string.Empty;
-
-        [Display(Name = "Ngày sinh")]
-        [Required(ErrorMessage = "Vui lòng chọn ngày sinh.")]
-        public string BirthDate { get; set; } = string.Empty;
 
         [Display(Name = "Mật khẩu")]
         [Required(ErrorMessage = "Vui lòng nhập mật khẩu.")]
@@ -69,22 +63,6 @@ public sealed class RegisterModel(IAuthService authService, IKocRegistrationServ
         [EmailAddress(ErrorMessage = "Email không hợp lệ.")]
         public string Email { get; set; } = string.Empty;
 
-        [Display(Name = "Số điện thoại liên hệ")]
-        [Required(ErrorMessage = "Vui lòng nhập số điện thoại liên hệ.")]
-        public string Phone { get; set; } = string.Empty;
-
-        [Display(Name = "Số nhà + tên đường")]
-        [Required(ErrorMessage = "Vui lòng nhập số nhà + tên đường.")]
-        public string StreetAddress { get; set; } = string.Empty;
-
-        [Display(Name = "Tỉnh/Thành phố")]
-        [Required(ErrorMessage = "Vui lòng chọn tỉnh/thành phố.")]
-        public Guid? ProvinceId { get; set; }
-
-        [Display(Name = "Phường/Xã")]
-        [Required(ErrorMessage = "Vui lòng chọn phường/xã.")]
-        public Guid? WardId { get; set; }
-
         [Display(Name = "Mật khẩu")]
         [Required(ErrorMessage = "Vui lòng nhập mật khẩu.")]
         [MinLength(8, ErrorMessage = "Mật khẩu tối thiểu 8 ký tự.")]
@@ -94,150 +72,153 @@ public sealed class RegisterModel(IAuthService authService, IKocRegistrationServ
     public async Task OnGetAsync(string? tab = null, CancellationToken cancellationToken = default)
     {
         ActiveTab = NormalizeTab(tab);
-        await LoadLocationOptionsAsync(cancellationToken);
+        FormStartedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        await LoadRegistrationOptionsAsync(cancellationToken);
     }
 
     public async Task<IActionResult> OnPostQuickKocAsync(CancellationToken cancellationToken)
     {
         ActiveTab = "koc";
+        if (IsAutomatedSubmission()) return await RejectAutomatedAsync(cancellationToken);
+        ModelState.Clear();
         if (!TryValidateModel(KocInput, nameof(KocInput)))
         {
-            await LoadLocationOptionsAsync(cancellationToken);
+            await LoadRegistrationOptionsAsync(cancellationToken);
             return Page();
         }
 
-        if (!DateOnly.TryParseExact(KocInput.BirthDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _))
-        {
-            ErrorMessage = "Ngày sinh không hợp lệ.";
-            await LoadLocationOptionsAsync(cancellationToken);
-            return Page();
-        }
-
-        var rs = await authService.RegisterAsync(
+        var result = await authService.RegisterAsync(
             new RegisterRequest(
                 UserRoleType.Koc,
                 KocInput.Email,
-                KocInput.Phone,
-                KocInput.Gender,
+                null,
+                null,
                 KocInput.Password,
                 KocInput.FullName,
                 null,
-                KocInput.Phone,
+                null,
                 BuildDeviceContext()),
             cancellationToken);
 
-        if (!rs.Success || rs.Data is null)
+        if (!result.Success || result.Data is null)
         {
-            ErrorMessage = rs.Message;
-            await LoadLocationOptionsAsync(cancellationToken);
+            ErrorMessage = result.Message;
+            await LoadRegistrationOptionsAsync(cancellationToken);
             return Page();
         }
 
-        await SignInUserAsync(rs.Data);
-        return Redirect("/Koc/Dashboard?completeProfile=1");
+        await SendActivationEmailAsync(result.Data, KocInput.FullName, cancellationToken);
+        return RedirectToPage("/Public/ActivateAccount", new { email = KocInput.Email });
     }
 
     public async Task<IActionResult> OnPostQuickBrandAsync(CancellationToken cancellationToken)
     {
         ActiveTab = "brand";
+        if (IsAutomatedSubmission()) return await RejectAutomatedAsync(cancellationToken);
+        ModelState.Clear();
         if (!TryValidateModel(BrandInput, nameof(BrandInput)))
         {
-            await LoadLocationOptionsAsync(cancellationToken);
+            await LoadRegistrationOptionsAsync(cancellationToken);
             return Page();
         }
 
-        if (BrandInput.ProvinceId is null || !await kocRegistrationService.IsValidProvinceAsync(BrandInput.ProvinceId.Value, cancellationToken))
-        {
-            ModelState.AddModelError("BrandInput.ProvinceId", "Tỉnh/Thành phố không hợp lệ.");
-        }
-
-        if (BrandInput.WardId is null || !await kocRegistrationService.IsValidWardAsync(BrandInput.WardId.Value, BrandInput.ProvinceId, cancellationToken))
-        {
-            ModelState.AddModelError("BrandInput.WardId", "Phường/Xã không hợp lệ.");
-        }
-
-        if (!ModelState.IsValid)
-        {
-            await LoadLocationOptionsAsync(cancellationToken);
-            return Page();
-        }
-
-        var rs = await authService.RegisterAsync(
+        var result = await authService.RegisterAsync(
             new RegisterRequest(
                 UserRoleType.Brand,
                 BrandInput.Email,
-                BrandInput.Phone,
+                null,
                 null,
                 BrandInput.Password,
                 BrandInput.FullName,
                 BrandInput.CompanyName,
-                BrandInput.Phone,
-                BuildDeviceContext(),
-                BrandInput.StreetAddress,
-                BrandInput.ProvinceId,
-                BrandInput.WardId),
+                null,
+                BuildDeviceContext()),
             cancellationToken);
 
-        if (!rs.Success || rs.Data is null)
+        if (!result.Success || result.Data is null)
         {
-            ErrorMessage = rs.Message;
-            await LoadLocationOptionsAsync(cancellationToken);
+            ErrorMessage = result.Message;
+            await LoadRegistrationOptionsAsync(cancellationToken);
             return Page();
         }
 
-        await SignInUserAsync(rs.Data);
-        return Redirect("/Brand/Dashboard?completeProfile=1");
-    }
-
-    private async Task SignInUserAsync(AuthenticatedUser user)
-    {
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-            new(ClaimTypes.Email, user.Email),
-            new(ClaimTypes.Name, user.DisplayName),
-            new(ClaimTypes.Role, user.Role.ToString())
-        };
-
-        var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
-        var props = new AuthenticationProperties
-        {
-            IsPersistent = true,
-            ExpiresUtc = DateTimeOffset.UtcNow.AddDays(30)
-        };
-
-        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, props);
+        await SendActivationEmailAsync(result.Data, BrandInput.FullName, cancellationToken);
+        return RedirectToPage("/Public/ActivateAccount", new { email = BrandInput.Email });
     }
 
     private static string NormalizeTab(string? tab)
         => string.Equals(tab, "brand", StringComparison.OrdinalIgnoreCase) ? "brand" : "koc";
 
-    public async Task<IActionResult> OnGetWardsByProvinceAsync(Guid? provinceId, CancellationToken cancellationToken)
+    private bool IsAutomatedSubmission()
     {
-        if (provinceId is null || provinceId == Guid.Empty)
-        {
-            return new JsonResult(new { data = Array.Empty<object>() });
-        }
-
-        var wardsFromService = await kocRegistrationService.GetActiveWardsByProvinceAsync(provinceId.Value, cancellationToken);
-        var wards = wardsFromService.Select(x => new { id = x.Id, name = x.Name });
-        return new JsonResult(new { data = wards });
+        if (!string.IsNullOrWhiteSpace(Website)) return true;
+        var elapsed = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - FormStartedAt;
+        return FormStartedAt <= 0 || elapsed < 2 || elapsed > 7200;
     }
 
-    private async Task LoadLocationOptionsAsync(CancellationToken cancellationToken)
+    private async Task<IActionResult> RejectAutomatedAsync(CancellationToken cancellationToken)
     {
-        var provinces = await kocRegistrationService.GetActiveProvincesAsync(cancellationToken);
-        ProvinceOptions = provinces
-            .Select(x => new SelectListItem { Value = x.Id.ToString(), Text = x.Name })
-            .ToList();
+        ErrorMessage = "Không thể xử lý đăng ký tự động. Vui lòng tải lại trang và thử lại.";
+        FormStartedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        await LoadRegistrationOptionsAsync(cancellationToken);
+        return Page();
+    }
 
-        WardOptions = new List<SelectListItem>();
-        if (BrandInput.ProvinceId.HasValue && BrandInput.ProvinceId.Value != Guid.Empty)
+    private async Task LoadRegistrationOptionsAsync(CancellationToken cancellationToken)
+    {
+        var options = await systemSettings.GetSocialLoginConfigurationsAsync(cancellationToken);
+        var isBrand = ActiveTab == "brand";
+        var google = options.First(x => x.Provider == "Google");
+        var facebook = options.First(x => x.Provider == "Facebook");
+        GoogleRegistrationEnabled = google.RegistrationEnabled && (isBrand ? google.BrandEnabled : google.KocEnabled);
+        FacebookRegistrationEnabled = facebook.RegistrationEnabled && (isBrand ? facebook.BrandEnabled : facebook.KocEnabled);
+    }
+
+    private async Task SendActivationEmailAsync(
+        AuthenticatedUser user,
+        string fullName,
+        CancellationToken cancellationToken)
+    {
+        var tokenResult = await accountActivationService.CreateActivationTokenAsync(
+            user.UserId,
+            TimeSpan.FromHours(24),
+            cancellationToken);
+
+        if (!tokenResult.Success || tokenResult.Data is null)
         {
-            var wards = await kocRegistrationService.GetActiveWardsByProvinceAsync(BrandInput.ProvinceId.Value, cancellationToken);
-            WardOptions = wards
-                .Select(x => new SelectListItem { Value = x.Id.ToString(), Text = x.Name })
-                .ToList();
+            TempData["EmailWarning"] = "Tài khoản đã được tạo nhưng chưa tạo được mã kích hoạt. Vui lòng dùng chức năng gửi lại mã.";
+            return;
+        }
+
+        var baseUrl = configuration["Email:ActivationBaseUrl"]?.TrimEnd('/')
+            ?? $"{Request.Scheme}://{Request.Host}/kich-hoat-tai-khoan";
+        var verifyUrl = $"{baseUrl}?token={Uri.EscapeDataString(tokenResult.Data.RawToken)}";
+        var encodedName = System.Net.WebUtility.HtmlEncode(fullName);
+        var encodedUrl = System.Net.WebUtility.HtmlEncode(verifyUrl);
+        var contentHtml = $@"
+            <p>Xin chào {encodedName},</p>
+            <p>Nhập mã OTP dưới đây tại trang kích hoạt tài khoản:</p>
+            <p style=""font-size:28px;font-weight:700;letter-spacing:6px;text-align:center;"">{tokenResult.Data.RawCode}</p>
+            <p>Hoặc bấm vào nút bên dưới để kích hoạt bằng liên kết:</p>
+            <p style=""margin:20px 0;""><a href=""{encodedUrl}"" style=""display:inline-block;padding:12px 18px;background:#6f2bd9;color:#fff;text-decoration:none;border-radius:10px;font-weight:700;"">Kích hoạt tài khoản</a></p>
+            <p>OTP và liên kết có hiệu lực trong 24 giờ. Không cung cấp mã này cho bất kỳ ai.</p>";
+        var htmlBody = emailTemplateRenderer.Render(new EmailTemplateModel
+        {
+            ProjectName = "TopStar Platform",
+            MainTitle = "Kích hoạt tài khoản",
+            Preheader = "Hoàn tất bước kích hoạt tài khoản TopStar.",
+            BodyHtml = contentHtml
+        });
+
+        var sent = await emailSender.SendAsync(
+            user.Email,
+            "Kích hoạt tài khoản TopStar",
+            htmlBody,
+            cancellationToken);
+
+        if (!sent)
+        {
+            TempData["EmailWarning"] = "Tài khoản đã được tạo nhưng chưa gửi được email kích hoạt. Vui lòng dùng chức năng gửi lại mã.";
         }
     }
 }

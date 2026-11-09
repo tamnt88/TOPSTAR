@@ -1,0 +1,12 @@
+@page
+@model Topstar.Web.Pages.Admin.MatchingModel
+@{ ViewData["Title"] = "Matching KOC"; ViewData["AdminHeaderTitle"] = "Matching KOC"; }
+<div >
+    <h1 class="section-title mb-1">Matching và shortlist</h1><p class="text-muted mb-4">Chọn KOC đã apply để gửi shortlist cho Brand.</p>
+    @if (!string.IsNullOrWhiteSpace(Model.Message)) { <div class="alert alert-success">@Model.Message</div> }
+    @if (Model.Items.Count == 0) { <div class="alert alert-light border">Chưa có campaign Published.</div> }
+    @foreach (var item in Model.Items)
+    {
+        <div class="card-x mb-3 d-flex justify-content-between align-items-center gap-3"><div><h2 class="h5 mb-1">@item.CampaignTitle</h2><div class="text-muted">@item.BrandName · Applied: @item.AppliedCount · Shortlisted: @item.ShortlistedCount · Confirmed: @item.ConfirmedCount</div></div><a asp-page="/Admin/MatchingDetail" asp-route-id="@item.CampaignId" class="btn btn-primary">Xử lý applications</a></div>
+    }
+</div>

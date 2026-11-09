@@ -1,0 +1,94 @@
+@model Topstar.Application.Notifications.NotificationInbox
+@{
+    var filter = (Context.Request.Query["filter"].ToString() ?? "all").ToLowerInvariant();
+    if (filter is not ("unread" or "archived")) filter = "all";
+    string TabClass(string value) => filter == value ? "btn btn-primary" : "btn btn-outline-secondary";
+    string EventLabel(string value) => value switch { "Created" => "Đã tạo", "Read" => "Đã đọc", "Opened" => "Đã mở công việc", "Hidden" => "Đã lưu trữ", "Restored" => "Đã khôi phục", _ => value };
+    string TypeLabel(string value) => PortalFormat.Status(value);
+}
+<div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3 mb-4">
+    <div>
+        <h1 class="section-title mb-1">Thông báo</h1>
+        <p class="text-muted mb-0">Theo dõi cập nhật và mở nhanh công việc cần xử lý.</p>
+    </div>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        <span class="badge bg-danger">@Model.UnreadCount chưa đọc</span>
+        <a asp-route-filter="unread" class="@TabClass("unread")">Chưa đọc</a>
+        <a asp-route-filter="all" class="@TabClass("all")">Tất cả</a>
+        <a asp-route-filter="archived" class="@TabClass("archived")">Đã lưu trữ</a>
+        @if (Model.UnreadCount > 0 && filter != "archived")
+        {
+            <form method="post" asp-page-handler="All" class="d-inline">
+                <input type="hidden" name="filter" value="@filter" />
+                <button class="btn btn-outline-primary">Đọc tất cả</button>
+            </form>
+        }
+    </div>
+</div>
+@if (Model.Items.Count == 0)
+{
+    <div class="card-x text-center py-5 text-muted">Không có thông báo theo bộ lọc này.</div>
+}
+<div class="d-flex flex-column gap-3">
+@foreach (var item in Model.Items)
+{
+    <article class="card-x @(item.IsRead || !item.IsVisible ? "" : "border-primary")">
+        <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+            <div class="flex-grow-1">
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <span class="badge bg-light text-dark border">@TypeLabel(item.Type)</span>
+                    @if (!item.IsVisible) { <span class="badge bg-secondary">Đã lưu trữ</span> }
+                    else if (!item.IsRead) { <span class="badge bg-primary">Mới</span> }
+                    <h2 class="h6 mb-0">@item.Title</h2>
+                </div>
+                <div class="mt-2" style="white-space:pre-wrap">@item.Body</div>
+                <div class="small text-muted mt-2">
+                    @item.CreatedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm")
+                    @if (item.ReadAtUtc.HasValue) { <span> · Đã đọc @item.ReadAtUtc.Value.ToVietnamTime().ToString("dd/MM HH:mm")</span> }
+                    @if (item.HiddenAtUtc.HasValue) { <span> · Lưu trữ @item.HiddenAtUtc.Value.ToVietnamTime().ToString("dd/MM HH:mm")</span> }
+                </div>
+                @if (!string.IsNullOrWhiteSpace(item.SourceEntityType) && item.SourceEntityId.HasValue)
+                {
+                    <div class="small text-muted mt-1">Nguồn: @TypeLabel(item.SourceEntityType) · <code>@item.SourceEntityId.Value.ToString()[..8]</code></div>
+                }
+            </div>
+            <div class="d-flex flex-wrap align-self-lg-center gap-2">
+                @if (item.IsVisible && !string.IsNullOrWhiteSpace(item.TargetUrl))
+                {
+                    <form method="post" asp-page-handler="Open">
+                        <input type="hidden" name="id" value="@item.Id" /><input type="hidden" name="filter" value="@filter" />
+                        <button class="btn btn-primary text-nowrap">Mở công việc</button>
+                    </form>
+                }
+                @if (item.IsVisible && !item.IsRead)
+                {
+                    <form method="post" asp-page-handler="Read">
+                        <input type="hidden" name="id" value="@item.Id" /><input type="hidden" name="filter" value="@filter" />
+                        <button class="btn btn-outline-primary text-nowrap">Đánh dấu đã đọc</button>
+                    </form>
+                }
+                <form method="post" asp-page-handler="@(item.IsVisible ? "Archive" : "Restore")">
+                    <input type="hidden" name="id" value="@item.Id" /><input type="hidden" name="filter" value="@filter" />
+                    <button class="btn btn-outline-secondary text-nowrap">@(item.IsVisible ? "Lưu trữ" : "Khôi phục")</button>
+                </form>
+            </div>
+        </div>
+        @if (item.History.Count > 0)
+        {
+            <details class="mt-3">
+                <summary class="small text-muted">Lịch sử trạng thái (@item.History.Count)</summary>
+                <div class="small mt-2 border-start ps-3">
+                    @foreach (var entry in item.History)
+                    {
+                        <div class="mb-1">
+                            <strong>@EventLabel(entry.EventType)</strong> · @entry.CreatedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm")
+                            @if (!string.IsNullOrWhiteSpace(entry.ActorRoleSnapshot)) { <span class="badge bg-light text-dark border ms-1">@entry.ActorRoleSnapshot</span> }
+                            @if (!string.IsNullOrWhiteSpace(entry.TargetUrlSnapshot)) { <div class="text-muted text-break">Đích: <code>@entry.TargetUrlSnapshot</code></div> }
+                        </div>
+                    }
+                </div>
+            </details>
+        }
+    </article>
+}
+</div>

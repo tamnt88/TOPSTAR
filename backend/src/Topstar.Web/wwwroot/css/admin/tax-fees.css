@@ -1,0 +1,31 @@
+.tax-fees-page .nav-tabs{gap:12px}.tax-fees-page .nav-link{display:flex;gap:8px;align-items:center;padding:14px 24px;font-weight:600}.tax-fees-block{border:1px solid #e1d8f1;border-radius:18px;padding:24px;background:#fff;margin-bottom:24px;box-shadow:0 6px 24px #27134d06}.tax-fees-block>header{display:flex;align-items:center;gap:12px;margin-bottom:24px;padding-bottom:18px;border-bottom:1px solid #eee8f6}.tax-fees-block>header>span{display:grid;place-items:center;width:44px;height:44px;flex-shrink:0;background:#f0e9ff;color:#7035cf;border-radius:12px}.tax-fees-block h2{font-size:19px;font-weight:700;margin:0 0 5px}.tax-fees-block>header p{margin:0;color:#78869d;font-size:14px}.tax-fees-block>header>a{margin-left:auto;white-space:nowrap}.tax-fees-block .fee-policy-page{padding:0;max-width:none}.tax-fees-block .card-x{box-shadow:none;border:1px solid #eee8f6}.tax-fees-block summary{cursor:pointer;font-weight:600;padding:10px 0}.tax-fees-block .fee-policy-section-head i{margin-right:0}.tax-fees-block .btn i{margin-right:6px}@media(max-width:767px){.tax-fees-block{padding:16px}.tax-fees-block>header{flex-wrap:wrap}.tax-fees-block>header>a{margin-left:0}}
+
+.tax-fees-tabs{display:flex;gap:10px;align-items:center;border-bottom:1px solid #e2d8ef;padding-bottom:12px}.admin-portal .tax-fees-tabs .nav-link{display:inline-flex;align-items:center;gap:9px;padding:12px 26px;border:1px solid transparent;border-radius:10px;font-weight:600;text-decoration:none;color:#758096;background:transparent}.admin-portal .tax-fees-tabs .nav-link.active{background:#eee5ff;color:#6930ca;border-color:#e1d2fc}.admin-portal .tax-fees-tabs .nav-link:hover{background:#f4effb;color:#6930ca}
+
+.tax-fees-editor{min-width:0;padding:0;border:0;box-shadow:none;background:transparent}.tax-fees-history,.tax-fees-editor>details{border-top:1px solid #eee8f6;padding-top:12px}.tax-fees-page,.tax-fees-page button,.tax-fees-page input,.tax-fees-page select{font-family:"Roboto",sans-serif}
+
+/* Match the bordered active tab used by the KOC profile editor. */
+.admin-portal .tax-fees-tabs.nav-tabs{gap:0;padding:0;border-bottom:1px solid #d9dfea;align-items:stretch}
+.admin-portal .tax-fees-tabs.nav-tabs .nav-link{margin-bottom:-1px;padding:12px 18px;border:1px solid transparent;border-radius:6px 6px 0 0;background:transparent;color:#66758b;font-weight:500;gap:8px}
+.admin-portal .tax-fees-tabs.nav-tabs .nav-link.active{border-color:#b7d4f6 #b7d4f6 #fff;background:#fff;color:#1263c8}
+.admin-portal .tax-fees-tabs.nav-tabs .nav-link:hover{background:#f8faff;color:#1263c8}
+.tax-vat-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:16px}.tax-vat-row-last{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) auto;margin-bottom:0}
+.tax-inline-save{display:flex;align-items:flex-end;padding-bottom:0}.tax-inline-save .btn{min-height:38px;white-space:nowrap}
+.tax-fees-page .tax-brand-fee-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
+.tax-koc-tax-grid{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,.8fr) minmax(0,1.1fr) minmax(0,1.3fr) auto;gap:16px;align-items:end}
+.tax-koc-tax-grid .form-check{min-height:38px;display:flex;align-items:center;gap:8px;margin-bottom:0}.tax-koc-tax-grid .form-check-input{margin-top:0}
+.tax-payout-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr)) auto;gap:16px;align-items:end}.tax-payout-grid>div:nth-child(1){grid-column:1}.tax-payout-grid>div:nth-child(2){grid-column:2 / -1}.tax-vat-row>div,.tax-koc-tax-grid>div,.tax-payout-grid>div{min-width:0}
+@media(max-width:991px){.tax-fees-page .tax-brand-fee-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.tax-koc-tax-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.tax-koc-tax-grid .tax-inline-save{grid-column:2;justify-content:flex-end}}
+@media(max-width:575px){.tax-vat-row,.tax-vat-row-last,.tax-koc-tax-grid,.tax-payout-grid,.tax-fees-page .tax-brand-fee-grid{grid-template-columns:1fr}.tax-payout-grid>div:nth-child(n),.tax-koc-tax-grid .tax-inline-save{grid-column:auto}.tax-inline-save{justify-content:flex-end}}
+
+.admin-portal .tax-fees-tabs.nav-tabs{gap:10px;border-bottom:0}
+.admin-portal .tax-fees-tabs.nav-tabs .nav-link{margin-bottom:0;border-radius:6px;border-color:#ddd5ea}
+.admin-portal .tax-fees-tabs.nav-tabs .nav-link.active{border-color:#b7d4f6}
+.tax-vat-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(100px,.6fr) minmax(0,1.2fr) minmax(0,1.5fr) auto;gap:16px;align-items:end}.tax-vat-grid>div{min-width:0}
+@media(max-width:991px){.tax-vat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.tax-vat-grid .tax-inline-save{grid-column:2;justify-content:flex-end}}
+@media(max-width:575px){.tax-vat-grid{grid-template-columns:1fr}.tax-vat-grid .tax-inline-save{grid-column:auto}}
+
+.tax-policy-effective-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:16px;align-items:end}.tax-policy-effective-grid>div{min-width:0}.tax-policy-effective-grid .fee-policy-toggle{min-height:38px;padding:6px 12px}.tax-policy-effective-grid .fee-policy-toggle div{display:flex;align-items:center;min-height:24px}
+@media(max-width:767px){.tax-policy-effective-grid{grid-template-columns:1fr}.tax-policy-effective-grid .tax-inline-save{justify-content:flex-end}}
+
+.admin-portal .tax-fees-page .tax-inline-save .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:38px;min-height:38px;box-sizing:border-box;padding:0 14px;line-height:1.25}.admin-portal .tax-fees-page .tax-inline-save .btn i{margin:0}

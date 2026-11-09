@@ -1,9 +1,9 @@
-﻿@page
+@page
 @model Topstar.Web.Pages.Admin.Settings.WebsiteInfoModel
 @{
     ViewData["Title"] = "Thông tin website";
 }
-<div class="page-wrap card-list admin-page-wrap">
+<div class="card-list admin-page-wrap">
     <div class="card-x">
         <h2 class="section-title mb-2">Cấu hình thông tin website</h2>
         <p class="kpi-title">Tên website, domain, địa chỉ, email liên hệ, hotline và thông tin bản quyền.</p>
@@ -29,7 +29,7 @@
                 <label class="form-check"><input class="form-check-input" type="checkbox" asp-for="Input.IsVisible" /><span class="form-check-label">Hiển thị</span></label>
             </div>
             <div class="col-12 d-flex justify-content-end">
-                <button class="btn btn-warning btn-sm" type="submit">Lưu cấu hình</button>
+                <button class="btn btn-warning btn-sm" type="submit">Lưu</button>
             </div>
         </form>
     </div>

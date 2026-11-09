@@ -1,0 +1,73 @@
+.security-overview-grid .is-active {
+    color: inherit;
+}
+
+.security-note-form .field-error,
+.security-action-modal .field-error {
+    display: none;
+}
+
+.security-note-form .is-invalid + .field-error,
+.security-action-modal .is-invalid + .field-error {
+    display: block;
+}
+
+.security-required-label::after {
+    content: " *";
+    color: #ef4444;
+}
+
+.security-note-form .form-control.is-invalid,
+.security-action-modal .form-control.is-invalid {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, .1);
+    background-position: top .75rem right .75rem;
+}
+
+.security-note-form .invalid-feedback,
+.security-action-modal .invalid-feedback {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    color: #ef4444;
+}
+
+.security-note-form .invalid-feedback.field-validation-error,
+.security-action-modal .invalid-feedback.field-validation-error {
+    display: flex;
+}
+
+.security-note-form .invalid-feedback::before,
+.security-action-modal .invalid-feedback::before {
+    content: "\f06a";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+}
+
+.security-state-tag {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+    width: max-content;
+    margin-top: 6px !important;
+    padding: 5px 9px;
+    border-radius: 999px;
+    font-size: 12px;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.security-state-tag.is-success {
+    color: #18794e;
+    background: #def4e8;
+}
+
+.security-state-tag.is-warning {
+    color: #946300;
+    background: #fff0c7;
+}
+
+.security-state-tag.is-danger {
+    color: #b63343;
+    background: #fde7ea;
+}

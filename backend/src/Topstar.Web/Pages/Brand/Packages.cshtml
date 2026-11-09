@@ -1,0 +1,165 @@
+@page
+@model Topstar.Web.Pages.Brand.PackagesModel
+@using Topstar.Application.Matching
+@{
+    ViewData["Title"] = "Gói dịch vụ KOC";
+    var actionablePurchases = Model.Purchases
+        .Where(x => x.Status is BrandPackagePurchaseStatuses.Pending or BrandPackagePurchaseStatuses.Paid or "CancelRequested")
+        .ToList();
+    var openOwnedTab = Request.Query["tab"] != "catalog" && (actionablePurchases.Count > 0 || Request.Query["required"] == "true");
+}
+
+<div class="brand-package-catalog">
+    @if(TempData["PackagePaymentMessage"] is string balanceMessage){<div hidden data-ts-notification="success">@balanceMessage</div>}
+    <header class="brand-page-heading brand-package-heading">
+        <div>
+            <span class="brand-page-eyebrow"><i class="fa-solid fa-bag-shopping"></i> DỊCH VỤ KOC</span>
+            <h1>Gói dịch vụ KOC</h1>
+            <p>Chọn hình thức triển khai phù hợp với mục tiêu và quy mô chiến dịch của Brand.</p>
+        </div>
+        <div class="brand-page-actions">
+            <a asp-page="/Brand/Campaigns" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-rectangle-list"></i> Chiến dịch</a>
+            <a asp-page="/Brand/Billing" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-wallet"></i> Tài chính</a>
+        </div>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div hidden data-ts-notification="@(Model.Success ? "success" : "error")">@Model.Message</div>
+    }
+    @if (Request.Query["required"] == "true")
+    {
+        <div class="alert alert-warning"><i class="fa-solid fa-lock"></i> Để tạo chiến dịch mới, Brand cần có một gói đã thanh toán và còn hiệu lực.</div>
+    }
+
+    <nav class="ts-tabs brand-package-tabs" aria-label="Điều hướng gói KOC">
+        <div class="ts-tabs nav nav-tabs" role="tablist">
+            <button class="nav-link @(openOwnedTab ? "active" : "")" data-bs-toggle="tab" data-bs-target="#brandOwnedPackages" type="button" role="tab">
+                <i class="fa-solid fa-wallet"></i> Gói đã mua trước đây
+                <span>@actionablePurchases.Count</span>
+            </button>
+            <button class="nav-link @(!openOwnedTab ? "active" : "")" data-bs-toggle="tab" data-bs-target="#brandPackageCatalog" type="button" role="tab">
+                <i class="fa-solid fa-compass"></i> Gói tham khảo
+                <span>@Model.PackageTotal</span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="tab-content">
+        <section id="brandOwnedPackages" class="tab-pane fade @(openOwnedTab ? "show active" : "")" role="tabpanel">
+            <div class="brand-tab-intro">
+                <div><h2>Gói sẵn sàng cho Brand</h2><p>Gói đã thanh toán có thể dùng để bắt đầu một chiến dịch mới.</p></div>
+                <a asp-page="/Brand/Billing" class="brand-text-link"><i class="fa-solid fa-clock-rotate-left"></i> Xem toàn bộ lịch sử</a>
+            </div>
+            @if (actionablePurchases.Count == 0)
+            {
+                <div class="brand-empty-state">
+                    <i class="fa-solid fa-box-open"></i>
+                    <h3>Brand chưa có gói khả dụng</h3>
+                    <p>Hãy chọn gói phù hợp tại tab Gói tham khảo để bắt đầu.</p>
+                    <button class="btn brand-btn-primary btn-sm" data-bs-toggle="tab" data-bs-target="#brandPackageCatalog" type="button"><i class="fa-solid fa-compass"></i> Gói tham khảo</button>
+                </div>
+            }
+            else
+            {
+                <div class="brand-owned-package-grid">
+                    @foreach (var purchase in actionablePurchases)
+                    {
+                        <article class="brand-owned-package">
+                            <div class="brand-owned-package-top">
+                                <span class="brand-package-icon"><i class="fa-solid fa-box-open"></i></span>
+                                <div class="brand-package-status-actions">
+                                    <span class="badge @(purchase.CanCreateCampaign ? "bg-success" : "bg-warning text-dark")"><i class="fa-solid @(purchase.CanCreateCampaign ? "fa-circle-check" : "fa-clock")"></i> @PackagesModel.StatusLabel(purchase.Status)</span>
+                                    @if (purchase.Status == BrandPackagePurchaseStatuses.Pending || purchase.CanCreateCampaign)
+                                    {
+                                        <button type="button" class="brand-package-cancel-link js-cancel-package" data-bs-toggle="modal" data-bs-target="#brandPackageCancelModal" data-id="@purchase.Id" data-name="@PackagesModel.DisplayPurchasedPackageName(purchase)"><i class="fa-solid fa-xmark"></i> Yêu cầu hủy</button>
+                                    }
+                                </div>
+                            </div>
+                            <h3>@PackagesModel.DisplayPurchasedPackageName(purchase)</h3>
+                            <div class="brand-owned-package-price">@purchase.Amount.ToString("N0", PortalFormat.Vietnamese) ₫</div>
+                            <div class="brand-owned-package-meta">
+                                @if (purchase.ExpiresAtUtc.HasValue)
+                                {
+                                    <span><i class="fa-regular fa-calendar-check"></i> Sử dụng trước @purchase.ExpiresAtUtc.Value.ToVietnamTime().ToString("dd/MM/yyyy")</span>
+                                }
+                                else
+                                {
+                                    <span><i class="fa-solid fa-infinity"></i> Không giới hạn thời gian</span>
+                                }
+                            </div>
+                            @if (purchase.CanCreateCampaign)
+                            {
+                                <a asp-page="/Brand/CampaignEdit" asp-route-purchaseId="@purchase.Id" class="btn brand-btn-primary w-100"><i class="fa-solid fa-bullhorn"></i> Bắt đầu chiến dịch</a>
+                            }
+                            else if(purchase.Status=="CancelRequested")
+                            {<div class="brand-package-pending-note">Gói đang chờ Admin xét duyệt hủy, chưa thể sử dụng. Tiền được duyệt hoàn sẽ cộng vào số dư.</div>}
+                            else
+                            {
+                                <div class="brand-owned-package-payment-method"><i class="fa-solid @(purchase.PaymentMethod == "BankTransfer" ? "fa-building-columns" : "fa-credit-card")"></i><span>Phương thức</span><strong>@(purchase.PaymentMethod == "BankTransfer" ? "Chuyển khoản ngân hàng" : "Thanh toán online")</strong></div>
+                                <div class="brand-package-pending-note"><i class="fa-solid fa-circle-info"></i> @(purchase.PaymentMethod == "BankTransfer" ? (string.IsNullOrWhiteSpace(purchase.PaymentProofUrl) ? "Chưa gửi chứng từ chuyển khoản." : "Chứng từ đã gửi, đang chờ Topstar đối soát.") : "Giao dịch trực tuyến đang chờ cập nhật trạng thái.")</div>
+                                <a asp-page="/Brand/PackageCheckout" asp-route-packageId="@purchase.PackagePolicyId" asp-route-purchaseId="@purchase.Id" class="btn brand-btn-primary w-100"><i class="fa-solid fa-receipt"></i> @(purchase.PaymentMethod == "BankTransfer" ? "Thanh toán và chứng từ" : "Xem chi tiết thanh toán")</a>
+                            }
+                        </article>
+                    }
+                </div>
+            }
+        </section>
+
+        <section id="brandPackageCatalog" class="tab-pane fade @(!openOwnedTab ? "show active" : "")" role="tabpanel">
+            <div class="brand-tab-intro">
+                <div><h2>Chọn cách triển khai phù hợp</h2><p>Mỗi gói đã thanh toán được sử dụng cho một chiến dịch.</p></div>
+            </div>
+            @if (Model.Items.Count == 0)
+            {
+                <div class="brand-empty-state"><i class="fa-solid fa-box-open"></i><h3>Các gói đang được cập nhật</h3><p>Vui lòng liên hệ Topstar để được tư vấn.</p></div>
+            }
+            else
+            {
+                <div class="brand-package-grid" aria-label="Danh sách gói KOC">
+                    @foreach (var item in Model.Items)
+                    {
+                        <article class="brand-package-item @(item.IsFeatured ? "is-featured" : "")">
+                            @if (item.IsFeatured)
+                            {
+                                <span class="brand-package-featured"><i class="fa-solid fa-star"></i> Được lựa chọn nhiều</span>
+                            }
+                            <div class="brand-package-icon">
+                                @if (!string.IsNullOrWhiteSpace(item.ImageUrl)){<img src="@item.ImageUrl" alt="" />}else{<i class="fa-solid fa-box-open"></i>}
+                            </div>
+                            <h3>@PackagesModel.DisplayPackageName(item)</h3>
+                            <div class="brand-package-key-benefit @(item.BrandSelectionEnabled ? "is-self-select" : "is-topstar-select")"><i class="fa-solid @(item.BrandSelectionEnabled ? "fa-user-check" : "fa-people-arrows")"></i><span><small>QUYỀN LỢI CHÍNH</small><strong>@(item.BrandSelectionEnabled ? $"Brand tự chọn tối đa {item.SelectionQuota ?? 1} KOC" : $"Topstar phân công tối đa {item.SelectionQuota ?? 1} KOC")</strong></span></div>
+                            <p>@item.Description</p>
+                            <div class="brand-package-price">@((item.ReferenceBudget??item.SalePrice).ToString("N0", PortalFormat.Vietnamese)) <small>₫</small></div>
+                            @if (item.ValidityDays.HasValue)
+                            {
+                                <div class="brand-package-validity"><i class="fa-regular fa-calendar-check"></i> Sử dụng trong @item.ValidityDays ngày</div>
+                            }
+                            <div class="brand-package-benefits">@Html.Raw(PackagesModel.DisplayBenefits(item.Benefits))</div>
+                            <ul>
+                                <li><i class="fa-solid fa-circle-check"></i> @(item.BrandSelectionEnabled ? "Brand chủ động lựa chọn KOC" : "Topstar đề xuất KOC phù hợp")</li>
+                                @if (item.SelectionQuota.HasValue){<li><i class="fa-solid fa-circle-check"></i> Tối đa @item.SelectionQuota KOC được xác nhận</li>}
+                                <li><i class="fa-solid fa-circle-check"></i> Brand chủ động thiết lập ngân sách chiến dịch</li>
+                            </ul>
+                            <a asp-page="/Brand/CampaignNeeds" asp-route-packageId="@item.Id" class="btn brand-btn-primary w-100"><i class="fa-solid fa-arrow-right"></i> Chọn gói này</a>
+                        </article>
+                    }
+                </div>
+                @if(Model.PackagePages > 1)
+                {
+                    <nav class="brand-package-pager" aria-label="Phân trang gói KOC">
+                        <span>Trang @Model.PackagePage/@Model.PackagePages</span>
+                        <div>
+                            <a asp-page="/Brand/Packages" asp-route-tab="catalog" asp-route-packagePage="@(Model.PackagePage-1)" class="@(Model.PackagePage<=1 ? "disabled" : null)" aria-disabled="@(Model.PackagePage<=1)"><i class="fa-solid fa-chevron-left"></i><span>Trang trước</span></a>
+                            @for(var packagePageNumber=1;packagePageNumber<=Model.PackagePages;packagePageNumber++){<a asp-page="/Brand/Packages" asp-route-tab="catalog" asp-route-packagePage="@packagePageNumber" class="@(packagePageNumber==Model.PackagePage ? "active" : null)" aria-current="@(packagePageNumber==Model.PackagePage ? "page" : null)">@packagePageNumber</a>}
+                            <a asp-page="/Brand/Packages" asp-route-tab="catalog" asp-route-packagePage="@(Model.PackagePage+1)" class="@(Model.PackagePage>=Model.PackagePages ? "disabled" : null)" aria-disabled="@(Model.PackagePage>=Model.PackagePages)"><span>Trang sau</span><i class="fa-solid fa-chevron-right"></i></a>
+                        </div>
+                    </nav>
+                }
+            }
+        </section>
+    </div>
+</div>
+<partial name="_BrandPackageCancelModal"/>
+<div id="brandPackageCancelRestore" class="d-none" data-open="@(!string.IsNullOrWhiteSpace(Model.CancelError) ? "true" : "false")" data-id="@Model.CancelPurchaseId" data-name="@Model.CancelPackageName" data-reason="@Model.CancelReason" data-error="@Model.CancelError"></div>
+@section Scripts{<script src="/js/brand/brand-package-cancel.js?v=20260731-brand-cancel-id-5"></script>}

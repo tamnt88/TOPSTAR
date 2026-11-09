@@ -1,0 +1,50 @@
+@model Topstar.Web.Features.Common.Paging.ListWindowViewModel
+@{
+    var prefix = "list." + Model.Id + ".";
+    var showFilters = !string.Equals(Model.Part, "Pager", StringComparison.OrdinalIgnoreCase);
+    var showPager = !string.Equals(Model.Part, "Filters", StringComparison.OrdinalIgnoreCase);
+    string Link(int page) {
+        var values = ViewContext.HttpContext.Request.Query.ToDictionary(x => x.Key, x => (string?)x.Value.ToString());
+        values[prefix + "page"] = page.ToString();
+        values[prefix + "size"] = Model.Window.Size.ToString();
+        return ViewContext.HttpContext.Request.Path + Microsoft.AspNetCore.Http.QueryString.Create(values).ToString();
+    }
+}
+<section class="list-window" data-list-window="@Model.Id" data-page="@Model.Window.Page" data-size="@Model.Window.Size" data-total="@Model.Window.Total" data-filtered="@Model.Window.Filtered">
+    @if (showFilters)
+    {
+    <form method="get" class="list-window-filters" novalidate>
+        @foreach (var value in ViewContext.HttpContext.Request.Query.Where(x => !x.Key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))) { <input type="hidden" name="@value.Key" value="@value.Value" /> }
+        <input type="hidden" name="@(prefix + "page")" value="1" />
+        <label>Từ khóa<input class="form-control" name="@(prefix + "q")" value="@Model.Window.Search" maxlength="120" placeholder="Tìm kiếm trong toàn bộ danh sách" /></label>
+        @if (Model.Window.Counts.Count > 0) {
+            <label>Trạng thái<select class="form-select" name="@(prefix + "status")" onchange="this.form.requestSubmit()"><option value="">Tất cả</option>
+                @foreach (var status in Model.Window.Counts.Keys.OrderBy(x => x)) { <option value="@status" selected="@(status == Model.Window.Status)">@Topstar.Web.Features.Common.PortalFormat.Status(status)</option> }
+            </select></label>
+        }
+        <label>Hiển thị<select class="form-select" name="@(prefix + "size")" onchange="this.form.requestSubmit()">
+            @foreach (var size in Topstar.Core.Common.Pagination.PaginationDefaults.PageSizeOptions) { <option value="@size" selected="@(size == Model.Window.Size)">@size dòng</option> }
+        </select></label>
+        <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-filter"></i> Áp dụng</button>
+        @if (Model.ShowReset)
+        {
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-list-reset><i class="fa-solid fa-rotate-left"></i> Đặt lại</button>
+        }
+    </form>
+    }
+    @if (showPager)
+    {
+    <div class="list-window-footer">
+        <span role="status">Hiển thị @(Model.Window.Filtered == 0 ? 0 : (Model.Window.Page - 1) * Model.Window.Size + 1)–@Math.Min(Model.Window.Page * Model.Window.Size, Model.Window.Filtered) trong @Model.Window.Filtered kết quả</span>
+        @if (Model.Window.Pages > 1) { <nav aria-label="Phân trang danh sách"><ul class="pagination mb-0">
+            @foreach (var item in new[] { (1,"angles-left","Trang đầu",Model.Window.Page<=1), (Math.Max(1,Model.Window.Page-1),"chevron-left","Trang trước",Model.Window.Page<=1) }) {
+                <li class="page-item @(item.Item4 ? "disabled" : "")"><a class="page-link" href="@Link(item.Item1)" aria-label="@item.Item3" aria-disabled="@(item.Item4 ? "true" : "false")" tabindex="@(item.Item4 ? -1 : 0)"><i class="fa-solid fa-@item.Item2" aria-hidden="true"></i></a></li>
+            }
+            @for (var page = Math.Max(1, Model.Window.Page - 2); page <= Math.Min(Model.Window.Pages, Model.Window.Page + 2); page++) { <li class="page-item @(page == Model.Window.Page ? "active" : "")"><a class="page-link" aria-current="@(page == Model.Window.Page ? "page" : null)" href="@Link(page)">@(page)</a></li> }
+            @foreach (var item in new[] { (Math.Min(Model.Window.Pages,Model.Window.Page+1),"chevron-right","Trang sau",Model.Window.Page>=Model.Window.Pages), (Model.Window.Pages,"angles-right","Trang cuối",Model.Window.Page>=Model.Window.Pages) }) {
+                <li class="page-item @(item.Item4 ? "disabled" : "")"><a class="page-link" href="@Link(item.Item1)" aria-label="@item.Item3" aria-disabled="@(item.Item4 ? "true" : "false")" tabindex="@(item.Item4 ? -1 : 0)"><i class="fa-solid fa-@item.Item2" aria-hidden="true"></i></a></li>
+            }
+        </ul></nav> }
+    </div>
+    }
+</section>

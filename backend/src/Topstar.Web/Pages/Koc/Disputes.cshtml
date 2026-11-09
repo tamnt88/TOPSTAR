@@ -1,0 +1,192 @@
+@page
+@model Topstar.Web.Pages.Koc.DisputesModel
+@using Topstar.Application.Disputes
+@{
+    Layout = "_KocLayout";
+    ViewData["Title"] = "Tranh chấp & hỗ trợ";
+    var categoryLabels = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Booking"] = "Lịch booking",
+        ["Shipment"] = "Giao nhận sản phẩm",
+        ["Deliverable"] = "Nội dung bàn giao",
+        ["Payment"] = "Thanh toán",
+        ["Review"] = "Đánh giá",
+        ["Other"] = "Vấn đề khác"
+    };
+    var activeDisputes = Model.Window.Counts.Where(item => DisputeTransitions.IsActive(item.Key)).Sum(item => item.Value);
+    var resolvedDisputes = Model.Window.Counts.GetValueOrDefault(DisputeStatuses.Resolved);
+}
+
+<div class="koc-dispute-page">
+    <header class="koc-dispute-hero">
+        <div class="koc-dispute-hero-copy">
+            <span class="koc-page-eyebrow"><i class="fa-solid fa-shield-heart"></i> Đồng hành cùng KOC</span>
+            <h1>Tranh chấp & hỗ trợ</h1>
+            <p>Gửi vấn đề có căn cứ, theo dõi tiến độ minh bạch và trao đổi với bộ phận hỗ trợ tại một nơi.</p>
+            <button class="btn btn-light btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#openDisputeModal">
+                <i class="fa-solid fa-plus"></i> Mở tranh chấp mới
+            </button>
+        </div>
+        <div class="koc-dispute-overview" aria-label="Tổng quan tranh chấp">
+            <div>
+                <span><i class="fa-solid fa-ticket"></i></span>
+                <strong>@Model.Window.Total</strong>
+                <small>Tổng yêu cầu</small>
+            </div>
+            <div>
+                <span><i class="fa-solid fa-hourglass-half"></i></span>
+                <strong>@activeDisputes</strong>
+                <small>Đang xử lý</small>
+            </div>
+            <div>
+                <span><i class="fa-solid fa-circle-check"></i></span>
+                <strong>@resolvedDisputes</strong>
+                <small>Đã giải quyết</small>
+            </div>
+        </div>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div class="alert @(Model.MessageSuccess ? "alert-success" : "alert-danger")">
+            <i class="fa-solid @(Model.MessageSuccess ? "fa-circle-check" : "fa-circle-exclamation") me-1"></i>@Model.Message
+        </div>
+    }
+
+    <section class="koc-dispute-card">
+        <form id="disputeFilters" class="koc-dispute-filters">
+            <div class="koc-filter-field is-keyword">
+                <label for="disputeSearch">Từ khóa</label>
+                <div class="koc-filter-input">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input id="disputeSearch" class="form-control" type="search" placeholder="Chiến dịch, Brand hoặc nội dung" autocomplete="off">
+                </div>
+            </div>
+            <div class="koc-filter-field">
+                <label for="disputeStatus">Trạng thái</label>
+                <select id="disputeStatus" class="form-select">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="Open">Mới mở</option>
+                    <option value="InReview">Đang xử lý</option>
+                    <option value="Resolved">Đã giải quyết</option>
+                    <option value="Rejected">Đã từ chối</option>
+                    <option value="Cancelled">Đã hủy</option>
+                </select>
+            </div>
+            <div class="koc-filter-field">
+                <label for="disputePageSize">Hiển thị</label>
+                <select id="disputePageSize" class="form-select">
+                    <option value="10">10 dòng</option>
+                    <option value="20">20 dòng</option>
+                    <option value="50">50 dòng</option>
+                </select>
+            </div>
+            <div class="koc-filter-action">
+                <span class="koc-filter-action-label">Thao tác</span>
+                <button class="btn btn-primary" type="submit"><i class="fa-solid fa-filter"></i> Lọc</button>
+            </div>
+        </form>
+
+        <div class="koc-dispute-list-heading">
+            <div>
+                <h2><span><i class="fa-solid fa-headset"></i></span> Danh sách yêu cầu</h2>
+                <p>Theo dõi trạng thái và mở hồ sơ để trao đổi với bộ phận hỗ trợ.</p>
+            </div>
+            <span data-dispute-count><i class="fa-solid fa-ticket"></i> 0 yêu cầu</span>
+        </div>
+
+        <div class="koc-dispute-table-wrap">
+            <table id="kocDisputeTable" class="table koc-dispute-table"
+                   data-list-actions="false"
+                   data-ajax-url="@Url.Page("/Koc/Disputes", "Data")"
+                   data-detail-page="@Url.Page("/Koc/DisputeDetail")">
+                <thead>
+                    <tr>
+                        <th>STT</th>
+                        <th>Chiến dịch</th>
+                        <th>Vấn đề</th>
+                        <th>Ngày gửi</th>
+                        <th>Trạng thái</th>
+                        <th>Trao đổi</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<div class="modal fade" id="openDisputeModal" tabindex="-1" aria-labelledby="openDisputeModalTitle" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h2 class="modal-title h5" id="openDisputeModalTitle"><i class="fa-solid fa-scale-balanced me-2"></i>Mở tranh chấp mới</h2>
+                    <p class="mb-0">Cung cấp căn cứ rõ ràng để bộ phận hỗ trợ xử lý nhanh hơn.</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <form id="openDisputeForm" method="post" asp-page-handler="Open" novalidate>
+                <div class="modal-body row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Chiến dịch / đối tác</label>
+                        <div class="koc-searchable-select" data-searchable-select>
+                            <div class="koc-searchable-select-control">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input id="disputeParticipationSearch" class="form-control" type="search"
+                                       placeholder="Tìm chiến dịch hoặc Brand" autocomplete="off"
+                                       role="combobox" aria-autocomplete="list" aria-expanded="false"
+                                       aria-controls="disputeParticipationOptions"
+                                       aria-describedby="disputeParticipationError">
+                                <button type="button" class="koc-searchable-select-toggle" aria-label="Mở danh sách">
+                                    <i class="fa-solid fa-chevron-down"></i>
+                                </button>
+                            </div>
+                            <div id="disputeParticipationOptions" class="koc-searchable-select-menu" role="listbox"></div>
+                        </div>
+                        <select id="disputeParticipationId" name="participationId" class="visually-hidden" tabindex="-1" aria-hidden="true">
+                            <option value="">Chọn lượt tham gia</option>
+                            @foreach (var candidate in Model.Portal.Candidates)
+                            {
+                                <option value="@candidate.ParticipationId">@candidate.CampaignTitle · @candidate.CounterpartyName</option>
+                            }
+                        </select>
+                        <div id="disputeParticipationError" class="invalid-feedback">Vui lòng chọn chiến dịch cần hỗ trợ.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Loại vấn đề</label>
+                        <select name="category" class="form-select">
+                            @foreach (var category in DisputeCategories.All)
+                            {
+                                <option value="@category">@categoryLabels[category]</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Tiêu đề</label>
+                        <input id="disputeSubject" name="subject" maxlength="200" class="form-control"
+                               aria-describedby="disputeSubjectError" placeholder="Tóm tắt vấn đề cần hỗ trợ">
+                        <div id="disputeSubjectError" class="invalid-feedback">Tiêu đề phải có từ 5 đến 200 ký tự.</div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Mô tả và mong muốn xử lý</label>
+                        <textarea id="disputeDescription" name="description" maxlength="2000" rows="5" class="form-control"
+                                  aria-describedby="disputeDescriptionError" placeholder="Nêu diễn biến, căn cứ và kết quả bạn mong muốn"></textarea>
+                        <div id="disputeDescriptionError" class="invalid-feedback">Mô tả phải có từ 10 đến 2.000 ký tự.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Hủy</button>
+                    <button class="btn btn-danger btn-sm" type="submit"><i class="fa-solid fa-paper-plane"></i> Gửi cho Admin</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/datatables/js/dataTables.min.js" asp-append-version="true"></script>
+    <script src="~/lib/datatables/js/dataTables.bootstrap5.min.js" asp-append-version="true"></script>
+    <script src="~/js/koc/disputes.js" asp-append-version="true"></script>
+}

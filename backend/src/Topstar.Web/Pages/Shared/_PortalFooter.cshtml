@@ -1,0 +1,31 @@
+@model string
+@using Topstar.Application.Website
+@inject IWebsiteContentService WebsiteContentService
+@{
+    var website = await WebsiteContentService.GetWebsiteContentAsync(Context?.RequestAborted ?? default);
+    var websiteName = website?.WebsiteName ?? "TopStar";
+    var logoUrl = string.IsNullOrWhiteSpace(website?.LogoUrl) ? "/images/logo.png" : website!.LogoUrl!;
+    var contactEmail = string.IsNullOrWhiteSpace(website?.ContactEmail) ? "info@topstar.vn" : website!.ContactEmail!;
+    var hotline = string.IsNullOrWhiteSpace(website?.Hotline) ? "08 3333 1004" : website!.Hotline!;
+    var phoneUrl = hotline.Replace(" ", string.Empty).Replace(".", string.Empty).Replace("-", string.Empty);
+    var portalName = string.IsNullOrWhiteSpace(Model) ? "Hệ thống" : Model;
+}
+<footer class="portal-footer portal-footer--@portalName.ToLowerInvariant()" aria-label="Thông tin hệ thống @portalName">
+    <div class="container portal-footer__inner">
+        <section class="portal-footer__identity">
+            <span class="portal-footer__logo"><img src="@logoUrl" alt="@websiteName" /></span>
+            <div>
+                <strong>@websiteName <em>@portalName Portal</em></strong>
+                <p>Phát triển bởi <b>Công ty TNHH sản xuất thương mại và dịch vụ Hoa Xinh</b></p>
+                <small>© @DateTime.Now.Year @websiteName. Bảo lưu mọi quyền.</small>
+            </div>
+        </section>
+        <section class="portal-footer__support" aria-label="Kênh hỗ trợ">
+            <span class="portal-footer__support-title">Hỗ trợ hệ thống</span>
+            <div>
+                <a href="tel:@phoneUrl"><i class="fa-solid fa-phone"></i><span><small>Hotline</small><strong>@hotline</strong></span></a>
+                <a href="mailto:@contactEmail"><i class="fa-solid fa-envelope"></i><span><small>Email hỗ trợ</small><strong>@contactEmail</strong></span></a>
+            </div>
+        </section>
+    </div>
+</footer>

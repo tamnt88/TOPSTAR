@@ -1,0 +1,52 @@
+@page
+@model Topstar.Web.Pages.Admin.Settings.SampleDataModel
+@{
+    ViewData["Title"] = "Xóa dữ liệu mẫu";
+    ViewData["AdminHeaderTitle"] = "Xóa dữ liệu mẫu";
+    ViewData["AdminActivePath"] = "/Admin/Settings/SampleData";
+}
+@section Styles { <link rel="stylesheet" href="~/css/admin/sample-data.css" asp-append-version="true" /> }
+
+<main class="sample-cleanup">
+    <header class="sample-head">
+        <div class="sample-icon"><i class="fa-solid fa-broom"></i></div>
+        <div><span>BẢO TRÌ DỮ LIỆU</span><h1>Xóa dữ liệu mẫu</h1><p>Dọn tài khoản KOC/Brand do bộ seed tạo và toàn bộ dữ liệu nghiệp vụ phụ thuộc.</p></div>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div class="alert @(Model.Success ? "alert-success" : "alert-danger")">@Model.Message</div>
+    }
+
+    <section class="sample-safety">
+        <i class="fa-solid fa-shield-halved"></i>
+        <div><strong>Tài khoản đăng ký thật được giữ nguyên</strong><p>Hệ thống chỉ nhận diện email <code>seed.koc.*@@seed.topstar.local</code>, <code>seed.brand.*@@seed.topstar.local</code> và hai tài khoản demo cũ <code>koc@@topstar.local</code>, <code>brand@@topstar.local</code>. Không nhận diện theo tên hiển thị.</p></div>
+    </section>
+
+    <section class="sample-card">
+        <div class="sample-card-head"><div><h2>Dữ liệu sẽ được xóa</h2><p>Số liệu được đọc trực tiếp từ database tại thời điểm mở trang.</p></div><span class="sample-live"><i></i> Xem trước</span></div>
+        <div class="sample-stats">
+            <article><span>Thành viên mẫu</span><strong>@Model.Preview.MemberAccounts.ToString("N0")</strong></article>
+            <article><span>Brand mẫu</span><strong>@Model.Preview.BrandAccounts.ToString("N0")</strong></article>
+            <article><span>Hồ sơ KOC</span><strong>@Model.Preview.KocProfiles.ToString("N0")</strong></article>
+            <article><span>Hồ sơ Brand</span><strong>@Model.Preview.BrandProfiles.ToString("N0")</strong></article>
+            <article><span>Chiến dịch</span><strong>@Model.Preview.Campaigns.ToString("N0")</strong></article>
+            <article><span>Bản ghi liên quan</span><strong>@Model.Preview.RelatedRecords.ToString("N0")</strong></article>
+        </div>
+
+        <div class="sample-scope"><h3>Phạm vi dọn dẹp</h3><p>Bao gồm hồ sơ, mạng xã hội, chiến dịch, ứng tuyển, cộng tác, lịch hẹn, giao nhận, nội dung, đánh giá, ví và lịch sử phát sinh từ các tài khoản mẫu. Danh mục, cấu hình hệ thống, menu, khóa học và tài khoản thật không bị xóa.</p></div>
+
+        @if (Model.Preview.HasSampleData)
+        {
+            <form method="post" class="sample-confirm" novalidate>
+                <label asp-for="Confirmation">Nhập <code>@SampleDataModel.ConfirmationText</code> để xác nhận</label>
+                <div><input asp-for="Confirmation" class="form-control" autocomplete="off" placeholder="@SampleDataModel.ConfirmationText" /><button class="btn btn-danger" type="submit"><i class="fa-solid fa-trash-can"></i> Xóa dữ liệu mẫu</button></div>
+                <span asp-validation-for="Confirmation" class="text-danger"></span>
+            </form>
+        }
+        else
+        {
+            <div class="sample-empty"><i class="fa-solid fa-circle-check"></i><span>Database hiện không có tài khoản mẫu cần xóa.</span></div>
+        }
+    </section>
+</main>

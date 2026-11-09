@@ -1,0 +1,309 @@
+@page
+@model Topstar.Web.Pages.Admin.Finance.CampaignFundingModel
+@using Topstar.Application.Billing
+<link rel="stylesheet" href="~/css/admin/vnpay-journal.css" asp-append-version="true"/>
+@{
+    ViewData["Title"] = "Ký quỹ chiến dịch";
+    var fundingItems = Model.Items.Where(x => x.Id.HasValue).ToList();
+    var settlementItems = fundingItems.Where(x => x.Status is CampaignFundingStatuses.Paid or CampaignFundingStatuses.PartiallyReleased).ToList();
+}
+
+<div class="admin-funding-page">
+    <header class="admin-funding-heading">
+        <div>
+            <span class="admin-page-eyebrow"><i class="fa-solid fa-vault"></i> TÀI CHÍNH CHIẾN DỊCH</span>
+            <h1>Ký quỹ chiến dịch</h1>
+            <p>Theo dõi yêu cầu thanh toán, xác minh giao dịch và quản lý giải ngân.</p>
+        </div>
+        <a asp-page-handler="Export" class="btn btn-outline-primary"><i class="fa-solid fa-file-csv"></i> Xuất dữ liệu</a>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div hidden data-ts-notification="@(Model.Success ? "success" : "error")">
+            <i class="fa-solid @(Model.Success ? "fa-circle-check" : "fa-circle-exclamation")"></i> @Model.Message
+        </div>
+    }
+
+    <section class="admin-funding-stats" aria-label="Thống kê ký quỹ">
+        <article><span class="is-waiting"><i class="fa-regular fa-clock"></i></span><div><small>Chờ thanh toán</small><strong>@Model.Window.Counts.GetValueOrDefault(CampaignFundingStatuses.Pending)</strong></div></article>
+        <article><span class="is-funded"><i class="fa-solid fa-shield-halved"></i></span><div><small>Đã ký quỹ</small><strong>@Model.Window.Counts.GetValueOrDefault(CampaignFundingStatuses.Paid)</strong></div></article>
+        <article><span class="is-released"><i class="fa-solid fa-circle-check"></i></span><div><small>Đã giải ngân</small><strong>@Model.Window.Counts.GetValueOrDefault(CampaignFundingStatuses.Released)</strong></div></article>
+        <article><span class="is-money"><i class="fa-solid fa-coins"></i></span><div><small>Tổng tiền chờ đối soát</small><strong>@Model.Window.Amounts.GetValueOrDefault(CampaignFundingStatuses.Pending).ToString("N0", PortalFormat.Vietnamese) ₫</strong></div></article>
+    </section>
+
+    <nav class="ts-tabs admin-funding-tabs" role="tablist" aria-label="Hàng đợi tài chính chiến dịch">
+        <button type="button" class="is-active" data-funding-tab="reconcile" data-funding-queue="pending" aria-selected="true"><i class="fa-solid fa-money-check-dollar"></i> Chờ đối soát <b>@Model.Window.Counts.GetValueOrDefault(CampaignFundingStatuses.Pending)</b></button>
+        <button type="button" data-funding-tab="reconcile" data-funding-queue="funded" aria-selected="false"><i class="fa-solid fa-shield-halved"></i> Đã ký quỹ <b>@Model.Window.Counts.GetValueOrDefault(CampaignFundingStatuses.Paid)</b></button>
+        <button type="button" data-funding-tab="settlement" data-funding-queue="settlement" aria-selected="false"><i class="fa-solid fa-scale-balanced"></i> Nghiệm thu & giải ngân <b>@(Model.Window.Counts.GetValueOrDefault(CampaignFundingStatuses.Paid) + Model.Window.Counts.GetValueOrDefault(CampaignFundingStatuses.PartiallyReleased))</b></button>
+        <button type="button" data-funding-tab="reconcile" data-funding-queue="exception" aria-selected="false"><i class="fa-solid fa-triangle-exclamation"></i> Ngoại lệ <b>@(Model.Window.Counts.GetValueOrDefault(CampaignFundingStatuses.Cancelled) + Model.Window.Counts.GetValueOrDefault(CampaignFundingStatuses.Refunded) + Model.Window.Counts.GetValueOrDefault(CampaignFundingStatuses.PartiallyReleased))</b></button>
+        <button type="button" data-funding-tab="reconcile" data-funding-queue="all" aria-selected="false"><i class="fa-solid fa-list"></i> Tất cả <b>@Model.Window.Total</b></button>
+    </nav>
+
+    <section class="admin-funding-panel is-active" data-funding-panel="reconcile">
+        <div class="admin-funding-panel-head">
+            <div><h2>Danh sách yêu cầu thanh toán</h2><p>Kiểm tra chứng từ và xác nhận đúng số tiền thực nhận.</p></div>
+        </div>
+        <partial name="_ListWindow" model='new Topstar.Web.Features.Common.Paging.ListWindowViewModel("campaignFundingTable", Model.Window, "Filters", false)' />
+        <div class="table-responsive">
+            <table id="campaignFundingTable" class="table admin-funding-table align-middle w-100" data-list-actions="false">
+                <thead><tr><th>Chiến dịch</th><th>Brand</th><th>Giá trị</th><th>Phương thức</th><th>Trạng thái</th><th>Chứng từ</th><th class="text-center">Thao tác</th></tr></thead>
+                <tbody>
+                @foreach (var item in fundingItems)
+                {
+                    <tr data-funding-status="@item.Status">
+                        <td><strong>@item.CampaignTitle</strong><small>@(item.OrderNumber ?? "Chưa phát sinh mã yêu cầu")</small></td>
+                        <td>@item.BrandName</td>
+                        <td data-order="@item.TotalPayableSnapshot"><strong>@item.TotalPayableSnapshot.ToString("N0", PortalFormat.Vietnamese) ₫</strong><small>Ngân sách @item.CampaignBudget.ToString("N0", PortalFormat.Vietnamese) ₫ · Phí @item.PlatformFeeSnapshot.ToString("N0", PortalFormat.Vietnamese) ₫</small></td>
+                        <td><span class="admin-funding-method"><i class="fa-solid @(item.PaymentMethod != CampaignPaymentMethods.BankTransfer ? "fa-credit-card" : "fa-building-columns")"></i> @(item.PaymentMethod != CampaignPaymentMethods.BankTransfer ? "Thanh toán online" : "Chuyển khoản")</span></td>
+                        <td><span class="admin-funding-status @StatusClass(item.Status)"><i class="fa-solid @StatusIcon(item.Status)"></i> @StatusLabel(item.Status)</span></td>
+                        <td>
+                            @if (!string.IsNullOrWhiteSpace(item.PaymentProofUrl))
+                            {
+                                <button type="button" class="btn admin-icon-btn js-proof-view" title="Xem chứng từ" data-url="@item.PaymentProofUrl" data-note="@item.PaymentProofNote" data-time="@item.PaymentProofSubmittedAtUtc?.AddHours(7).ToString("dd/MM/yyyy HH:mm")"><i class="fa-regular fa-image"></i><span class="visually-hidden">Xem chứng từ</span></button>
+                            }
+                            else { <span class="text-muted">Chưa có</span> }
+                        </td>
+                        <td class="text-center">
+                            <button type="button" class="btn admin-icon-btn" data-bs-toggle="modal" data-bs-target="#fundingDetail-@item.Id" title="Xem hồ sơ tài chính"><i class="fa-regular fa-eye"></i><span class="visually-hidden">Xem hồ sơ tài chính</span></button>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+        <partial name="_ListWindow" model='new Topstar.Web.Features.Common.Paging.ListWindowViewModel("campaignFundingTable", Model.Window, "Pager")' />
+    </section>
+
+    <section class="admin-funding-panel" data-funding-panel="settlement" hidden>
+        <div class="admin-funding-panel-head"><div><h2>Nghiệm thu và hoàn tiền</h2><p>Ghi nhận giá trị KOC được hưởng và khoản hoàn lại cho Brand.</p></div></div>
+        @if ((Model.Window.Counts.GetValueOrDefault(CampaignFundingStatuses.Paid) + Model.Window.Counts.GetValueOrDefault(CampaignFundingStatuses.PartiallyReleased)) == 0)
+        {
+            <div class="admin-empty-state"><i class="fa-solid fa-scale-balanced"></i><strong>Chưa có hồ sơ cần nghiệm thu</strong><span>Hồ sơ sẽ xuất hiện sau khi chiến dịch được ký quỹ.</span></div>
+        }
+        @foreach (var item in settlementItems)
+        {
+            <article class="admin-settlement-card">
+                <div class="admin-settlement-title"><div><small>@item.BrandName</small><h3>@item.CampaignTitle</h3></div><span>@item.TotalPayableSnapshot.ToString("N0", PortalFormat.Vietnamese) ₫</span></div>
+                <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>KOC</th><th>Thù lao</th><th>Được hưởng</th><th>Được hoàn</th><th>Thao tác</th></tr></thead><tbody>
+                @foreach (var allocation in item.Allocations)
+                {
+                    <tr><td><strong>@allocation.KocName</strong></td><td>@allocation.Amount.ToString("N0", PortalFormat.Vietnamese) ₫</td><td>@allocation.AcceptedAmount.ToString("N0", PortalFormat.Vietnamese) ₫</td><td>@allocation.RefundedAmount.ToString("N0", PortalFormat.Vietnamese) ₫</td><td>
+                    @if (!allocation.ReleasedAtUtc.HasValue)
+                    {
+                        <form method="post" asp-page-handler="Settle" class="admin-inline-action js-validated-form" novalidate><input type="hidden" name="allocationId" value="@allocation.Id"/><div class="admin-validation-field"><input class="form-control" name="acceptedAmount" type="number" min="0" max="@allocation.Amount" value="@allocation.Amount" required aria-label="Số tiền nghiệm thu"/><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Số tiền không hợp lệ.</div></div><div class="admin-validation-field"><input class="form-control" name="reason" minlength="10" maxlength="500" placeholder="Lý do nghiệm thu" required/><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Nhập lý do từ 10 đến 500 ký tự.</div></div><button class="btn btn-success text-nowrap"><i class="fa-solid fa-check"></i> Xác nhận</button></form>
+                    }
+                    else { <span class="admin-funding-status is-released"><i class="fa-solid fa-check"></i> Đã xử lý</span> }
+                    </td></tr>
+                }
+                </tbody></table></div>
+            </article>
+        }
+    </section>
+</div>
+
+@foreach (var item in fundingItems)
+{
+    var modalKey = item.Id!.Value.ToString("N");
+    var canAddReconciliationEvidence = item.PaymentMethod == CampaignPaymentMethods.BankTransfer;
+    var remainingApprovedRefund = item.Allocations.Sum(x => x.RefundedAmount) - item.RefundedAmount;
+    var canAddRefundEvidence = remainingApprovedRefund > 0;
+    var fundingEvidence = Model.AdminEvidences.TryGetValue(item.Id.Value, out var currentEvidence) ? currentEvidence : [];
+    var hasReconciliationEvidence = fundingEvidence.Any(x => x.EvidenceType == CampaignFundingEvidenceTypes.Reconciliation);
+    var brandEvidenceVersions = fundingEvidence.Where(x => x.EvidenceType == CampaignFundingEvidenceTypes.BrandPayment).ToList();
+    var latestBrandEvidence = brandEvidenceVersions.FirstOrDefault();
+    var latestBrandEvidenceAccepted = latestBrandEvidence is not null && Model.LatestEvidenceReviews.TryGetValue(latestBrandEvidence.Id, out var latestBrandReview) && latestBrandReview.Status == CampaignFundingEvidenceReviewStatuses.Accepted;
+    var requiresManualConfirmation = string.IsNullOrWhiteSpace(item.PaymentProofUrl) || !latestBrandEvidenceAccepted || !hasReconciliationEvidence;
+    var topstarEvidence = fundingEvidence.Where(x => x.EvidenceType != CampaignFundingEvidenceTypes.BrandPayment).ToList();
+    <div class="modal fade admin-action-modal admin-funding-record-modal" id="fundingDetail-@item.Id" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="admin-modal-heading"><span><i class="fa-solid fa-vault"></i></span><div><h2>@item.CampaignTitle</h2><small>@item.BrandName · @(item.OrderNumber ?? "Bản phân bổ chưa gửi")</small></div></div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+                <div class="modal-body">
+                    <nav class="ts-tabs admin-record-tabs nav" role="tablist">
+                        <button class="active" data-bs-toggle="tab" data-bs-target="#overview-@modalKey" type="button"><i class="fa-solid fa-chart-pie"></i> Tổng quan</button>
+                        <button data-bs-toggle="tab" data-bs-target="#allocation-@modalKey" type="button"><i class="fa-solid fa-users"></i> Phân bổ KOC <b>@item.Allocations.Count</b></button>
+                        <button data-bs-toggle="tab" data-bs-target="#payment-@modalKey" type="button"><i class="fa-solid fa-credit-card"></i> Thanh toán</button>
+                        <button data-bs-toggle="tab" data-bs-target="#proof-@modalKey" type="button"><i class="fa-regular fa-image"></i> Chứng từ</button>
+                        <button data-bs-toggle="tab" data-bs-target="#settlement-@modalKey" type="button"><i class="fa-solid fa-scale-balanced"></i> Nghiệm thu & hoàn tiền</button>
+                        <button data-bs-toggle="tab" data-bs-target="#history-@modalKey" type="button"><i class="fa-solid fa-clock-rotate-left"></i> Lịch sử</button>
+                    </nav>
+                    <div class="tab-content admin-record-content">
+                        <section class="tab-pane fade show active" id="overview-@modalKey">
+                            <div class="admin-record-summary">
+                                <article><small>Trạng thái</small><span class="admin-funding-status @StatusClass(item.Status)"><i class="fa-solid @StatusIcon(item.Status)"></i> @StatusLabel(item.Status)</span></article>
+                                <article><small>Ngân sách KOC</small><strong>@item.CampaignBudget.ToString("N0", PortalFormat.Vietnamese) ₫</strong></article>
+                                <article><small>Phí nền tảng</small><strong>@item.PlatformFeeSnapshot.ToString("N0", PortalFormat.Vietnamese) ₫</strong></article>
+                                <article><small>Phí cổng thanh toán</small><strong>@item.GatewayFeeSnapshot.ToString("N0", PortalFormat.Vietnamese) ₫</strong></article>
+                                <article><small>Thuế GTGT (@item.VatRate%)</small><strong class="text-nowrap">@PortalFormat.Money(item.VatAmount)</strong><small>@(item.VatMode == "Included" ? "Đã gồm trong giá" : item.VatMode == "Excluded" ? "Cộng thêm vào giá" : "Không áp dụng")</small></article>
+                                <article class="is-total"><small>Tổng phải thanh toán</small><strong>@item.TotalPayableSnapshot.ToString("N0", PortalFormat.Vietnamese) ₫</strong></article>
+                            </div>
+                            <div class="admin-record-meta">
+                                <div><span>Phương thức</span><strong>@(item.PaymentMethod != CampaignPaymentMethods.BankTransfer ? "Thanh toán online" : "Chuyển khoản ngân hàng")</strong></div>
+                                <div><span>Ngày tạo yêu cầu</span><strong>@(item.SubmittedAtUtc?.AddHours(7).ToString("dd/MM/yyyy HH:mm") ?? "Chưa gửi")</strong></div>
+                                <div><span>Hạn thanh toán</span><strong>@(item.DueAtUtc?.AddHours(7).ToString("dd/MM/yyyy HH:mm") ?? "—")</strong></div>
+                                <div><span>Ngày nhận tiền</span><strong>@(item.PaidAtUtc?.AddHours(7).ToString("dd/MM/yyyy HH:mm") ?? "—")</strong></div>
+                            </div>
+                            <h3 class="admin-record-section-title mt-4"><i class="fa-solid fa-rotate-left"></i> Tài khoản nhận hoàn</h3>
+                            @if (!string.IsNullOrWhiteSpace(item.RefundBankName) && !string.IsNullOrWhiteSpace(item.RefundAccountNumber) && !string.IsNullOrWhiteSpace(item.RefundAccountHolder))
+                            {
+                                <div class="admin-record-meta"><div><span>Ngân hàng</span><strong>@item.RefundBankName</strong></div><div><span>Số tài khoản</span><strong>@item.RefundAccountNumber</strong></div><div><span>Chủ tài khoản</span><strong>@item.RefundAccountHolder</strong></div></div>
+                            }
+                            else { <div class="alert alert-warning"><i class="fa-solid fa-triangle-exclamation"></i> Phiên bản yêu cầu cũ chưa có tài khoản nhận hoàn. Không thể xác nhận hoàn tiền cho đến khi bổ sung đủ thông tin.</div> }
+                        </section>
+                        <section class="tab-pane fade" id="allocation-@modalKey">
+                            @if (item.Allocations.Count == 0) { <div class="admin-empty-state"><i class="fa-solid fa-users-slash"></i><strong>Chưa có bảng phân bổ</strong><span>Brand cần chốt KOC và lưu bảng thù lao trước khi tạo yêu cầu thanh toán.</span></div> }
+                            else
+                            {
+                                <div class="table-responsive"><table class="table admin-record-table"><thead><tr><th>KOC</th><th>Thù lao đã khóa</th><th>Đã nghiệm thu</th><th>Dự kiến hoàn</th><th>Trạng thái</th></tr></thead><tbody>
+                                @foreach (var allocation in item.Allocations) { <tr><td><strong>@allocation.KocName</strong></td><td>@allocation.Amount.ToString("N0", PortalFormat.Vietnamese) ₫</td><td>@allocation.AcceptedAmount.ToString("N0", PortalFormat.Vietnamese) ₫</td><td>@allocation.RefundedAmount.ToString("N0", PortalFormat.Vietnamese) ₫</td><td>@(allocation.ReleasedAtUtc.HasValue ? "Đã xử lý" : "Chưa xử lý")</td></tr> }
+                                </tbody></table></div>
+                            }
+                        </section>
+                        <section class="tab-pane fade" id="payment-@modalKey">
+                            @if(item.PaymentMethod=="VnPay")
+                            {
+                                <partial name="_VnPayCallbackHistory" model='@(Model.VnPayLogs.GetValueOrDefault("F"+item.Id!.Value.ToString("N")) ?? Array.Empty<Topstar.Infrastructure.Entities.VnPayCallbackLogEntity>())'/>
+                            }
+                            <div class="admin-record-payment">
+                                <div><i class="fa-solid @(item.PaymentMethod != CampaignPaymentMethods.BankTransfer ? "fa-credit-card" : "fa-building-columns")"></i><div><small>Phương thức thanh toán</small><strong>@(item.PaymentMethod != CampaignPaymentMethods.BankTransfer ? "Thanh toán online" : "Chuyển khoản ngân hàng")</strong></div></div>
+                                <div><small>Mã yêu cầu</small><strong>@(item.OrderNumber ?? "Chưa phát sinh")</strong></div>
+                                <div><small>Mã giao dịch</small><strong>@(item.PaymentReference ?? "Chưa đối soát")</strong></div>
+                            </div>
+                            @if (item.Status == CampaignFundingStatuses.Pending && item.PaymentMethod == CampaignPaymentMethods.BankTransfer)
+                            {
+                                @if (string.IsNullOrWhiteSpace(item.PaymentProofUrl)) { <div class="alert alert-warning mt-3"><i class="fa-solid fa-triangle-exclamation"></i> Brand chưa gửi chứng từ chuyển khoản. Admin vẫn có thể xác nhận thủ công sau khi kiểm tra sao kê ngân hàng.</div> }
+                                else if (!hasReconciliationEvidence) { <div class="alert alert-warning mt-3"><i class="fa-solid fa-file-shield"></i> Hãy lưu chứng từ đối soát Topstar tại tab <strong>Chứng từ</strong> trước khi xác nhận.</div> }
+                                <form method="post" asp-page-handler="Paid" class="admin-record-action @(requiresManualConfirmation ? "has-manual-reason" : "") js-validated-form" novalidate>
+                                    <input type="hidden" name="id" value="@item.Id"/>
+                                    <div class="admin-validation-field"><label>Mã giao dịch ngân hàng <span>*</span></label><input class="form-control" name="reference" minlength="3" maxlength="200" required placeholder="Nhập mã giao dịch đã đối soát"/><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Vui lòng nhập mã giao dịch từ 3 đến 200 ký tự.</div></div>
+                                    @if (requiresManualConfirmation)
+                                    {
+                                        <div class="admin-validation-field"><label>Lý do xác nhận thủ công <span>*</span></label><input class="form-control" name="manualReason" minlength="10" maxlength="500" required placeholder="Ví dụ: Đã kiểm tra sao kê và xác nhận nhận đủ tiền"/><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Vui lòng nhập lý do từ 10 đến 500 ký tự.</div></div>
+                                    }
+                                    <button class="btn btn-success"><i class="fa-solid fa-check"></i> Xác nhận đủ tiền</button>
+                                </form>
+                            }
+                            else if (item.Status == CampaignFundingStatuses.Pending && item.PaymentMethod != CampaignPaymentMethods.BankTransfer)
+                            { <div class="alert alert-info mt-3"><i class="fa-solid fa-shield-halved"></i> Cổng thanh toán online đang xác thực giao dịch. Admin không thể xác nhận thủ công.</div> }
+                            else { <div class="alert alert-light mt-3"><i class="fa-solid fa-circle-info"></i> Hồ sơ hiện không có thao tác đối soát cần thực hiện.</div> }
+                        </section>
+                        <section class="tab-pane fade" id="proof-@modalKey">
+                            <h3 class="admin-record-section-title"><i class="fa-solid fa-building-columns"></i> Chứng từ Brand</h3>
+                            @if (!string.IsNullOrWhiteSpace(item.PaymentProofUrl))
+                            {
+                                <div class="admin-record-proof"><a href="@item.PaymentProofUrl" target="_blank" rel="noopener"><img src="@item.PaymentProofUrl" alt="Chứng từ chuyển khoản"/></a><div><small>Brand gửi lúc @item.PaymentProofSubmittedAtUtc?.AddHours(7).ToString("dd/MM/yyyy HH:mm")</small><p>@(item.PaymentProofNote ?? "Không có ghi chú.")</p><a class="btn btn-outline-primary" href="@item.PaymentProofUrl" target="_blank" rel="noopener"><i class="fa-solid fa-up-right-from-square"></i> Xem ảnh gốc</a></div></div>
+                            }
+                            else { <div class="admin-empty-state"><i class="fa-regular fa-image"></i><strong>Chưa có chứng từ</strong><span>Brand chưa gửi bằng chứng chuyển khoản cho yêu cầu này.</span></div> }
+                            @if (brandEvidenceVersions.Count > 0)
+                            {
+                                <details class="admin-evidence-versions" open><summary><i class="fa-solid fa-clock-rotate-left"></i> @brandEvidenceVersions.Count phiên bản Brand đã gửi</summary><div class="admin-evidence-list">
+                                @foreach(var evidence in brandEvidenceVersions)
+                                {
+                                    var review=Model.LatestEvidenceReviews.TryGetValue(evidence.Id,out var currentReview)?currentReview:null;
+                                    <article><a href="@evidence.FileUrl" target="_blank" rel="noopener"><img src="@evidence.FileUrl" alt="Chứng từ Brand"/></a><div><strong>Chứng từ Brand</strong><small>@evidence.CreatedAtUtc.AddHours(7).ToString("dd/MM/yyyy HH:mm")</small><p>@evidence.Note</p>
+                                    @if(review is not null){<div class="alert alert-light py-2"><strong>@(review.Status==CampaignFundingEvidenceReviewStatuses.Accepted?"Đã chấp nhận":review.Status==CampaignFundingEvidenceReviewStatuses.SupplementRequired?"Cần bổ sung":"Đã từ chối")</strong><div>@review.Reason</div></div>}
+                                    <form method="post" asp-page-handler="ReviewEvidence" class="js-validated-form" novalidate><input type="hidden" name="evidenceId" value="@evidence.Id"/><div class="row g-2"><div class="col-md-4"><select class="form-select" name="reviewStatus" required><option value="@CampaignFundingEvidenceReviewStatuses.Accepted">Chấp nhận</option><option value="@CampaignFundingEvidenceReviewStatuses.SupplementRequired">Yêu cầu bổ sung</option><option value="@CampaignFundingEvidenceReviewStatuses.Rejected">Từ chối</option></select></div><div class="col-md-6 admin-validation-field"><input class="form-control" name="reviewReason" minlength="10" maxlength="500" required placeholder="Nhập phản hồi từ 10 đến 500 ký tự"/><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Nhập phản hồi từ 10 đến 500 ký tự.</div></div><div class="col-md-2"><button class="btn btn-primary w-100"><i class="fa-solid fa-paper-plane"></i> Gửi</button></div></div></form>
+                                    </div></article>
+                                }
+                                </div></details>
+                            }
+                            <div class="admin-evidence-divider"></div>
+                            <h3 class="admin-record-section-title"><i class="fa-solid fa-file-shield"></i> Chứng từ Topstar</h3>
+                            @if (topstarEvidence.Count > 0)
+                            {
+                                <div class="admin-evidence-list">
+                                @foreach (var evidence in topstarEvidence)
+                                {
+                                    <article><a href="@evidence.FileUrl" target="_blank" rel="noopener"><img src="@evidence.FileUrl" alt="Chứng từ Topstar"/></a><div><strong>@(evidence.EvidenceType == CampaignFundingEvidenceTypes.Refund ? "Chứng từ hoàn tiền" : "Chứng từ đối soát")</strong><small>@evidence.CreatedAtUtc.AddHours(7).ToString("dd/MM/yyyy HH:mm") · @evidence.Reference</small><p>@evidence.Note</p>@if(evidence.Amount.HasValue){<b>@evidence.Amount.Value.ToString("N0", PortalFormat.Vietnamese) ₫</b>}</div></article>
+                                }
+                                </div>
+                            }
+                            @if (canAddReconciliationEvidence || canAddRefundEvidence)
+                            {
+                            <form method="post" enctype="multipart/form-data" asp-page-handler="Evidence" class="admin-evidence-form js-validated-form" data-reconciliation-max="@item.RemainingPayment" data-refund-max="@remainingApprovedRefund" novalidate>
+                                <input type="hidden" name="fundingId" value="@item.Id"/>
+                                <div class="admin-validation-field"><label>Loại chứng từ <span>*</span></label><select class="form-select" name="evidenceType" required>@if(canAddReconciliationEvidence){<option value="@CampaignFundingEvidenceTypes.Reconciliation">Đối soát thanh toán</option>}@if(canAddRefundEvidence){<option value="@CampaignFundingEvidenceTypes.Refund">Hoàn tiền cho Brand</option>}</select><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i></div>
+                                <div class="admin-validation-field"><label>Mã giao dịch <span>*</span></label><input class="form-control" name="reference" minlength="3" maxlength="200" required/><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Nhập mã giao dịch từ 3 đến 200 ký tự.</div></div>
+                                <div class="admin-validation-field"><label>Số tiền thực nhận <span>*</span></label><input class="form-control js-evidence-amount" name="amount" type="number" min="1" required/><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Vui lòng nhập số tiền thực nhận lớn hơn 0.</div></div>
+                                <div class="admin-validation-field admin-evidence-file"><label>Ảnh chứng từ <span>*</span></label><input class="form-control" name="evidenceFile" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required/><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><small>JPG, PNG hoặc WEBP; tối đa 5 MB.</small><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Vui lòng chọn ảnh chứng từ hợp lệ.</div></div>
+                                <div class="admin-validation-field admin-evidence-note"><label>Ghi chú <span>*</span></label><textarea class="form-control" name="note" minlength="10" maxlength="500" required placeholder="Mô tả nội dung đối soát hoặc giao dịch hoàn tiền"></textarea><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Nhập ghi chú từ 10 đến 500 ký tự.</div></div>
+                                <button class="btn btn-primary"><i class="fa-solid fa-upload"></i> Lưu chứng từ</button>
+                            </form>
+                            }
+                        </section>
+                        <section class="tab-pane fade" id="settlement-@modalKey">
+                            @if (item.Status is not (CampaignFundingStatuses.Paid or CampaignFundingStatuses.PartiallyReleased))
+                            {
+                                <div class="admin-empty-state"><i class="fa-solid fa-lock"></i><strong>Chưa đến giai đoạn nghiệm thu</strong><span>Hồ sơ chỉ được nghiệm thu sau khi đã ký quỹ.</span></div>
+                            }
+                            else if (!Model.AdjudicatedCampaignIds.Contains(item.CampaignId))
+                            {
+                                <div class="alert alert-info"><i class="fa-solid fa-circle-info"></i> Chiến dịch bình thường được giải ngân theo quy trình hoàn thành. Nghiệm thu một phần chỉ mở khi có kết luận tranh chấp.</div>
+                            }
+                            else
+                            {
+                                <div class="table-responsive"><table class="table admin-record-table"><thead><tr><th>KOC</th><th>Thù lao</th><th>Đã duyệt</th><th>Thao tác</th></tr></thead><tbody>
+                                @foreach (var allocation in item.Allocations)
+                                {
+                                    <tr><td><strong>@allocation.KocName</strong></td><td>@allocation.Amount.ToString("N0", PortalFormat.Vietnamese) ₫</td><td>@allocation.AcceptedAmount.ToString("N0", PortalFormat.Vietnamese) ₫</td><td>
+                                    @if (!allocation.ReleasedAtUtc.HasValue)
+                                    {
+                                        <form method="post" asp-page-handler="Settle" class="admin-inline-action js-validated-form" novalidate><input type="hidden" name="allocationId" value="@allocation.Id"/><div class="admin-validation-field"><input class="form-control" name="acceptedAmount" type="number" min="0" max="@allocation.Amount" value="@allocation.Amount" required aria-label="Số tiền nghiệm thu"/><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Số tiền không hợp lệ.</div></div><div class="admin-validation-field"><input class="form-control" name="reason" minlength="10" maxlength="500" placeholder="Lý do nghiệm thu" required/><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Nhập lý do từ 10 đến 500 ký tự.</div></div><button class="btn btn-success text-nowrap"><i class="fa-solid fa-check"></i> Xác nhận</button></form>
+                                    }
+                                    else { <span class="admin-funding-status is-released"><i class="fa-solid fa-check"></i> Đã xử lý</span> }
+                                    </td></tr>
+                                }
+                                </tbody></table></div>
+                                var approvedRefund = item.Allocations.Sum(x => x.RefundedAmount);
+                                var remainingRefund = approvedRefund - item.RefundedAmount;
+                                @if (remainingRefund > 0)
+                                {
+                                    <form method="post" asp-page-handler="Refund" class="admin-record-refund js-validated-form" novalidate><input type="hidden" name="fundingId" value="@item.Id"/><div class="admin-validation-field"><label>Số tiền hoàn <span>*</span></label><input class="form-control" name="amount" type="number" min="1" max="@remainingRefund" value="@remainingRefund" required/><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Số tiền hoàn không hợp lệ.</div></div><div class="admin-validation-field"><label>Mã giao dịch <span>*</span></label><input class="form-control" name="reference" minlength="3" maxlength="200" required/><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Nhập mã giao dịch từ 3 đến 200 ký tự.</div></div><div class="admin-validation-field"><label>Lý do hoàn <span>*</span></label><input class="form-control" name="reason" minlength="10" maxlength="500" required/><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Nhập lý do từ 10 đến 500 ký tự.</div></div><button class="btn btn-danger"><i class="fa-solid fa-rotate-left"></i> Xác nhận hoàn</button></form>
+                                }
+                            }
+                        </section>
+                        <section class="tab-pane fade" id="history-@modalKey">
+                            @if (!Model.Ledgers.TryGetValue(item.Id!.Value, out var entries) || entries.Count == 0)
+                            {
+                                <div class="admin-empty-state"><i class="fa-solid fa-clock-rotate-left"></i><strong>Chưa có biến động quỹ</strong><span>Lịch sử sẽ được tạo khi hồ sơ phát sinh giao dịch.</span></div>
+                            }
+                            else
+                            {
+                                <div class="admin-record-timeline">@foreach (var entry in entries){<article><span><i class="fa-solid fa-coins"></i></span><div><strong>@LedgerLabel(entry.EntryType)</strong><p>@LedgerNote(entry.Note)</p><small>@entry.CreatedAtUtc.AddHours(7).ToString("dd/MM/yyyy HH:mm")</small></div><b class="@(entry.Amount < 0 ? "is-out" : "is-in")">@entry.Amount.ToString("N0", PortalFormat.Vietnamese) ₫</b></article>}</div>
+                            }
+                        </section>
+                    </div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Đóng</button></div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="modal fade admin-action-modal" id="confirmPaidModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><form method="post" asp-page-handler="Paid" id="confirmPaidForm" novalidate>
+        <div class="modal-header"><div class="admin-modal-heading"><span><i class="fa-solid fa-money-bill-transfer"></i></span><div><h2>Xác nhận thanh toán</h2><small id="paidModalOrder"></small></div></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div>
+        <div class="modal-body"><input type="hidden" name="id" id="paidFundingId"/><div class="admin-modal-summary"><span>Chiến dịch</span><strong id="paidModalTitle"></strong><span>Số tiền cần xác nhận</span><strong id="paidModalTotal"></strong></div><div class="alert alert-info"><i class="fa-solid fa-circle-info"></i> Chỉ xác nhận sau khi tiền đã vào tài khoản Topstar và thông tin giao dịch khớp với yêu cầu.</div><div class="admin-validation-field"><label for="paidReference">Mã giao dịch <span>*</span></label><input id="paidReference" name="reference" minlength="3" maxlength="200" required class="form-control" placeholder="Nhập mã giao dịch ngân hàng"/><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Vui lòng nhập mã giao dịch từ 3 đến 200 ký tự.</div></div></div>
+        <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Đóng</button><button type="submit" class="btn btn-success"><i class="fa-solid fa-check"></i> Xác nhận</button></div>
+    </form></div></div>
+</div>
+
+<div class="modal fade admin-action-modal" id="proofModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><div class="admin-modal-heading"><span><i class="fa-regular fa-image"></i></span><div><h2>Chứng từ chuyển khoản</h2><small id="proofTime"></small></div></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div class="modal-body"><a id="proofLink" target="_blank" rel="noopener"><img id="proofImage" class="admin-proof-image" alt="Chứng từ chuyển khoản"/></a><div class="admin-proof-note"><i class="fa-regular fa-note-sticky"></i><span id="proofNote"></span></div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Đóng</button></div></div></div></div>
+
+@functions {
+    string StatusLabel(string status) => status switch { CampaignFundingStatuses.Draft => "Bản nháp", CampaignFundingStatuses.Pending => "Chờ thanh toán", CampaignFundingStatuses.Paid => "Đã ký quỹ", CampaignFundingStatuses.PartiallyReleased => "Đang giải ngân", CampaignFundingStatuses.Released => "Đã giải ngân", CampaignFundingStatuses.Cancelled => "Đã hủy", CampaignFundingStatuses.Refunded => "Đã hoàn tiền", _ => "Đang xử lý" };
+    string StatusClass(string status) => status switch { CampaignFundingStatuses.Draft => "is-draft", CampaignFundingStatuses.Pending => "is-pending", CampaignFundingStatuses.Paid => "is-funded", CampaignFundingStatuses.PartiallyReleased => "is-processing", CampaignFundingStatuses.Released => "is-released", CampaignFundingStatuses.Cancelled => "is-cancelled", CampaignFundingStatuses.Refunded => "is-released", _ => "is-draft" };
+    string StatusIcon(string status) => status switch { CampaignFundingStatuses.Draft => "fa-file-pen", CampaignFundingStatuses.Pending => "fa-clock", CampaignFundingStatuses.Paid => "fa-shield-halved", CampaignFundingStatuses.PartiallyReleased => "fa-spinner", CampaignFundingStatuses.Released => "fa-circle-check", CampaignFundingStatuses.Cancelled => "fa-ban", CampaignFundingStatuses.Refunded => "fa-rotate-left", _ => "fa-circle-info" };
+    string LedgerLabel(string type) => type switch { "FundingRequested" or "PaymentRequested" => "Đã tạo yêu cầu thanh toán", "PaymentProof" => "Brand đã gửi chứng từ", "Paid" or "FundingPaid" => "Đã nhận tiền ký quỹ", "EarningCreated" => "Ghi nhận thù lao KOC", "RefundApproved" => "Duyệt số tiền hoàn", "RefundPaid" => "Đã hoàn tiền cho Brand", "ReconciliationEvidenceAdded" => "Đã lưu chứng từ đối soát", "RefundEvidenceAdded" => "Đã lưu chứng từ hoàn tiền", "Cancelled" => "Đã hủy yêu cầu", "Expired" => "Yêu cầu đã hết hạn", _ => "Cập nhật quỹ chiến dịch" };
+    string LedgerNote(string note) => note.Contains("QA", StringComparison.OrdinalIgnoreCase) && (note.Contains("Ã", StringComparison.Ordinal) || note.Contains("Ä", StringComparison.Ordinal) || note.Contains("á»", StringComparison.Ordinal)) ? "Dữ liệu QA vòng đời quỹ chiến dịch." : note;
+}
+
+@section Scripts {
+    <script src="/lib/datatables/js/dataTables.min.js" asp-append-version="true"></script>
+    <script src="/lib/datatables/js/dataTables.bootstrap5.min.js" asp-append-version="true"></script>
+    <script src="/js/admin/campaign-funding.js" asp-append-version="true"></script>
+}

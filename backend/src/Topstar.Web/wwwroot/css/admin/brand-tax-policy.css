@@ -1,0 +1,11 @@
+.brand-tax-policy .brand-tax-tabs { gap: 8px; padding: 0 0 8px; }
+.brand-tax-policy .brand-tax-tabs .nav-link { display: inline-flex; align-items: center; gap: 10px; padding: 12px 18px; border-radius: 10px 10px 0 0; font-weight: 600; }
+.brand-tax-policy h2 { display: flex; align-items: center; gap: 10px; line-height: 1.5; }
+.brand-tax-policy h2 > i, .brand-tax-policy .nav-link > i, .brand-tax-policy .btn > i { flex: 0 0 auto; }
+.brand-tax-policy .card-x { padding: 24px; }
+.brand-tax-policy .form-label { margin-bottom: 10px; }
+.brand-tax-policy .brand-tax-actions { padding-top: 16px; border-top: 1px solid #e9e3f2; }
+.brand-tax-policy .btn { display: inline-flex; justify-content: center; align-items: center; gap: 8px; min-height: 40px; padding: 9px 18px; }
+.brand-tax-policy .brand-tax-history h2 { margin-bottom: 18px; }
+.brand-tax-policy .card-x p { line-height: 1.65; }
+@media (max-width: 575.98px) { .brand-tax-policy .card-x { padding: 18px; } .brand-tax-policy .brand-tax-tabs .nav-link { padding: 11px 14px; } }

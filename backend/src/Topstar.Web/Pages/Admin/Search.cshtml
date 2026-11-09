@@ -1,0 +1,10 @@
+@page
+@model Topstar.Web.Pages.Admin.SearchModel
+@{ViewData["Title"]="Tìm kiếm toàn cục";}
+<main class="admin-global-search-page admin-page-wrap">
+ <header><div><span class="admin-page-eyebrow">Tra cứu nhanh</span><h1>Tìm kiếm toàn cục</h1><p>Tìm Brand, KOC, chiến dịch hoặc tranh chấp bằng tên, email, số điện thoại hay nội dung.</p></div></header>
+ <form method="get" class="admin-global-search-form"><i class="fa-solid fa-magnifying-glass"></i><input name="q" value="@Model.Query" class="form-control" minlength="2" maxlength="100" placeholder="Nhập ít nhất 2 ký tự..." autofocus/><button class="btn btn-primary">Tìm kiếm</button></form>
+ @if(Model.Query.Length<2){<div class="admin-empty-state"><i class="fa-solid fa-magnifying-glass"></i><strong>Nhập từ khóa để bắt đầu tra cứu</strong></div>}
+ else if(Model.Results.Count==0){<div class="admin-empty-state"><i class="fa-regular fa-folder-open"></i><strong>Không tìm thấy kết quả phù hợp</strong><span>Thử tìm bằng tên, email hoặc từ khóa ngắn hơn.</span></div>}
+ else{<section class="admin-global-results"><div class="admin-global-results-head"><h2>@Model.Results.Count kết quả</h2><span>Cho “@Model.Query”</span></div>@foreach(var item in Model.Results){<a href="@item.Url" class="admin-global-result"><i class="@item.Icon"></i><div><span>@item.Type</span><strong>@item.Title</strong><small>@item.Detail</small></div><em>@item.Status</em><i class="fa-solid fa-chevron-right"></i></a>}</section>}
+</main>

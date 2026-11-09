@@ -1,0 +1,126 @@
+@page
+@model Topstar.Web.Pages.Koc.NotificationsModel
+@using System.Text.Json
+@{
+    Layout = "_KocLayout";
+    ViewData["Title"] = "Thông báo";
+    var filter = Model.Filter;
+    var payload = Model.Inbox.Items.Select(item => new
+    {
+        id = item.Id,
+        type = item.Type,
+        title = item.Title,
+        body = item.Body,
+        isRead = item.IsRead,
+        isVisible = item.IsVisible,
+        createdAtUtc = item.CreatedAtUtc,
+        readAtUtc = item.ReadAtUtc,
+        hiddenAtUtc = item.HiddenAtUtc,
+        targetUrl = item.TargetUrl,
+        sourceEntityType = item.SourceEntityType,
+        history = item.History.Select(entry => new
+        {
+            eventType = entry.EventType,
+            createdAtUtc = entry.CreatedAtUtc,
+            actorRole = entry.ActorRoleSnapshot
+        })
+    });
+}
+
+<main class="container py-4 koc-notification-page">
+    <form id="notificationAntiForgery">@Html.AntiForgeryToken()</form>
+
+    <header class="koc-notification-heading">
+        <div>
+            <span class="koc-page-eyebrow"><i class="fa-solid fa-bell"></i> TRUNG TÂM CẬP NHẬT</span>
+            <h1>Thông báo</h1>
+            <p>Theo dõi cập nhật và mở nhanh những công việc cần bạn xử lý.</p>
+        </div>
+        @{ /* Count is loaded with the table. */ }
+            <button type="button" class="btn btn-outline-primary btn-sm" id="markAllNotificationsRead" hidden>
+                <i class="fa-solid fa-check-double"></i> Đánh dấu tất cả đã đọc
+            </button>
+    </header>
+
+    <section class="koc-notification-stats" aria-label="Tổng quan thông báo">
+        <article>
+            <span class="is-new"><i class="fa-solid fa-envelope"></i></span>
+            <div><small>Chưa đọc</small><strong><span data-notification-count="unreadCount">—</span></strong><p>Cập nhật cần xem</p></div>
+        </article>
+        <article>
+            <span class="is-active"><i class="fa-solid fa-bell"></i></span>
+            <div><small>Đang hoạt động</small><strong><span data-notification-count="activeCount">—</span></strong><p>Thông báo trong hộp thư</p></div>
+        </article>
+        <article>
+            <span class="is-archived"><i class="fa-solid fa-box-archive"></i></span>
+            <div><small>Đã lưu trữ</small><strong><span data-notification-count="archivedCount">—</span></strong><p>Có thể khôi phục</p></div>
+        </article>
+    </section>
+
+    <section class="koc-notification-panel">
+        <nav class="ts-tabs koc-notification-tabs" aria-label="Lọc thông báo">
+            <a class="@(filter == "all" ? "active" : null)" asp-route-filter="all">
+                <i class="fa-solid fa-layer-group"></i> Tất cả <span><span data-notification-count="activeCount">—</span></span>
+            </a>
+            <a class="@(filter == "unread" ? "active" : null)" asp-route-filter="unread">
+                <i class="fa-solid fa-envelope"></i> Chưa đọc <span><span data-notification-count="unreadCount">—</span></span>
+            </a>
+            <a class="@(filter == "archived" ? "active" : null)" asp-route-filter="archived">
+                <i class="fa-solid fa-box-archive"></i> Đã lưu trữ <span><span data-notification-count="archivedCount">—</span></span>
+            </a>
+        </nav>
+
+        <div class="koc-notification-toolbar"><input id="notificationFilter" type="hidden" value="@filter" />
+            <label>
+                <span>Từ khóa</span>
+                <span class="koc-notification-search"><i class="fa-solid fa-magnifying-glass"></i><input id="notificationSearch" type="search" placeholder="Tìm theo tiêu đề hoặc nội dung" /></span>
+            </label>
+            <label>
+                <span>Hiển thị</span>
+                <select id="notificationPageLength" class="form-select"><option value="10">10 dòng</option><option value="20">20 dòng</option><option value="50">50 dòng</option><option value="100">100 dòng</option></select>
+            </label>
+            <label>
+                <span>Nhóm thông báo</span>
+                <select id="notificationCategory" class="form-select"><option value="">Tất cả nhóm</option><option value="work">Công việc</option><option value="finance">Tài chính</option><option value="support">Hỗ trợ & an toàn</option></select>
+            </label>
+            <button type="button" id="notificationApply" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Lọc</button>
+        </div>
+
+        <div class="koc-notification-table-wrap">
+            <table id="kocNotificationTable" data-list-actions="false" class="table align-middle w-100">
+                <thead><tr><th>Thông báo</th><th>Thời gian</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<div class="modal fade" id="notificationDetailModal" tabindex="-1" aria-labelledby="notificationDetailTitle" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content koc-notification-modal">
+            <div class="modal-header">
+                <span class="koc-notification-modal-icon"><i class="fa-solid fa-bell"></i></span>
+                <div><h2 class="modal-title" id="notificationDetailTitle">Chi tiết thông báo</h2><p id="notificationDetailMeta"></p></div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body">
+                <div class="koc-notification-message"><i class="fa-solid fa-quote-left"></i><p id="notificationDetailBody"></p></div>
+                <section class="koc-notification-history">
+                    <h3><i class="fa-solid fa-clock-rotate-left"></i> Lịch sử trạng thái</h3>
+                    <div id="notificationDetailHistory"></div>
+                </section>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Đóng</button>
+                <button type="button" class="btn btn-primary btn-sm" id="notificationOpenTask"><i class="fa-solid fa-arrow-up-right-from-square"></i> Mở công việc</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script id="notificationData" type="application/json">@Html.Raw(JsonSerializer.Serialize(payload))</script>
+@section Scripts {
+    <script src="/lib/datatables/js/dataTables.min.js"></script>
+    <script src="/lib/datatables/js/dataTables.bootstrap5.min.js"></script>
+    <script src="~/js/koc/notifications.js" asp-append-version="true"></script>
+}

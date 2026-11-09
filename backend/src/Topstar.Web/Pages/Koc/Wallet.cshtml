@@ -1,18 +1,695 @@
-﻿@page
+@page
 @model Topstar.Web.Pages.Koc.WalletModel
-@{ ViewData["Title"] = "KOC Wallet"; }
-<div class="page-wrap card-list">
-  <h1 class="section-title mb-0">Vi thu nhap</h1>
-  <div class="card-x" style="background:#ff7a00;color:#fff"><div class="kpi-title" style="color:#fff">So du kha dung</div><div class="kpi-value">12,500,000 VND</div></div>
-  <div class="kpi-grid">
-    <div class="kpi-box"><div class="kpi-title">Thang nay</div><div class="kpi-value">6,400,000</div></div>
-    <div class="kpi-box"><div class="kpi-title">Thang truoc</div><div class="kpi-value">4,200,000</div></div>
-    <div class="kpi-box"><div class="kpi-title">Tong thu nhap</div><div class="kpi-value">42,000,000</div></div>
-  </div>
-  <div class="card-x">
-    <h2 class="h5">Lich su giao dich</h2>
-    <div class="list-row"><div>Job L'Oreal Paris - Holiday Collection</div><div class="text-success">+2,800,000</div></div>
-    <div class="list-row"><div>Rut tien ve tai khoan VCB</div><div class="text-danger">-5,000,000</div></div>
-    <div class="list-row"><div>Shopee - Flash Sale 11.11</div><div class="text-success">+4,500,000</div></div>
-  </div>
+@using Topstar.Application.Finance
+@{
+    ViewData["Title"] = "Ví thu nhập";
+}
+
+<div class="koc-wallet-page">
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div data-koc-flash data-type="@(Model.MessageSuccess ? "success" : "error")" data-message="@Model.Message" hidden></div>
+    }
+
+    <header class="koc-wallet-heading">
+        <div>
+            <span class="koc-page-eyebrow"><i class="fa-solid fa-wallet"></i> TÀI CHÍNH CÁ NHÂN</span>
+            <h1>Ví thu nhập</h1>
+            <p>Quản lý số dư, tài khoản nhận tiền và theo dõi toàn bộ giao dịch tại một nơi.</p>
+        </div>
+    </header>
+
+    @if (Model.Wallet is null)
+    {
+        <div class="koc-empty-state">
+            <i class="fa-solid fa-wallet"></i>
+            <strong>Chưa tìm thấy ví thu nhập</strong>
+            <span>Vui lòng liên hệ bộ phận hỗ trợ để được kiểm tra.</span>
+        </div>
+    }
+    else
+    {
+        var wallet = Model.Wallet;
+        var canRequestPayout = wallet.PayoutAccount is not null
+            && wallet.AvailableBalance >= wallet.Policy.MinimumAmount;
+
+        <section class="koc-wallet-balance">
+            <div class="koc-wallet-balance-main">
+                <span><i class="fa-solid fa-circle-check"></i> Số dư có thể rút</span>
+                <strong>@wallet.AvailableBalance.ToString("N0", PortalFormat.Vietnamese) <small>₫</small></strong>
+                <p>Khoản tiền đã hoàn tất đối soát và sẵn sàng chuyển về tài khoản của bạn.</p>
+            </div>
+            <div class="koc-wallet-withdraw">
+                @if (canRequestPayout)
+                {
+                    <div class="koc-wallet-withdraw-ready">
+                        <span><i class="fa-solid fa-building-columns"></i></span>
+                        <div>
+                            <small>Chuyển đến</small>
+                            <strong>@wallet.PayoutAccount!.BankCode · @wallet.PayoutAccount.MaskedAccountNumber</strong>
+                            <p>Tối thiểu @wallet.Policy.MinimumAmount.ToString("N0", PortalFormat.Vietnamese) ₫</p>
+                        </div>
+                        <button type="button" class="btn btn-light btn-sm"
+                                data-bs-toggle="modal" data-bs-target="#walletPayoutModal">
+                            <i class="fa-solid fa-money-bill-transfer"></i> Rút tiền
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <div class="koc-wallet-withdraw-disabled">
+                        <i class="fa-solid @(wallet.PayoutAccount is null ? "fa-building-columns" : "fa-hourglass-half")"></i>
+                        <div>
+                            <strong>@(wallet.PayoutAccount is null ? "Chưa có tài khoản nhận tiền" : "Chưa đủ số dư tối thiểu")</strong>
+                            <span>@(wallet.PayoutAccount is null
+                                ? "Cập nhật tài khoản bên dưới để sẵn sàng nhận thu nhập."
+                                : $"Bạn có thể rút từ {wallet.Policy.MinimumAmount:N0} ₫.")</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+
+        <section class="koc-wallet-stats" aria-label="Tổng quan số dư">
+            <article class="is-pending">
+                <span><i class="fa-solid fa-arrows-rotate"></i></span>
+                <div><small>Đang đối soát</small><strong>@wallet.PendingBalance.ToString("N0", PortalFormat.Vietnamese) ₫</strong></div>
+            </article>
+            <article class="is-hold">
+                <span><i class="fa-solid fa-pause"></i></span>
+                <div><small>Đang tạm giữ</small><strong>@wallet.OnHoldBalance.ToString("N0", PortalFormat.Vietnamese) ₫</strong></div>
+            </article>
+            <article class="is-requested">
+                <span><i class="fa-solid fa-paper-plane"></i></span>
+                <div><small>Đang chờ chuyển</small><strong>@wallet.RequestedPayoutBalance.ToString("N0", PortalFormat.Vietnamese) ₫</strong></div>
+            </article>
+            <article class="is-total">
+                <span><i class="fa-solid fa-chart-line"></i></span>
+                <div><small>Tổng thu nhập</small><strong>@wallet.TotalEarnings.ToString("N0", PortalFormat.Vietnamese) ₫</strong></div>
+            </article>
+        </section>
+
+        <section class="koc-wallet-workspace">
+            <nav class="ts-tabs koc-wallet-tabs nav" role="tablist" aria-label="Quản lý ví thu nhập">
+                <button class="active" data-bs-toggle="tab" data-bs-target="#walletAccountPane" type="button" role="tab" aria-selected="true">
+                    <i class="fa-solid fa-building-columns"></i>
+                    <span>Tài khoản nhận tiền</span>
+                    @if (wallet.PayoutAccounts.Count > 0) { <b>@wallet.PayoutAccounts.Count</b> }
+                </button>
+                <button data-bs-toggle="tab" data-bs-target="#walletPayoutPane" type="button" role="tab" aria-selected="false">
+                    <i class="fa-solid fa-money-bill-transfer"></i>
+                    <span>Yêu cầu rút tiền</span>
+                    <b>@wallet.PayoutRequests.Count</b>
+                </button>
+                <button data-bs-toggle="tab" data-bs-target="#walletTransactionPane" type="button" role="tab" aria-selected="false">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span>Lịch sử giao dịch</span>
+                    <b>@wallet.Transactions.Count</b>
+                </button>
+            </nav>
+            <div class="tab-content koc-wallet-tab-content">
+                <div class="tab-pane fade show active" id="walletAccountPane" role="tabpanel">
+            <section class="koc-wallet-panel koc-wallet-bank">
+                <header>
+                    <span class="koc-wallet-section-icon"><i class="fa-solid fa-building-columns"></i></span>
+                    <div><h2>Tài khoản nhận tiền</h2><p>Thông tin được mã hóa và bảo vệ an toàn.</p></div>
+                </header>
+
+                @if (wallet.PayoutAccounts.Count > 0)
+                {
+                    <div class="koc-wallet-account-list">
+                    @foreach (var account in wallet.PayoutAccounts)
+                    {
+                        <article class="koc-wallet-saved-account @(account.IsDefault ? "is-default" : string.Empty)">
+                            <span><i class="fa-solid fa-credit-card"></i></span>
+                            <div>
+                                <small>@(account.IsDefault ? "Tài khoản nhận tiền mặc định" : "Tài khoản nhận tiền")</small>
+                                <strong>@account.BankCode · @account.MaskedAccountNumber</strong>
+                                <p>@account.AccountHolderName</p>
+                            </div>
+                            <div class="koc-wallet-account-actions">
+                                @if (account.IsDefault)
+                                {
+                                    <span class="koc-wallet-default-badge"><i class="fa-solid fa-circle-check"></i> Mặc định</span>
+                                }
+                                else
+                                {
+                                    <form method="post" asp-page-handler="DefaultAccount">
+                                        <input type="hidden" name="accountId" value="@account.Id" />
+                                        <button class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-star"></i> Dùng mặc định</button>
+                                    </form>
+                                }
+                                <button type="button" class="btn btn-outline-danger btn-sm"
+                                        data-delete-account-id="@account.Id"
+                                        data-delete-account-label="@account.BankCode · @account.MaskedAccountNumber"
+                                        data-bs-toggle="modal" data-bs-target="#deletePayoutAccountModal">
+                                    <i class="fa-solid fa-trash-can"></i> Xóa
+                                </button>
+                            </div>
+                        </article>
+                    }
+                    </div>
+                }
+                else
+                {
+                    <div class="koc-wallet-account-empty">
+                        <i class="fa-solid fa-building-circle-exclamation"></i>
+                        <div><strong>Chưa có tài khoản nhận tiền</strong><p>Thêm tài khoản để sẵn sàng nhận thu nhập.</p></div>
+                    </div>
+                }
+
+                @if (wallet.PayoutAccounts.Count < 5)
+                {
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPayoutAccountModal">
+                        <i class="fa-solid fa-plus me-1"></i>Thêm tài khoản
+                    </button>
+                    <div class="modal fade koc-wallet-modal" id="addPayoutAccountModal" tabindex="-1"
+                         aria-labelledby="addPayoutAccountTitle" aria-hidden="true"
+                         data-auto-open-modal="@(!string.IsNullOrWhiteSpace(Model.AccountErrorMessage) ? "true" : "false")">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <span class="koc-wallet-modal-icon is-payout"><i class="fa-solid fa-building-columns"></i></span>
+                                    <div><h2 class="modal-title" id="addPayoutAccountTitle">Thêm tài khoản nhận tiền</h2><p>Bạn có thể lưu tối đa 5 tài khoản.</p></div>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                                </div>
+                                <div class="modal-body">
+                    <form method="post" asp-page-handler="Account" id="walletBankForm" class="koc-wallet-bank-form" novalidate>
+                        <div>
+                            <label for="walletBankCode">Ngân hàng</label>
+                            <input id="walletBankCode" name="bankCode" maxlength="20"
+                                   value="@Model.AccountBankCode"
+                                   class="form-control @(Model.AccountErrorField == "bankCode" ? "is-invalid" : string.Empty)"
+                                   placeholder="VD: VCB" />
+                            @if (Model.AccountErrorField == "bankCode") { <div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> @Model.AccountErrorMessage</div> }
+                        </div>
+                        <div>
+                            <label for="walletAccountHolder">Tên chủ tài khoản</label>
+                            <input id="walletAccountHolder" name="accountHolderName" maxlength="150"
+                                   value="@Model.AccountHolderName"
+                                   class="form-control @(Model.AccountErrorField == "accountHolderName" ? "is-invalid" : string.Empty)"
+                                   placeholder="NGUYEN VAN A" />
+                            @if (Model.AccountErrorField == "accountHolderName") { <div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> @Model.AccountErrorMessage</div> }
+                        </div>
+                        <div>
+                            <label for="walletAccountNumber">Số tài khoản</label>
+                            <input id="walletAccountNumber" name="accountNumber" inputmode="numeric"
+                                   autocomplete="off" maxlength="30"
+                                   class="form-control @(Model.AccountErrorField == "accountNumber" ? "is-invalid" : string.Empty)"
+                                   placeholder="Nhập số tài khoản mới" />
+                            @if (Model.AccountErrorField == "accountNumber") { <div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> @Model.AccountErrorMessage</div> }
+                        </div>
+                        <label class="koc-wallet-default-check">
+                            <input type="checkbox" name="makeDefault" value="true" @(wallet.PayoutAccounts.Count == 0 ? "checked" : null) />
+                            <span>Đặt làm tài khoản mặc định</span>
+                        </label>
+                        @if (Model.AccountErrorField == "form") { <div class="koc-wallet-form-error"><i class="fa-solid fa-circle-exclamation"></i> @Model.AccountErrorMessage</div> }
+                        <p><i class="fa-solid fa-lock"></i> Sau khi lưu, hệ thống chỉ hiển thị 4 số cuối.</p>
+                    </form>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                                    <button type="submit" form="walletBankForm" class="btn btn-primary"><i class="fa-solid fa-plus me-1"></i>Thêm tài khoản</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </section>
+                </div>
+                <div class="tab-pane fade" id="walletPayoutPane" role="tabpanel">
+            <section class="koc-wallet-panel koc-wallet-payouts">
+                <header>
+                    <span class="koc-wallet-section-icon"><i class="fa-solid fa-money-bill-transfer"></i></span>
+                    <div><h2>Yêu cầu rút tiền</h2><p>Theo dõi tiến độ chuyển tiền gần đây.</p></div>
+                </header>
+
+<partial name="_ListWindow" model='new Topstar.Web.Features.Common.Paging.ListWindowViewModel("walletPayoutTable", Model.PayoutsWindow)' />
+                @if (wallet.PayoutRequests.Count == 0)
+                {
+                    <div class="koc-wallet-panel-empty">
+                        <i class="fa-regular fa-folder-open"></i>
+                        <strong>Chưa có yêu cầu rút tiền</strong>
+                        <span>Yêu cầu đầu tiên sẽ xuất hiện tại đây.</span>
+                    </div>
+                }
+                else
+                {
+                    <div class="koc-wallet-table-tools" hidden>
+                        <label><i class="fa-solid fa-magnifying-glass"></i><input id="walletPayoutSearch" class="form-control" placeholder="Tìm ngân hàng hoặc mã tham chiếu" /></label>
+                        <select id="walletPayoutStatus" class="form-select" aria-label="Lọc trạng thái yêu cầu rút tiền">
+                            <option value="">Tất cả trạng thái</option>
+                            <option value="Đang xử lý">Đang xử lý</option>
+                            <option value="Đã chuyển">Đã chuyển</option>
+                            <option value="Không thành công">Không thành công</option>
+                        </select>
+                    </div>
+                    <div class="table-responsive koc-wallet-datatable-wrap">
+<table id="walletPayoutTable" class="table koc-wallet-table">
+                            <thead><tr><th>STT</th><th>Tài khoản nhận</th><th>Ngày yêu cầu</th><th>Số tiền</th><th>Thực nhận</th><th>Trạng thái</th></tr></thead>
+                            <tbody>
+                            @foreach (var payout in wallet.PayoutRequests)
+                            {
+                                var payoutClass = payout.Status switch
+                                {
+                                    PayoutStatuses.PaidOut => "is-success",
+                                    PayoutStatuses.Failed => "is-danger",
+                                    PayoutStatuses.Cancelled => "is-muted",
+                                    _ => "is-pending"
+                                };
+                                var payoutText = payout.Status switch
+                                {
+                                    PayoutStatuses.PaidOut => "Đã chuyển",
+                                    PayoutStatuses.Failed => "Không thành công",
+                                    PayoutStatuses.Cancelled => "Đã hủy",
+                                    _ => "Đang xử lý"
+                                };
+                                <tr>
+                                    <td></td>
+                                    <td><strong>@payout.BankCode · •••• @payout.AccountNumberLast4</strong>
+                                        @if (!string.IsNullOrWhiteSpace(payout.PayoutReference)) { <small>Mã: @payout.PayoutReference</small> }
+                                        @if (!string.IsNullOrWhiteSpace(payout.FailureReason)) { <small class="text-danger">@payout.FailureReason</small> }
+                                    </td>
+                                    <td data-order="@payout.RequestedAtUtc.Ticks"><time>@payout.RequestedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy")<small>@payout.RequestedAtUtc.ToVietnamTime().ToString("HH:mm")</small></time></td>
+                                    <td><strong>@payout.Amount.ToString("N0", PortalFormat.Vietnamese) ₫</strong><small>Phí @payout.FeeAmount.ToString("N0", PortalFormat.Vietnamese) ₫</small></td>
+                                    <td><strong class="koc-wallet-amount">@payout.NetAmount.ToString("N0", PortalFormat.Vietnamese) ₫</strong></td>
+                                    <td data-search="@payoutText">
+                                        <div class="koc-wallet-payout-status-cell">
+                                            <span class="koc-wallet-status @payoutClass">@payoutText</span>
+                                            @if (payout.Status == PayoutStatuses.WithdrawRequested)
+                                            {
+                                                <button type="button" class="btn btn-outline-danger btn-sm"
+                                                        data-cancel-payout-id="@payout.Id"
+                                                        data-cancel-payout-label="@($"{payout.Amount:N0} ₫ · {payout.BankCode} · •••• {payout.AccountNumberLast4}")"
+                                                        data-bs-toggle="modal" data-bs-target="#cancelPayoutModal">
+                                                    <i class="fa-solid fa-ban"></i> Hủy lệnh
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </section>
+                </div>
+                <div class="tab-pane fade" id="walletTransactionPane" role="tabpanel">
+        <section class="koc-wallet-panel koc-wallet-transactions">
+            <header>
+                <span class="koc-wallet-section-icon"><i class="fa-solid fa-clock-rotate-left"></i></span>
+                <div><h2>Lịch sử giao dịch</h2><p>Các khoản thu nhập và trạng thái đối soát theo thời gian.</p></div>
+                <span class="koc-wallet-count">@wallet.Transactions.Count giao dịch</span>
+            </header>
+
+<partial name="_ListWindow" model='new Topstar.Web.Features.Common.Paging.ListWindowViewModel("walletTransactionTable", Model.TransactionsWindow)' />
+            @if (wallet.Transactions.Count == 0)
+            {
+                <div class="koc-wallet-panel-empty">
+                    <i class="fa-solid fa-receipt"></i>
+                    <strong>Chưa có giao dịch</strong>
+                    <span>Thu nhập từ chiến dịch sẽ được ghi nhận tại đây.</span>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <div class="koc-wallet-table-tools" hidden>
+                        <label><i class="fa-solid fa-magnifying-glass"></i><input id="walletTransactionSearch" class="form-control" placeholder="Tìm chiến dịch hoặc nội dung" /></label>
+                        <select id="walletTransactionStatus" class="form-select" aria-label="Lọc trạng thái giao dịch">
+                            <option value="">Tất cả trạng thái</option>
+                            <option value="Đối soát">Đối soát</option>
+                            <option value="Khả dụng">Khả dụng</option>
+                            <option value="Tạm giữ">Tạm giữ</option>
+                        </select>
+                    </div>
+<table id="walletTransactionTable" class="table koc-wallet-table">
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Chiến dịch</th>
+                                <th>Thời gian</th>
+                                <th>Trạng thái</th>
+                                <th class="text-end">Số tiền</th>
+                                <th class="text-center">Chi tiết</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in wallet.Transactions)
+                            {
+                                var transactionClass = item.Status switch
+                                {
+                                    WalletStatuses.Available => "is-success",
+                                    WalletStatuses.OnHold => "is-danger",
+                                    WalletStatuses.Pending => "is-pending",
+                                    WalletStatuses.PaidOut => "is-neutral",
+                                    WalletStatuses.Failed => "is-danger",
+                                    _ => "is-neutral"
+                                };
+                                var transactionText = item.Status switch
+                                {
+                                    WalletStatuses.Available => "Khả dụng",
+                                    WalletStatuses.OnHold => "Tạm giữ",
+                                    WalletStatuses.Pending => "Đối soát",
+                                    WalletStatuses.PaidOut => "Đã chi trả",
+                                    WalletStatuses.Failed => "Thất bại",
+                                    _ => item.Status
+                                };
+                                <tr>
+                                    <td></td>
+                                    <td>
+                                        <div class="koc-wallet-transaction-title">
+                                            <span><i class="fa-solid fa-briefcase"></i></span>
+                                            <div><strong>@item.CampaignTitle</strong><small>@item.Description</small></div>
+                                        </div>
+                                    </td>
+                                    <td><time>@item.CreatedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy")<small>@item.CreatedAtUtc.ToVietnamTime().ToString("HH:mm")</small></time></td>
+                                    <td data-search="@transactionText"><span class="koc-wallet-status @transactionClass">@transactionText</span></td>
+                                    <td class="text-end text-nowrap">@if(item.TaxState=="Awaiting"){<strong>Chờ xác minh thuế</strong>}else{<strong class="koc-wallet-amount">+@item.Amount.ToString("N0", PortalFormat.Vietnamese) ₫</strong>}@if(item.PlatformFeeAmount>0){<small class="d-block text-muted">Phí nền tảng: @PortalFormat.Money(item.PlatformFeeAmount)</small>}@if(item.TaxState=="Calculated"){<small class="d-block text-muted">Trước thuế: @PortalFormat.Money(item.GrossAmount??item.Amount)</small><small class="d-block text-muted">Thuế khấu trừ: @PortalFormat.Money(item.TaxAmount)</small>}</td>
+                                    <td class="text-center">
+                                        @if (item.History.Count > 0 || !string.IsNullOrWhiteSpace(item.HoldReason))
+                                        {
+                                            <button type="button" class="btn btn-outline-primary btn-sm koc-wallet-history-button"
+                                                    title="Xem chi tiết giao dịch"
+                                                    data-wallet-history-id="walletHistory-@item.Id"
+                                                    data-bs-toggle="modal" data-bs-target="#walletHistoryModal">
+                                                <i class="fa-regular fa-eye"></i>
+                                                <span class="visually-hidden">Xem chi tiết</span>
+                                            </button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    @foreach (var item in wallet.Transactions.Where(x => x.History.Count > 0 || !string.IsNullOrWhiteSpace(x.HoldReason)))
+                    {
+                        var modalStatusClass = item.Status switch
+                        {
+                            WalletStatuses.Available => "is-success",
+                            WalletStatuses.OnHold => "is-danger",
+                            WalletStatuses.Pending => "is-pending",
+                            WalletStatuses.PaidOut => "is-neutral",
+                            WalletStatuses.Failed => "is-danger",
+                            _ => "is-neutral"
+                        };
+                        var modalStatusText = item.Status switch
+                        {
+                            WalletStatuses.Available => "Khả dụng",
+                            WalletStatuses.OnHold => "Tạm giữ",
+                            WalletStatuses.Pending => "Đối soát",
+                            WalletStatuses.PaidOut => "Đã chi trả",
+                            WalletStatuses.Failed => "Thất bại",
+                            _ => item.Status
+                        };
+                        <template id="walletHistory-@item.Id" data-wallet-history-title="@item.CampaignTitle">
+                            <section class="koc-wallet-history-summary">
+                                <div>
+                                    <span><i class="fa-solid fa-briefcase"></i></span>
+                                    <p><small>Chiến dịch</small><strong>@item.CampaignTitle</strong></p>
+                                </div>
+                                <div>
+                                    <span><i class="fa-solid fa-coins"></i></span>
+                                    <p><small>Số tiền</small><strong class="koc-wallet-amount">+@item.Amount.ToString("N0", PortalFormat.Vietnamese) ₫</strong></p>
+                                </div>
+                                <div>
+                                    <span><i class="fa-solid fa-circle-check"></i></span>
+                                    <p><small>Trạng thái hiện tại</small><strong><em class="koc-wallet-status @modalStatusClass">@modalStatusText</em></strong></p>
+                                </div>
+                            </section>
+                            <div class="koc-wallet-history-description">
+                                <i class="fa-regular fa-note-sticky"></i>
+                                <div><small>Nội dung giao dịch</small><p>@item.Description</p></div>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(item.HoldReason))
+                            {
+                                <div class="koc-wallet-history-reason">
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                    <div><strong>Lý do tạm giữ</strong><p>@item.HoldReason</p></div>
+                                </div>
+                            }
+                            <section class="koc-wallet-history-timeline">
+                                <header>
+                                    <i class="fa-solid fa-timeline"></i>
+                                    <div><h3>Tiến trình giao dịch</h3><p>@item.History.Count sự kiện được lưu trong lịch sử.</p></div>
+                                </header>
+                                @foreach (var history in item.History.OrderByDescending(x => x.CreatedAtUtc))
+                                {
+                                    var historyText = history.ToStatus switch
+                                    {
+                                        WalletStatuses.Available => "Khả dụng",
+                                        WalletStatuses.OnHold => "Tạm giữ",
+                                        WalletStatuses.Pending => "Đối soát",
+                                        WalletStatuses.PaidOut => "Đã chi trả",
+                                        WalletStatuses.Failed => "Thất bại",
+                                        _ => history.ToStatus
+                                    };
+                                    <article>
+                                        <span><i class="fa-solid fa-circle"></i></span>
+                                        <div>
+                                            <header><strong>@historyText</strong><time><i class="fa-regular fa-clock"></i> @history.CreatedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm")</time></header>
+                                            @if (!string.IsNullOrWhiteSpace(history.Note)) { <p>@history.Note</p> }
+                                        </div>
+                                    </article>
+                                }
+                            </section>
+                        </template>
+                    }
+                </div>
+            }
+        </section>
+                </div>
+            </div>
+        </section>
+
+        <div class="modal fade koc-wallet-modal" id="walletHistoryModal" tabindex="-1"
+             data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="walletHistoryModalTitle" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <span class="koc-wallet-modal-icon is-history"><i class="fa-solid fa-clock-rotate-left"></i></span>
+                        <div><h2 class="modal-title" id="walletHistoryModalTitle">Chi tiết giao dịch</h2>
+                            <p>Xem trạng thái và toàn bộ tiến trình xử lý.</p>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                    </div>
+                    <div class="modal-body" data-wallet-history-content></div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">
+                            <i class="fa-solid fa-xmark"></i> Đóng
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (canRequestPayout)
+        {
+            <div class="modal fade koc-wallet-modal" id="walletPayoutModal" tabindex="-1" data-auto-open-modal="@(Model.OpenPayoutModal ? "true" : "false")"
+                 data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="walletPayoutTitle" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <span class="koc-wallet-modal-icon is-payout"><i class="fa-solid fa-money-bill-transfer"></i></span>
+                            <div>
+                                <h2 class="modal-title" id="walletPayoutTitle">Yêu cầu rút tiền</h2>
+                                <p>Kiểm tra số tiền và tài khoản nhận trước khi xác nhận.</p>
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                        </div>
+                        <form method="post" asp-page-handler="Payout" id="walletPayoutForm" novalidate
+                              data-available="@wallet.AvailableBalance.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                              data-minimum="@wallet.Policy.MinimumAmount.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                              data-fixed-fee="@wallet.Policy.FixedFee.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                              data-fee-rate="@wallet.Policy.FeeRate.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+                            <div class="modal-body">
+                                <section class="koc-wallet-payout-overview">
+                                    <div><small>Số dư khả dụng</small><strong>@wallet.AvailableBalance.ToString("N0", PortalFormat.Vietnamese) ₫</strong></div>
+                                    <div><small>Số tài khoản đã lưu</small><strong>@wallet.PayoutAccounts.Count tài khoản</strong></div>
+                                </section>
+
+                                <label for="walletPayoutAccountSelect">Chuyển đến tài khoản <span>*</span></label>
+                                <select id="walletPayoutAccountSelect" name="payoutAccountId" class="form-select">
+                                    @foreach (var account in wallet.PayoutAccounts)
+                                    {
+                                        var selectedAccount = Model.PayoutAccountId == account.Id
+                                            || (!Model.PayoutAccountId.HasValue && account.IsDefault);
+                                        <option value="@account.Id" selected="@selectedAccount">
+                                            @account.BankCode · @account.MaskedAccountNumber@(account.IsDefault ? " · Mặc định" : "")
+                                        </option>
+                                    }
+                                </select>
+
+                                <label for="walletPayoutAmountDisplay">Số tiền muốn rút <span>*</span></label>
+                                <div class="koc-wallet-money-input @(!string.IsNullOrWhiteSpace(Model.PayoutErrorMessage) ? "is-invalid" : string.Empty)">
+                                    <input id="walletPayoutAmountDisplay" inputmode="numeric" autocomplete="off"
+                                           class="form-control @(!string.IsNullOrWhiteSpace(Model.PayoutErrorMessage) ? "is-invalid" : string.Empty)"
+                                           value="@Model.PayoutAmount" placeholder="Nhập số tiền" />
+                                    <span>₫</span>
+                                </div>
+                                <input id="walletPayoutAmount" name="amount" type="hidden" value="@Model.PayoutAmount" />
+                                <div class="invalid-feedback" data-payout-error>
+                                    <i class="fa-solid fa-circle-exclamation"></i>
+                                    @(Model.PayoutErrorMessage ?? $"Vui lòng nhập số tiền từ {wallet.Policy.MinimumAmount:N0} ₫ đến {wallet.AvailableBalance:N0} ₫.")
+                                </div>
+
+                                <div class="koc-wallet-quick-amounts" aria-label="Chọn nhanh số tiền">
+                                    <button type="button" data-payout-ratio="0.25">25%</button>
+                                    <button type="button" data-payout-ratio="0.5">50%</button>
+                                    <button type="button" data-payout-ratio="0.75">75%</button>
+                                    <button type="button" data-payout-ratio="1">Toàn bộ</button>
+                                </div>
+
+                                <section class="koc-wallet-payout-calculation">
+                                    <div><span>Số tiền yêu cầu</span><strong data-payout-requested>0 ₫</strong></div>
+                                    <div><span>Phí giao dịch</span><strong data-payout-fee>0 ₫</strong></div>
+                                    <div class="is-total"><span>Thực nhận dự kiến</span><strong data-payout-net>0 ₫</strong></div>
+                                    <div><span>Thời gian dự kiến</span><strong>@PayoutPolicyRules.EstimatedProcessingTime</strong></div>
+                                </section>
+                                <div class="koc-wallet-modal-warning">
+                                    <i class="fa-solid fa-shield-halved"></i>
+                                    <span>Hệ thống sẽ gửi mã OTP tới email đã đăng ký. Yêu cầu rút và các lần thay đổi trạng thái đều được lưu lịch sử.</span>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Hủy</button>
+                                <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-paper-plane"></i> Gửi mã xác nhận</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (Model.PayoutChallengeId.HasValue)
+        {
+            <div class="modal fade koc-wallet-modal" id="walletPayoutOtpModal" tabindex="-1" data-auto-open-modal="@(Model.PayoutChallengeId.HasValue ? "true" : "false")"
+                 data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="walletPayoutOtpTitle" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <span class="koc-wallet-modal-icon is-otp"><i class="fa-solid fa-shield-halved"></i></span>
+                            <div>
+                                <h2 class="modal-title" id="walletPayoutOtpTitle">Xác nhận rút tiền</h2>
+                                <p>Mã OTP có hiệu lực trong @Model.PayoutOtpExpiryMinutes phút và chỉ được sử dụng một lần.</p>
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                        </div>
+                        <form method="post" asp-page-handler="ConfirmPayout" id="walletPayoutOtpForm" novalidate>
+                            <input type="hidden" name="challengeId" value="@Model.PayoutChallengeId" />
+                            <input type="hidden" name="expiresAtUtc" value="@Model.PayoutOtpExpiresAtUtc" />
+                            <div class="modal-body">
+                                <div class="koc-wallet-modal-warning">
+                                    <i class="fa-solid fa-envelope-circle-check"></i>
+                                    <span>Kiểm tra hộp thư email đã đăng ký và không chia sẻ mã xác nhận cho bất kỳ ai.</span>
+                                </div>
+                                <label for="walletPayoutOtpCode">Mã xác nhận gồm 6 chữ số <span>*</span></label>
+                                <input id="walletPayoutOtpCode" name="code" inputmode="numeric" autocomplete="one-time-code"
+                                       maxlength="6" class="form-control koc-wallet-otp-code @(!string.IsNullOrWhiteSpace(Model.PayoutOtpErrorMessage) ? "is-invalid" : string.Empty)"
+                                       placeholder="000000" />
+                                <div class="invalid-feedback" data-payout-otp-error>
+                                    <i class="fa-solid fa-circle-exclamation"></i>
+                                    @(Model.PayoutOtpErrorMessage ?? "Vui lòng nhập đúng mã OTP gồm 6 chữ số.")
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Đóng</button>
+                                <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-circle-check"></i> Xác nhận rút tiền</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (wallet.PayoutAccounts.Count > 0)
+        {
+            <div class="modal fade koc-wallet-modal" id="deletePayoutAccountModal" tabindex="-1" data-auto-open-modal="@(Model.OpenDeleteAccountModal ? "true" : "false")"
+                 data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="deletePayoutAccountTitle" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <span class="koc-wallet-modal-icon is-danger"><i class="fa-solid fa-trash-can"></i></span>
+                            <div><h2 class="modal-title" id="deletePayoutAccountTitle">Xóa tài khoản nhận tiền</h2>
+                                <p data-delete-account-label>Tài khoản đã chọn</p>
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                        </div>
+                        <form method="post" asp-page-handler="DeleteAccount" id="deletePayoutAccountForm" novalidate>
+                            <input type="hidden" name="accountId" data-delete-account-id />
+                            <div class="modal-body">
+                                <div class="koc-wallet-modal-warning">
+                                    <i class="fa-solid fa-circle-info"></i>
+                                    <span>Bạn sẽ cần thêm lại tài khoản trước lần rút tiền tiếp theo. Lịch sử giao dịch và payout cũ không bị xóa.</span>
+                                </div>
+                                <label for="deletePayoutAccountReason">Lý do xóa <span>*</span></label>
+                                <textarea id="deletePayoutAccountReason" name="reason" rows="4" maxlength="500"
+                                          class="form-control @(!string.IsNullOrWhiteSpace(Model.DeleteAccountError) ? "is-invalid" : string.Empty)"
+                                          placeholder="Nhập từ 10 đến 500 ký tự">@Model.DeleteAccountReason</textarea>
+                                <div class="invalid-feedback" data-delete-account-error>
+                                    <i class="fa-solid fa-circle-exclamation"></i>
+                                    @(Model.DeleteAccountError ?? "Vui lòng nhập lý do xóa từ 10 đến 500 ký tự.")
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Hủy</button>
+                                <button type="submit" class="btn btn-danger btn-sm"><i class="fa-solid fa-trash-can"></i> Xác nhận xóa</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (wallet.PayoutRequests.Any(x => x.Status == PayoutStatuses.WithdrawRequested))
+        {
+            <div class="modal fade koc-wallet-modal" id="cancelPayoutModal" tabindex="-1" data-auto-open-modal="@(Model.OpenCancelPayoutModal ? "true" : "false")"
+                 data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="cancelPayoutTitle" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <span class="koc-wallet-modal-icon is-danger"><i class="fa-solid fa-ban"></i></span>
+                            <div>
+                                <h2 class="modal-title" id="cancelPayoutTitle">Hủy yêu cầu rút tiền</h2>
+                                <p data-cancel-payout-label>Yêu cầu rút tiền đã chọn</p>
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                        </div>
+                        <form method="post" asp-page-handler="CancelPayout" id="cancelPayoutForm" novalidate>
+                            <input type="hidden" name="payoutRequestId" value="@Model.CancelPayoutId" data-cancel-payout-id />
+                            <div class="modal-body">
+                                <div class="koc-wallet-modal-warning">
+                                    <i class="fa-solid fa-circle-info"></i>
+                                    <span>Chỉ lệnh đang chờ xử lý mới được hủy. Số tiền giữ chỗ sẽ trở lại số dư khả dụng và thao tác được lưu lịch sử.</span>
+                                </div>
+                                <label for="cancelPayoutReason">Lý do hủy lệnh <span>*</span></label>
+                                <textarea id="cancelPayoutReason" name="reason" rows="4" maxlength="500"
+                                          class="form-control @(!string.IsNullOrWhiteSpace(Model.CancelPayoutError) ? "is-invalid" : string.Empty)"
+                                          placeholder="Nhập từ 10 đến 500 ký tự">@Model.CancelPayoutReason</textarea>
+                                <div class="invalid-feedback" data-cancel-payout-error>
+                                    <i class="fa-solid fa-circle-exclamation"></i>
+                                    @(Model.CancelPayoutError ?? "Vui lòng nhập lý do hủy từ 10 đến 500 ký tự.")
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">
+                                    <i class="fa-solid fa-xmark"></i> Đóng
+                                </button>
+                                <button type="submit" class="btn btn-danger btn-sm">
+                                    <i class="fa-solid fa-ban"></i> Xác nhận hủy lệnh
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+    }
 </div>
+
+@section Scripts {
+    <script src="~/lib/datatables/js/dataTables.min.js" asp-append-version="true"></script>
+    <script src="~/lib/datatables/js/dataTables.bootstrap5.min.js" asp-append-version="true"></script>
+    <script src="~/js/koc/wallet.js" asp-append-version="true"></script>
+}

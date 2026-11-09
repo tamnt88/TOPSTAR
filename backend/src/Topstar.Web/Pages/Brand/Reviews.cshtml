@@ -1,0 +1,78 @@
+@page
+@model Topstar.Web.Pages.Brand.ReviewsModel
+@{
+    ViewData["Title"] = "Đánh giá KOC";
+    var pendingCount = Model.Items.Count(x => !x.IsReviewed);
+    var completedCount = Model.Items.Count(x => x.IsReviewed);
+    var averageRating = Model.Items.Where(x => x.Rating.HasValue).Select(x => (decimal)x.Rating!.Value).DefaultIfEmpty(0).Average();
+}
+
+<div class="brand-review-page">
+    <header class="brand-page-heading">
+        <div><span class="brand-page-eyebrow"><i class="fa-solid fa-star"></i> CHẤT LƯỢNG CỘNG TÁC</span><h1>Đánh giá KOC</h1><p>Ghi nhận trải nghiệm hợp tác để Topstar cải thiện chất lượng tuyển chọn KOC.</p></div>
+        <a asp-page="/Brand/Campaigns" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-arrow-left"></i> Quay lại chiến dịch</a>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div class="brand-shortlist-message @(Model.MessageSuccess ? "" : "is-error")"><i class="fa-solid @(Model.MessageSuccess ? "fa-circle-check" : "fa-circle-exclamation")"></i><span>@Model.Message</span></div>
+    }
+
+    <section class="brand-review-stats">
+        <article><span class="is-pending"><i class="fa-regular fa-clock"></i></span><div><small>Chờ đánh giá</small><strong>@pendingCount</strong><em>Chiến dịch đã hoàn tất</em></div></article>
+        <article><span class="is-completed"><i class="fa-solid fa-check"></i></span><div><small>Đã đánh giá</small><strong>@completedCount</strong><em>Nhận xét đã gửi</em></div></article>
+        <article><span class="is-rating"><i class="fa-solid fa-star"></i></span><div><small>Điểm trung bình đã chấm</small><strong>@averageRating.ToString("N1", PortalFormat.Vietnamese)/5</strong><em>Dựa trên @completedCount đánh giá</em></div></article>
+    </section>
+
+    <nav class="ts-tabs brand-review-tabs nav nav-tabs" role="tablist">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#brandReviewSent" type="button"><i class="fa-solid fa-paper-plane"></i> Đánh giá KOC <span>@Model.Items.Count</span></button>
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#brandReviewReceived" type="button"><i class="fa-solid fa-comments"></i> Phản hồi từ KOC <span>@Model.ReceivedItems.Count</span></button>
+    </nav>
+
+    <div class="tab-content">
+        <section id="brandReviewSent" class="tab-pane fade show active">
+            @if (Model.Items.Count == 0)
+            {
+                <div class="brand-review-empty"><span><i class="fa-solid fa-lock"></i></span><h2>@(Model.CampaignId.HasValue ? "Chưa đến giai đoạn đánh giá" : "Chưa có KOC cần đánh giá")</h2><p>@(Model.CampaignId.HasValue ? "Brand chỉ có thể đánh giá KOC sau khi chiến dịch đã hoàn tất nghiệm thu. Các chiến dịch đang tuyển chọn, chờ thanh toán hoặc đang thực hiện sẽ không mở biểu mẫu đánh giá." : "KOC sẽ xuất hiện tại đây sau khi chiến dịch hoàn tất và nội dung đã được nghiệm thu.")</p></div>
+            }
+            else
+            {
+                <div class="brand-review-list">
+                    @foreach (var item in Model.Items)
+                    {
+                        <article class="brand-review-card">
+                            <header><span><i class="fa-solid fa-user"></i></span><div><small>@item.CampaignTitle</small><h2>@item.KocName</h2></div><span class="brand-status-pill @(item.IsReviewed ? "is-completed" : "is-warning")"><i class="fa-solid @(item.IsReviewed ? "fa-check" : "fa-clock")"></i> @(item.IsReviewed ? "Đã đánh giá" : "Chờ đánh giá")</span></header>
+                            @if (item.IsReviewed)
+                            {
+                                <div class="brand-review-result"><div class="brand-review-stars" aria-label="@item.Rating trên 5 sao">@for(var star=1;star<=5;star++){<i class="@(star <= item.Rating ? "fa-solid" : "fa-regular") fa-star"></i>}</div>@if(!string.IsNullOrWhiteSpace(item.Comment)){<p>“@item.Comment”</p>}<small><i class="fa-regular fa-clock"></i> Đã gửi @item.ReviewedAtUtc?.ToVietnamTime().ToString("dd/MM/yyyy HH:mm")</small></div>
+                            }
+                            else
+                            {
+                                <form method="post" asp-page-handler="Submit" class="brand-review-form js-brand-review-form" novalidate>
+                                    <input type="hidden" name="id" value="@item.ParticipationId" />
+                                    <input type="hidden" name="campaignId" value="@Model.CampaignId" />
+                                    <fieldset><legend>Mức độ hài lòng <span>*</span></legend><div class="brand-review-rating">@for(byte score=1;score<=5;score++){var inputId=$"brand-{item.ParticipationId}-{score}";<input type="radio" name="rating" id="@inputId" value="@score" /><label for="@inputId"><i class="fa-solid fa-star"></i><b>@score</b></label>}</div><div class="invalid-feedback" data-rating-error><i class="fa-solid fa-circle-exclamation"></i><span>Vui lòng chọn mức độ hài lòng.</span></div></fieldset>
+                                    <div><label for="comment-@item.ParticipationId">Nhận xét <small>(không bắt buộc)</small></label><textarea id="comment-@item.ParticipationId" name="comment" maxlength="2000" rows="3" class="form-control" placeholder="Điểm KOC làm tốt và nội dung có thể cải thiện"></textarea></div>
+                                    <button class="btn btn-brand-primary btn-sm"><i class="fa-solid fa-paper-plane"></i> Gửi đánh giá</button>
+                                </form>
+                            }
+                        </article>
+                    }
+                </div>
+            }
+        </section>
+
+        <section id="brandReviewReceived" class="tab-pane fade">
+            @if (Model.ReceivedItems.Count == 0)
+            {
+                <div class="brand-review-empty"><span><i class="fa-regular fa-comments"></i></span><h2>Chưa có phản hồi từ KOC</h2><p>Phản hồi mới sẽ xuất hiện sau khi KOC hoàn tất đánh giá quá trình hợp tác.</p></div>
+            }
+            else
+            {
+                <div class="brand-review-list">@foreach(var item in Model.ReceivedItems){<article class="brand-review-card"><header><span><i class="fa-solid fa-user"></i></span><div><small>@item.CampaignTitle</small><h2>@item.ReviewerName</h2></div><div class="brand-review-stars">@for(var star=1;star<=5;star++){<i class="@(star<=item.Rating?"fa-solid":"fa-regular") fa-star"></i>}</div></header>@if(!string.IsNullOrWhiteSpace(item.Comment)){<div class="brand-review-quote"><i class="fa-solid fa-quote-left"></i><p>@item.Comment</p></div>}<small class="brand-review-date"><i class="fa-regular fa-clock"></i> @item.CreatedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm")</small></article>}</div>
+            }
+        </section>
+    </div>
+</div>
+
+@section Scripts { <script src="~/js/brand/brand-reviews.js?v=20260731-1"></script> }

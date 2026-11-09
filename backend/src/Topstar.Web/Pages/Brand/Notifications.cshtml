@@ -1,0 +1,32 @@
+@page
+@model Topstar.Web.Pages.Brand.NotificationsModel
+@{ Layout = "_BrandLayout"; ViewData["Title"] = "Thông báo"; }
+<div class="brand-notification-page">
+ <form id="notificationAntiForgery">@Html.AntiForgeryToken()</form>
+ <header class="brand-page-heading brand-notification-heading"><div><span class="brand-page-eyebrow"><i class="fa-solid fa-bell"></i> TRUNG TÂM THÔNG BÁO</span><h1>Thông báo</h1><p>Theo dõi cập nhật và mở nhanh công việc Brand cần xử lý.</p></div><button id="brandMarkAll" type="button" class="btn btn-outline-primary" data-notification-action="all" hidden><i class="fa-solid fa-check-double"></i> Đánh dấu tất cả đã đọc</button></header>
+ <section class="brand-notification-stats" aria-label="Thống kê thông báo">
+  <article class="is-total"><span><i class="fa-solid fa-inbox"></i></span><div><small>Tổng thông báo</small><strong id="brandNotificationTotal">—</strong></div></article>
+  <article class="is-unread"><span><i class="fa-solid fa-envelope"></i></span><div><small>Chưa đọc</small><strong id="brandUnreadCount">—</strong></div></article>
+  <article class="is-read"><span><i class="fa-solid fa-envelope-open"></i></span><div><small>Đã đọc</small><strong id="brandReadCount">—</strong></div></article>
+  <article class="is-archived"><span><i class="fa-solid fa-box-archive"></i></span><div><small>Đã lưu trữ</small><strong id="brandArchivedCount">—</strong></div></article>
+ </section>
+ <nav class="ts-tabs brand-notification-tabs" aria-label="Nhóm thông báo">
+  <button type="button" class="is-active" data-notification-filter="all"><i class="fa-solid fa-list"></i> Tất cả <b id="brandActiveTabCount">0</b></button>
+  <button type="button" data-notification-filter="unread"><i class="fa-solid fa-envelope"></i> Chưa đọc <b id="brandUnreadTabCount">0</b></button>
+  <button type="button" data-notification-filter="read"><i class="fa-solid fa-envelope-open"></i> Đã đọc <b id="brandReadTabCount">0</b></button>
+  <button type="button" data-notification-filter="archived"><i class="fa-solid fa-box-archive"></i> Đã lưu trữ <b id="brandArchivedTabCount">0</b></button>
+ </nav>
+ <section class="brand-notification-panel">
+  <header><div><h2>Danh sách thông báo</h2><p id="brandNotificationDescription">Các thông báo đang hoạt động.</p></div></header>
+  <form id="brandNotificationFilters" class="brand-notification-filter" novalidate>
+   <label class="brand-notification-search"><span>Từ khóa</span><div><i class="fa-solid fa-magnifying-glass"></i><input id="brandNotificationSearch" class="form-control" maxlength="120" placeholder="Tìm theo tiêu đề hoặc nội dung" /></div></label>
+   <label><span>Hiển thị</span><select id="brandNotificationSize" class="form-select"><option value="10">10 dòng</option><option value="20" selected>20 dòng</option><option value="50">50 dòng</option></select></label>
+   <button class="btn btn-primary" type="submit"><i class="fa-solid fa-filter"></i> Lọc</button><button id="brandNotificationClear" class="btn btn-outline-secondary" type="button"><i class="fa-solid fa-rotate-left"></i> Đặt lại</button>
+  </form>
+  <input id="brandNotificationFilter" type="hidden" value="all" />
+  <div id="brandNotificationFeedback" class="list-feedback" role="status" hidden></div>
+  <div class="brand-notification-table-shell"><table id="brandNotificationTable" data-clear-filters="#brandNotificationClear" class="table brand-data-table align-middle w-100"><thead><tr><th>STT</th><th>Thông báo</th><th>Nội dung</th><th>Thời gian</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody></tbody></table></div>
+ </section>
+</div>
+@section Styles { <link rel="stylesheet" href="~/lib/datatables/css/dataTables.bootstrap5.min.css" asp-append-version="true" /> }
+@section Scripts { <script src="~/lib/datatables/js/dataTables.min.js" asp-append-version="true"></script><script src="~/lib/datatables/js/dataTables.bootstrap5.min.js" asp-append-version="true"></script><script src="~/js/brand/brand-notifications.js" asp-append-version="true"></script> }

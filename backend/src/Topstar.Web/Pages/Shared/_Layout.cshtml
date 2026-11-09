@@ -1,5 +1,7 @@
 @using Topstar.Application.Website
 @inject IWebsiteContentService WebsiteContentService
+@inject Topstar.Web.Services.TrackingConfigurationService TrackingConfigurationService
+@{ var tracking = await TrackingConfigurationService.ReadAsync(Context?.RequestAborted ?? default); }
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -46,15 +48,26 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Arimo:ital,wght@0,400..700;1,400..700&family=Saira+Stencil:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/lib/fontawesome/css/all.min.css" />
-    <link rel="stylesheet" href="~/lib/flaticon/css/uicons-regular-rounded.css" />
-    <link rel="stylesheet" href="~/lib/swiper/swiper-bundle.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/Topstar.Web.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="/lib/fontawesome/css/all.min.css" />
+    <link rel="stylesheet" href="/lib/flaticon/css/uicons-regular-rounded.css" />
+    <link rel="stylesheet" href="/lib/swiper/swiper-bundle.min.css" />
+    <link rel="stylesheet" href="/css/site.css?v=20260814-public-shell" />
+    <link rel="stylesheet" href="~/css/shared/file-picker.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/shared/notifications.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/select2/select2.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/jquery-ui/jquery-ui.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/shared/form-controls.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/shared/statistics.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/css/public/footer.css?v=20260814-public-shell" />
+    <link rel="stylesheet" href="/css/public/public-theme.css?v=20260916-mobile-menu" />
+    @* CSS riêng của từng trang tải sau cùng để không bị giao diện dùng chung ghi đè. *@
+    @await RenderSectionAsync("Styles", required: false)
+    @if (tracking?.Enabled == true && !string.IsNullOrWhiteSpace(tracking.HeadCode)) { @Html.Raw(tracking.HeadCode) }
+    <link rel="stylesheet" href="~/css/shared/ui-standard.css" asp-append-version="true" />
 </head>
-<body>
+<body class="topstar-public-site">
+    @if (tracking?.Enabled == true && !string.IsNullOrWhiteSpace(tracking.BodyCode)) { @Html.Raw(tracking.BodyCode) }
     @{
         var websiteBody = await WebsiteContentService.GetWebsiteContentAsync(Context?.RequestAborted ?? default);
         var websiteNameBody = websiteBody?.WebsiteName ?? "TopStar";
@@ -119,26 +132,28 @@
             </nav>
         </div>
         <div class="collapse d-md-none top-mobile-menu" id="topstarMobileMenu">
-            <div class="container py-2">
-                <a class="top-nav-link @(isHome ? "active" : "") d-flex mb-1" asp-page="/Index"><i class="fa-solid fa-house"></i><span>Trang chủ</span></a>
-                <a class="top-nav-link @(isAcademy ? "active" : "") d-flex mb-1" asp-page="/Public/Academy"><i class="fa-solid fa-graduation-cap"></i><span>Học viện KOC</span></a>
-                <a class="top-nav-link @(isBrand ? "active" : "") d-flex mb-2" asp-page="/Public/BrandPublic"><i class="fa-solid fa-handshake-angle"></i><span>Dành cho Brand</span></a>
-                <div class="d-flex gap-2 pb-2">
+            <div class="container top-mobile-menu__inner">
+                <nav class="top-mobile-menu__nav" aria-label="Điều hướng mobile">
+                    <a class="top-nav-link @(isHome ? "active" : "")" asp-page="/Index"><i class="fa-solid fa-house"></i><span>Trang chủ</span><i class="fa-solid fa-chevron-right top-mobile-menu__arrow"></i></a>
+                    <a class="top-nav-link @(isAcademy ? "active" : "")" asp-page="/Public/Academy"><i class="fa-solid fa-graduation-cap"></i><span>Học viện KOC</span><i class="fa-solid fa-chevron-right top-mobile-menu__arrow"></i></a>
+                    <a class="top-nav-link @(isBrand ? "active" : "")" asp-page="/Public/BrandPublic"><i class="fa-solid fa-handshake-angle"></i><span>Dành cho Brand</span><i class="fa-solid fa-chevron-right top-mobile-menu__arrow"></i></a>
+                </nav>
+                <div class="top-mobile-menu__actions">
                     @if (isAuthenticated)
                     {
-                        <a class="btn btn-sm btn-outline-warning rounded-pill px-3 top-auth-btn top-dashboard-btn d-inline-flex align-items-center gap-2" href="@dashboardUrl">
+                        <a class="btn top-auth-btn top-dashboard-btn" href="@dashboardUrl">
                             <i class="fa-solid fa-gauge-high"></i> Dashboard
                         </a>
-                        <a class="btn btn-sm btn-warning rounded-pill px-3 top-auth-btn top-login-btn d-inline-flex align-items-center gap-2" asp-page="/Public/Logout">
+                        <a class="btn top-auth-btn top-login-btn" asp-page="/Public/Logout">
                             <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
                         </a>
                     }
                     else
                     {
-                        <a class="btn btn-sm btn-outline-warning rounded-pill px-3 top-auth-btn d-inline-flex align-items-center gap-2" asp-page="/Public/Register">
+                        <a class="btn top-auth-btn" asp-page="/Public/Register">
                             <i class="fa-solid fa-user-plus"></i> Đăng ký
                         </a>
-                        <a class="btn btn-sm btn-warning rounded-pill px-3 top-auth-btn top-login-btn d-inline-flex align-items-center gap-2" asp-page="/Public/Login">
+                        <a class="btn top-auth-btn top-login-btn" asp-page="/Public/Login">
                             <i class="fa-solid fa-right-to-bracket"></i> Đăng nhập
                         </a>
                     }
@@ -150,11 +165,15 @@
     <main class="topstar-main">@RenderBody()</main>
     <partial name="_Footer" />
 
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/lib/swiper/swiper-bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/select2/select2.min.js" asp-append-version="true"></script>
+    <script src="~/lib/jquery-ui/jquery-ui.min.js" asp-append-version="true"></script>
+    <script src="~/js/shared/form-controls.js" asp-append-version="true"></script>
+    <script src="~/js/shared/notifications.js" asp-append-version="true"></script>
+    <script src="/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/lib/swiper/swiper-bundle.min.js"></script>
+    <script src="/js/site.js?v=20260922-local-script"></script>
+    <script src="~/js/shared/file-picker.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
-

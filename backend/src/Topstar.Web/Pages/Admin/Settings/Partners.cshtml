@@ -1,0 +1,69 @@
+@page "/Admin/Settings/Partners"
+@model Topstar.Web.Pages.Admin.Settings.PartnersModel
+@{
+    ViewData["Title"] = "Logo đối tác";
+    ViewData["AdminHeaderTitle"] = "Logo đối tác";
+    ViewData["AdminActivePath"] = "/Admin/Settings/Partners";
+}
+
+@section Styles { <link rel="stylesheet" href="~/css/admin/partners.css" asp-append-version="true" /> }
+
+<main class="partner-admin-page">
+    <header class="partner-page-head">
+        <div><span class="admin-page-eyebrow"><i class="fa-solid fa-handshake"></i> NỘI DUNG WEBSITE</span><h1>Logo đối tác</h1><p>Quản lý các thương hiệu xuất hiện trong khu vực “Đối tác tin cậy” trên trang chủ.</p></div>
+        <a asp-page="/Admin/Settings/HomepageContent" asp-fragment="proof" class="btn btn-light"><i class="fa-solid fa-arrow-left"></i> Nội dung trang chủ</a>
+    </header>
+
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+    <div class="partner-admin-layout">
+        <section class="partner-list-card">
+            <header><div><h2>Danh sách đối tác</h2><p>@Model.Partners.Count / 24 logo · sắp xếp theo thứ tự hiển thị</p></div><a asp-page="/Admin/Settings/Partners" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Thêm đối tác</a></header>
+            @if (Model.Partners.Count == 0)
+            {
+                <div class="partner-empty"><i class="fa-regular fa-image"></i><strong>Chưa có logo đối tác</strong><span>Thêm logo đầu tiên để hiển thị trên trang chủ.</span></div>
+            }
+            else
+            {
+                <div class="partner-table-wrap">
+                    <table class="partner-table">
+                        <thead><tr><th>Thứ tự</th><th>Đối tác</th><th>Liên kết</th><th>Trạng thái</th><th class="text-end">Thao tác</th></tr></thead>
+                        <tbody>
+                        @for (var i = 0; i < Model.Partners.Count; i++)
+                        {
+                            var item = Model.Partners[i];
+                            <tr>
+                                <td><div class="partner-order"><strong>@item.DisplayOrder</strong><form method="post" asp-page-handler="Move"><input type="hidden" name="index" value="@i"/><button name="direction" value="-1" title="Đưa lên" disabled="@(i == 0)"><i class="fa-solid fa-chevron-up"></i></button><button name="direction" value="1" title="Đưa xuống" disabled="@(i == Model.Partners.Count - 1)"><i class="fa-solid fa-chevron-down"></i></button></form></div></td>
+                                <td><div class="partner-identity"><span><img src="@item.LogoUrl" alt="Logo @item.Name"/></span><strong>@item.Name</strong></div></td>
+                                <td>@if (item.Url == "#" || string.IsNullOrWhiteSpace(item.Url)) { <span class="text-muted">Không gắn liên kết</span> } else { <a href="@item.Url" target="_blank" rel="noopener noreferrer" class="partner-link">@item.Url <i class="fa-solid fa-arrow-up-right-from-square"></i></a> }</td>
+                                <td><form method="post" asp-page-handler="Toggle"><input type="hidden" name="index" value="@i"/><button class="partner-status @(item.IsVisible ? "is-visible" : "is-hidden")"><i class="fa-solid @(item.IsVisible ? "fa-eye" : "fa-eye-slash")"></i> @(item.IsVisible ? "Đang hiển thị" : "Đang ẩn")</button></form></td>
+                                <td><div class="partner-actions"><a asp-page="/Admin/Settings/Partners" asp-route-editIndex="@i" title="Sửa"><i class="fa-solid fa-pen"></i></a><form method="post" asp-page-handler="Delete" data-delete-partner="@item.Name"><input type="hidden" name="index" value="@i"/><button title="Xóa"><i class="fa-solid fa-trash"></i></button></form></div></td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+
+        <aside class="partner-form-card">
+            <header><span><i class="fa-solid @(Model.IsEditing ? "fa-pen" : "fa-plus")"></i></span><div><h2>@(Model.IsEditing ? "Sửa đối tác" : "Thêm đối tác")</h2><p>@(Model.IsEditing ? "Cập nhật thông tin và logo đang chọn." : "Logo mới sẽ xuất hiện theo thứ tự thiết lập.")</p></div></header>
+            <form method="post" asp-page-handler="Save" data-partner-form>
+                <input asp-for="EditIndex" type="hidden"/>
+                <div class="partner-logo-preview @(string.IsNullOrWhiteSpace(Model.Input.LogoUrl) ? "is-empty" : "")" data-logo-preview>
+                    @if (!string.IsNullOrWhiteSpace(Model.Input.LogoUrl)) { <img src="@Model.Input.LogoUrl" alt="Xem trước logo"/> } else { <i class="fa-regular fa-image"></i><span>Chưa chọn logo</span> }
+                </div>
+                <input asp-for="Input.LogoUrl" type="hidden" data-logo-url/>
+                <label class="partner-upload"><i class="fa-solid fa-cloud-arrow-up"></i><span>Tải logo lên</span><input type="file" accept="image/jpeg,image/png,image/webp" data-logo-upload/></label>
+                <small class="partner-upload-note">JPG, PNG hoặc WEBP · tối đa 5 MB</small><span class="field-error" data-upload-error></span><span asp-validation-for="Input.LogoUrl" class="field-error"></span>
+                <div class="partner-field"><label asp-for="Input.Name">Tên đối tác <b>*</b></label><input asp-for="Input.Name" placeholder="Ví dụ: Shopee"/><span asp-validation-for="Input.Name"></span></div>
+                <div class="partner-field"><label asp-for="Input.Url">Liên kết website</label><input asp-for="Input.Url" placeholder="https://... hoặc #"/><span asp-validation-for="Input.Url"></span></div>
+                <div class="partner-field"><label asp-for="Input.DisplayOrder">Thứ tự hiển thị</label><input asp-for="Input.DisplayOrder" type="number" min="1" max="999"/><span asp-validation-for="Input.DisplayOrder"></span></div>
+                <label class="partner-visible"><input asp-for="Input.IsVisible"/><span></span><div><strong>Hiển thị trên trang chủ</strong><small>Có thể tắt tạm thời mà không cần xóa.</small></div></label>
+                <footer>@if (Model.IsEditing) { <a asp-page="/Admin/Settings/Partners" class="btn btn-light">Hủy</a> }<button class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> @(Model.IsEditing ? "Lưu thay đổi" : "Thêm đối tác")</button></footer>
+            </form>
+        </aside>
+    </div>
+</main>
+
+@section Scripts { <partial name="_ValidationScriptsPartial"/><script src="~/js/admin/partners.js" asp-append-version="true"></script> }

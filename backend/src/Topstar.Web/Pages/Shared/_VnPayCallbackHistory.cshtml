@@ -1,0 +1,42 @@
+@model System.Collections.Generic.IReadOnlyList<Topstar.Infrastructure.Entities.VnPayCallbackLogEntity>
+@using System.Text.Json
+<section class="vnpay-journal">
+    <header><div><i class="fa-solid fa-shield-halved"></i><strong>Chi tiết giao dịch VNPay</strong></div><span>@Model.Count phản hồi</span></header>
+    @if(Model.Count==0)
+    {
+        <p class="vnpay-journal-empty">Chưa có phản hồi đầy đủ được lưu. Giao dịch trước khi bổ sung nhật ký có thể chỉ có mã giao dịch.</p>
+    }
+    @foreach(var entry in Model)
+    {
+        var fields=JsonSerializer.Deserialize<Dictionary<string,string?[]>>(entry.PayloadJson)??new();
+        string Value(string key)=>fields.TryGetValue(key,out var values)?string.Join(", ",values):"—";
+        <details class="vnpay-journal-event" open="@(entry.Id==Model.First().Id)">
+            <summary><span class="vnpay-journal-source">@entry.Source</span><time>@entry.ReceivedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm:ss")</time><span class="vnpay-journal-state @(entry.Success==true?"is-success":"is-warning")">@(entry.Success==true?"Đã ghi nhận":entry.ProcessedAtUtc.HasValue?"Chưa ghi nhận":"Đang xử lý")</span></summary>
+            <div class="vnpay-journal-body">
+                <dl>
+                    <div><dt>Mã giao dịch VNPay</dt><dd>@Value("vnp_TransactionNo")</dd></div>
+                    <div><dt>Ngân hàng</dt><dd>@Value("vnp_BankCode")</dd></div>
+                    <div><dt>Mã giao dịch ngân hàng</dt><dd>@Value("vnp_BankTranNo")</dd></div>
+                    <div><dt>Loại thẻ</dt><dd>@Value("vnp_CardType")</dd></div>
+                    <div><dt>Thời điểm thanh toán (VNPay)</dt><dd>@Value("vnp_PayDate")</dd></div>
+                    <div><dt>Số tiền phản hồi (đơn vị ×100)</dt><dd>@Value("vnp_Amount")</dd></div>
+                    <div><dt>Mã phản hồi / Trạng thái VNPay</dt><dd>@Value("vnp_ResponseCode") / @Value("vnp_TransactionStatus")</dd></div>
+                    <div><dt>Xác thực chữ ký</dt><dd>@(entry.SignatureValid==true?"Hợp lệ":entry.SignatureValid==false?"Không hợp lệ":"Chưa xác minh")</dd></div>
+                </dl>
+                <p class="vnpay-journal-result"><strong>Kết quả xử lý:</strong> @entry.ResultMessage <span>(Mã: @entry.ResponseCode)</span></p>
+                <details class="vnpay-journal-raw"><summary>Xem toàn bộ tham số nhận được (@fields.Count trường)</summary>
+                    <div class="vnpay-journal-table"><table><thead><tr><th>Tham số</th><th>Giá trị nguyên bản</th></tr></thead><tbody>
+                    @foreach(var field in fields.OrderBy(x=>x.Key,StringComparer.Ordinal))
+                    {
+                        <tr><th>@field.Key</th><td>@foreach(var value in field.Value){<div>@value</div>}</td></tr>
+                    }
+                    </tbody></table></div>
+                    <dl><div><dt>IP gửi</dt><dd>@entry.RemoteIp</dd></div><div><dt>User-Agent</dt><dd>@entry.UserAgent</dd></div></dl>
+                    <label>Query string nguyên bản</label><pre>@entry.RawQuery</pre>
+                    <label>JSON đầy đủ</label><pre>@entry.PayloadJson</pre>
+                    @if(!string.IsNullOrWhiteSpace(entry.ErrorDetail)){<label>Chi tiết lỗi xử lý</label><pre>@entry.ErrorDetail</pre>}
+                </details>
+            </div>
+        </details>
+    }
+</section>

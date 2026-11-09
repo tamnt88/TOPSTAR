@@ -1,0 +1,54 @@
+@model Topstar.Application.Schedules.ScheduleCalendarView
+@{
+    var first = Model.Month;
+    var previous = first.AddMonths(-1);
+    var next = first.AddMonths(1);
+    var offset = ((int)first.DayOfWeek + 6) % 7;
+    var days = DateTime.DaysInMonth(first.Year, first.Month);
+    var cells = ((offset + days + 6) / 7) * 7;
+    var path = Context.Request.Path;
+    string StatusText(string status) => status switch { "Proposed" => "Chờ xác nhận", "Confirmed" => "Đã xác nhận", "Rescheduled" => "Đề xuất đổi lịch", "Cancelled" => "Đã hủy", _ => status };
+}
+<section class="schedule-calendar" aria-labelledby="calendar-title">
+    <div class="schedule-calendar-head">
+        <a class="btn btn-outline-secondary btn-sm" href="@path?Month=@previous.ToString("yyyy-MM-dd")" aria-label="Tháng trước"><i class="fa-solid fa-chevron-left"></i></a>
+        <div><h2 id="calendar-title">Tháng @first.Month/@first.Year</h2><small><i class="fa-regular fa-clock"></i> Giờ Việt Nam</small></div>
+        <a class="btn btn-outline-secondary btn-sm" href="@path?Month=@next.ToString("yyyy-MM-dd")" aria-label="Tháng sau"><i class="fa-solid fa-chevron-right"></i></a>
+    </div>
+    <div class="schedule-calendar-desktop">
+        <div class="schedule-calendar-weekdays">@foreach (var label in new[] { "T2", "T3", "T4", "T5", "T6", "T7", "CN" }) { <div>@label</div> }</div>
+        <div class="schedule-calendar-grid">
+            @for (var i = 0; i < cells; i++)
+            {
+                var day = i - offset + 1;
+                if (day < 1 || day > days)
+                {
+                    <div class="schedule-calendar-day is-outside"></div>
+                }
+                else
+                {
+                    var date = new DateOnly(first.Year, first.Month, day);
+                    var events = Model.Events.Where(x => DateOnly.FromDateTime(x.StartsAtLocal) == date).ToList();
+                    <div class="schedule-calendar-day @(date == DateOnly.FromDateTime(DateTime.Today) ? "is-today" : "")">
+                        <strong>@day</strong>
+                        @foreach (var e in events)
+                        {
+                            <div class="schedule-calendar-event @(e.Status == "Cancelled" ? "is-cancelled" : "")" title="@e.CampaignTitle · @e.KocName">
+                                <b>@e.StartsAtLocal.ToString("HH:mm")</b><span>@e.CampaignTitle</span>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+        </div>
+    </div>
+    <div class="schedule-calendar-mobile">
+        @if (Model.Events.Count == 0) { <div class="schedule-calendar-empty">Tháng này chưa có lịch.</div> }
+        @foreach (var group in Model.Events.GroupBy(x => DateOnly.FromDateTime(x.StartsAtLocal)).OrderBy(x => x.Key))
+        {
+            <div class="schedule-mobile-group"><strong>@group.Key.ToString("dd/MM/yyyy")</strong>
+                @foreach (var e in group) { <div><span>@e.StartsAtLocal.ToString("HH:mm")–@e.EndsAtLocal.ToString("HH:mm")</span><b>@e.CampaignTitle</b><small>@StatusText(e.Status)</small></div> }
+            </div>
+        }
+    </div>
+</section>

@@ -1,0 +1,151 @@
+@page
+@model Topstar.Web.Pages.Admin.Finance.BillingModel
+@using Topstar.Application.Billing
+@using Topstar.Application.Matching
+<link rel="stylesheet" href="~/css/admin/vnpay-journal.css" asp-append-version="true"/>
+@{
+    ViewData["Title"] = "Đơn mua gói KOC";
+    ViewData["AdminHeaderTitle"] = "Đơn mua gói KOC";
+    string PackageStatusClass(string status) => status switch
+    {
+        "CancelRequested" => "is-pending",
+        BrandPackagePurchaseStatuses.Pending => "is-pending",
+        BrandPackagePurchaseStatuses.Paid => "is-paid",
+        BrandPackagePurchaseStatuses.Consumed => "is-consumed",
+        BrandPackagePurchaseStatuses.Expired => "is-expired",
+        BrandPackagePurchaseStatuses.Cancelled => "is-cancelled",
+        "Refunded" => "is-paid",
+        _ => ""
+    };
+    string PaymentReferenceLabel(string? value) => value switch
+    {
+        "Đã nh?n đ?y đ? ti?n mua gói KOC" => "Đã nhận đầy đủ tiền mua gói KOC",
+        "N?i dung du?c luu vào l?ch s? ki?m toán." => "Nội dung được lưu vào lịch sử kiểm toán.",
+        _ => string.IsNullOrWhiteSpace(value) ? "Không có mã giao dịch." : value
+    };
+}
+<main class="admin-billing-page">
+    <header class="admin-management-heading admin-billing-heading"><div>
+        <a asp-page="/Admin/Finance/Index" class="admin-billing-back"><i class="fa-solid fa-arrow-left"></i> Quản trị tài chính</a>
+        <span class="admin-page-eyebrow"><i class="fa-solid fa-box-open"></i> GÓI DỊCH VỤ BRAND</span>
+        <h1>Đơn mua gói KOC</h1>
+        <p>Theo dõi Brand đã mua gói nào, kiểm tra thanh toán và tình trạng sử dụng trong một nơi.</p>
+    </div></header>
+    @if (!string.IsNullOrWhiteSpace(Model.Message)) { <div hidden data-ts-notification="@(Model.Success ? "success" : "error")">@Model.Message</div> }
+    <nav class="ts-tabs admin-billing-tabs" role="tablist" aria-label="Nhóm nghiệp vụ tài chính">
+        <button type="button" class="active" id="package-orders-tab" data-bs-toggle="tab" data-bs-target="#package-orders" role="tab" aria-controls="package-orders" aria-selected="true"><i class="fa-solid fa-box"></i> Đơn mua gói KOC <span>@Model.PackageWindow.Total</span></button>
+        <button type="button" id="campaign-invoices-tab" data-bs-toggle="tab" data-bs-target="#campaign-invoices" role="tab" aria-controls="campaign-invoices" aria-selected="false"><i class="fa-solid fa-file-invoice-dollar"></i> Hóa đơn phí chiến dịch <span>@Model.InvoiceWindow.Total</span></button>
+    </nav>
+    <div class="tab-content admin-billing-tab-content">
+    <section id="package-orders" class="admin-billing-section tab-pane fade show active" role="tabpanel" aria-labelledby="package-orders-tab" tabindex="0">
+        <div class="admin-billing-section__title"><div><h2>Đơn mua gói của Brand</h2><p>Thanh toán online được xác nhận tự động. Đơn chuyển khoản cần Admin đối soát trước khi kích hoạt gói.</p></div></div>
+        <div class="admin-billing-kpis package-billing-kpis">
+            <article class="is-blue"><i class="fa-solid fa-receipt"></i><span><small>Tổng đơn</small><strong>@Model.PackageWindow.Total</strong></span></article>
+            <article class="is-amber"><i class="fa-solid fa-clock"></i><span><small>Chờ thanh toán</small><strong>@Model.PackageWindow.Counts.GetValueOrDefault(BrandPackagePurchaseStatuses.Pending)</strong></span></article>
+            <article class="is-green"><i class="fa-solid fa-circle-check"></i><span><small>Gói còn khả dụng</small><strong>@Model.PackageWindow.AvailableCount</strong></span></article>
+            <article class="is-amber"><i class="fa-solid fa-hourglass-half"></i><span><small>Chờ duyệt hủy</small><strong>@Model.PackageWindow.Counts.GetValueOrDefault("CancelRequested")</strong></span></article>
+            <article class="is-green"><i class="fa-solid fa-money-bill-transfer"></i><span><small>Đã hoàn tiền</small><strong>@Model.PackageWindow.Counts.GetValueOrDefault("Refunded")</strong><small>@PortalFormat.Money(Model.PackageWindow.Amounts.GetValueOrDefault("Refunded"))</small></span></article>
+            <article class="is-purple"><i class="fa-solid fa-coins"></i><span><small>Giá trị chưa hoàn</small><strong>@PortalFormat.Money(new[]{"Paid","Consumed","Expired","CancelRequested"}.Sum(status=>Model.PackageWindow.Amounts.GetValueOrDefault(status)))</strong></span></article>
+        </div>
+        <partial name="_ListWindow" model='new Topstar.Web.Features.Common.Paging.ListWindowViewModel("adminPackageList", Model.PackageWindow, "Filters")' />
+        @if (Model.PackagePurchases.Count == 0)
+        { <div class="admin-billing-empty"><i class="fa-solid fa-box-open"></i><strong>Chưa có đơn mua gói</strong><span>Đơn của Brand sẽ xuất hiện tại đây ngay sau khi đặt mua.</span></div> }
+        else
+        {
+            <div class="admin-package-list">
+            <div class="admin-package-list__head" aria-hidden="true"><span>Brand và mã đơn</span><span>Gói đã mua</span><span>Giá trị</span><span>Trạng thái</span><span>Thao tác</span></div>
+            @foreach (var p in Model.PackagePurchases)
+            {
+                <article class="admin-package-order">
+                    <div class="admin-package-order__brand"><span class="admin-package-order__icon"><i class="fa-solid fa-building"></i></span><div><small>BRAND</small><strong>@p.BrandName</strong><span>@p.OrderNumber · @p.PurchasedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm")</span></div></div>
+                    <div class="admin-package-order__info"><small>Gói KOC</small><strong>@p.PackageName</strong><span>@p.PackageCode</span></div>
+                    <div class="admin-package-order__info"><small>Giá trị đơn</small><strong>@p.Amount.ToString("N0", PortalFormat.Vietnamese) ₫</strong><span>@PortalFormat.Status(p.PaymentMethod)</span></div>
+                    <div class="admin-package-order__info"><span class="admin-package-status @PackageStatusClass(p.Status)">@PortalFormat.Status(p.Status)</span>@if(!string.IsNullOrWhiteSpace(p.CampaignTitle)){<span>@p.CampaignTitle</span>}</div>
+                    <div class="admin-package-order__action"><button type="button" class="btn btn-outline-primary admin-package-review-btn" data-bs-toggle="modal" data-bs-target="#package-review-@p.Id"><i class="fa-solid @(p.Status=="CancelRequested"?"fa-clipboard-check":p.Status=="Pending"&&p.PaymentMethod=="BankTransfer"?"fa-money-check-dollar":"fa-eye")"></i> @(p.Status=="CancelRequested"?"Duyệt hủy gói":p.Status=="Pending"&&p.PaymentMethod=="BankTransfer"?"Đối soát thanh toán":"Xem chi tiết")</button></div>
+                </article>
+                <div class="modal fade" id="package-review-@p.Id" tabindex="-1" aria-labelledby="package-review-title-@p.Id" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-lg"><div class="modal-content admin-package-review-modal">
+                        <div class="modal-header"><div class="admin-package-review-modal__heading"><span><i class="fa-solid fa-receipt"></i></span><div><small>@(p.Status=="CancelRequested"?"DUYỆT HỦY GÓI":p.Status=="Pending"&&p.PaymentMethod=="BankTransfer"?"ĐỐI SOÁT THANH TOÁN":"CHI TIẾT ĐƠN MUA GÓI")</small><h2 class="modal-title" id="package-review-title-@p.Id">@p.BrandName</h2><p>@p.OrderNumber · @p.PurchasedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm")</p></div></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div>
+                        <div class="modal-body">
+                            <div class="admin-package-review-summary"><div><small>Gói KOC</small><strong>@p.PackageName</strong><span>@p.PackageCode</span></div><div><small>Giá trị đơn</small><strong>@p.Amount.ToString("N0", PortalFormat.Vietnamese) ₫</strong><span>@PortalFormat.Status(p.PaymentMethod)</span></div><div><small>Trạng thái</small><span class="admin-package-status @PackageStatusClass(p.Status)">@PortalFormat.Status(p.Status)</span>@if(!string.IsNullOrWhiteSpace(p.CampaignTitle)){<span>@p.CampaignTitle</span>}</div></div>
+                            @if(p.VatMode!="None"){<p class="small text-muted">Thuế GTGT @p.VatRate% @(p.VatMode=="Included"?"đã gồm trong giá":"đã cộng vào giá"): <strong>@PortalFormat.Money(p.VatAmount)</strong></p>}
+                            <details class="package-payment-details"><summary><i class="fa-solid fa-receipt"></i> Chi tiết thanh toán</summary>
+                            @if(p.PaymentMethod is not ("VnPay" or "BrandBalance")){
+                            <section class="admin-package-review-proof"><div class="admin-package-review-proof__heading"><div><i class="fa-solid fa-image"></i><span><strong>Bằng chứng thanh toán</strong><small>Thông tin và chứng từ do Brand cung cấp</small></span></div>@if(p.PaymentProofSubmittedAtUtc.HasValue){<time>@p.PaymentProofSubmittedAtUtc.Value.ToVietnamTime().ToString("dd/MM/yyyy HH:mm")</time>}</div>
+                            @if (p.PaymentMethod=="VnPay")
+                            { <div class="admin-package-review-proof__missing"><i class="fa-solid fa-shield-halved"></i><div><strong>Thanh toán online</strong><span>Kết quả được xác nhận tự động từ phản hồi hợp lệ của cổng thanh toán. Không yêu cầu Brand gửi chứng từ.</span></div></div> }
+                            else if(p.PaymentMethod=="BrandBalance")
+                            { <div class="admin-package-review-proof__missing"><i class="fa-solid fa-wallet"></i><div><strong>Thanh toán bằng số dư</strong><span>Đã trừ số dư và kích hoạt gói trong cùng giao dịch. Không yêu cầu chứng từ chuyển khoản.</span></div></div> }
+                            else if (!string.IsNullOrWhiteSpace(p.PaymentProofUrl))
+                            { <div class="admin-package-review-proof__body"><a href="@p.PaymentProofUrl" target="_blank" rel="noopener"><img src="@p.PaymentProofUrl" alt="Chứng từ chuyển khoản của @p.BrandName" /><span><i class="fa-solid fa-up-right-from-square"></i> Mở ảnh gốc</span></a><div><small>Ghi chú của Brand</small><p>@(string.IsNullOrWhiteSpace(p.PaymentProofNote) ? "Brand không để lại ghi chú." : p.PaymentProofNote)</p></div></div> }
+                            else
+                            { <div class="admin-package-review-proof__missing"><i class="fa-solid fa-triangle-exclamation"></i><div><strong>Brand chưa gửi bằng chứng thanh toán</strong><span>Không nên xác nhận nếu chưa đối chiếu được giao dịch thực tế.</span></div></div> }
+                            </section>
+                            }
+                            @if(p.PaymentMethod=="VnPay")
+                            {
+                                <section class="vnpay-transaction-summary">
+                                    <h3><i class="fa-solid fa-receipt"></i> Thông tin thanh toán online</h3>
+                                    <dl>
+                                        <div><dt>Mã đơn hàng</dt><dd>@p.OrderNumber</dd></div>
+                                        <div><dt>Mã giao dịch</dt><dd>@PaymentReferenceLabel(p.PaymentReference)</dd></div>
+                                        <div><dt>Số tiền giao dịch</dt><dd>@p.Amount.ToString("N0",PortalFormat.Vietnamese) ₫</dd></div>
+                                        <div><dt>Ngày ghi nhận thanh toán</dt><dd>@(p.PaidAtUtc.HasValue?p.PaidAtUtc.Value.ToVietnamTime().ToString("dd/MM/yyyy HH:mm:ss"):"Chưa ghi nhận")</dd></div>
+                                    </dl>
+                                </section>
+                                <partial name="_VnPayCallbackHistory" model='@(Model.VnPayLogs.GetValueOrDefault("P"+p.Id.ToString("N")) ?? Array.Empty<Topstar.Infrastructure.Entities.VnPayCallbackLogEntity>())'/>
+                            }
+                            </details>
+                            @if(p.Status=="CancelRequested"){
+<form method="post" asp-page-handler="CancelPackage" class="package-cancellation-review js-package-cancellation-review" novalidate><input type="hidden" name="id" value="@p.Id"/><p><strong>Lý do hủy:</strong> @p.CancellationReason</p><label class="form-label">Ghi chú xét duyệt</label><textarea name="reason" class="form-control" rows="2" required minlength="10" maxlength="500" placeholder="Nhập ghi chú xét duyệt">@(Model.CancelReviewId==p.Id?Model.CancelReviewReason:"")</textarea><div class="invalid-feedback">Vui lòng nhập từ 10 đến 500 ký tự.</div>@if(Model.CancelReviewId==p.Id){<p class="text-danger">@Model.CancelReviewError</p>}<div class="package-refund-total"><span>Hoàn vào số dư</span><strong>@PortalFormat.Money(p.Amount)</strong></div><div class="d-flex gap-2"><button name="approve" value="true" class="btn btn-success"><i class="fa-solid fa-check"></i> Duyệt hoàn tiền</button><button name="approve" value="false" class="btn btn-outline-danger"><i class="fa-solid fa-xmark"></i> Từ chối hủy</button></div></form>
+}
+@if (p.Status == BrandPackagePurchaseStatuses.Pending && p.PaymentMethod!="VnPay")
+                            { <form id="confirm-package-@p.Id" method="post" asp-page-handler="ConfirmPackagePaid" class="admin-package-review-form"><input type="hidden" name="id" value="@p.Id" /><label for="payment-modal-@p.Id">Ghi chú đối soát <span>*</span></label><textarea id="payment-modal-@p.Id" name="paymentReference" class="form-control" rows="3" required minlength="3" maxlength="100" placeholder="Nhập mã giao dịch và nội dung xác nhận thanh toán..."></textarea><div class="admin-package-review-form__meta"><small>Nội dung được lưu vào lịch sử kiểm toán.</small><small>Tối đa 100 ký tự</small></div></form> }
+                            else if(p.Status == BrandPackagePurchaseStatuses.Pending)
+                            { <div class="admin-package-review-done"><i class="fa-solid fa-clock"></i><div><strong>Chờ kết quả thanh toán online</strong><span>Hệ thống tự cập nhật sau khi xác minh giao dịch.</span></div></div> }
+                            else if(p.Status!="CancelRequested")
+                            { <div class="admin-package-review-done"><i class="fa-solid fa-circle-check"></i><div><strong>Đơn đã được xử lý</strong><span>Mã giao dịch: @PaymentReferenceLabel(p.PaymentReference)</span></div></div> }
+                        </div>
+                        <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Đóng</button>@if(p.Status == BrandPackagePurchaseStatuses.Pending && p.PaymentMethod!="VnPay"){<button type="submit" form="confirm-package-@p.Id" class="btn btn-success"><i class="fa-solid fa-check"></i> Xác nhận đã thu tiền</button>}</div>
+                    </div></div>
+                </div>
+            }
+            </div>
+            <partial name="_ListWindow" model='new Topstar.Web.Features.Common.Paging.ListWindowViewModel("adminPackageList", Model.PackageWindow, "Pager")' />
+        }
+    </section>
+    <section id="campaign-invoices" class="admin-billing-section admin-campaign-invoices tab-pane fade" role="tabpanel" aria-labelledby="campaign-invoices-tab" tabindex="0">
+        <div class="admin-billing-section__title"><div><h2>Hóa đơn phí chiến dịch</h2><p>Nghiệp vụ riêng cho phí nền tảng sau chiến dịch, không phải tiền Brand mua gói KOC.</p></div></div>
+        <div class="admin-billing-kpis">
+            <article class="is-blue"><i class="fa-regular fa-file"></i><span><small>Chưa phát hành</small><strong>@Model.InvoiceWindow.Counts.GetValueOrDefault("NotIssued")</strong></span></article>
+            <article class="is-amber"><i class="fa-solid fa-hourglass-half"></i><span><small>Chờ thu / quá hạn</small><strong>@(Model.InvoiceWindow.Counts.GetValueOrDefault(BillingStatuses.Pending) + Model.InvoiceWindow.Counts.GetValueOrDefault(BillingStatuses.Overdue))</strong></span></article>
+            <article class="is-green"><i class="fa-solid fa-circle-check"></i><span><small>Đã thanh toán</small><strong>@Model.InvoiceWindow.Counts.GetValueOrDefault(BillingStatuses.Paid)</strong></span></article>
+            <article class="is-purple"><i class="fa-solid fa-coins"></i><span><small>Doanh thu phí</small><strong>@Model.InvoiceWindow.Amounts.GetValueOrDefault(BillingStatuses.Paid).ToString("N0", PortalFormat.Vietnamese) ₫</strong></span></article>
+        </div>
+        <partial name="_ListWindow" model='new Topstar.Web.Features.Common.Paging.ListWindowViewModel("adminInvoiceList", Model.InvoiceWindow)' />
+        @if (Model.Items.Count == 0) { <div class="admin-billing-empty"><i class="fa-solid fa-file-invoice-dollar"></i><strong>Chưa có hóa đơn phí chiến dịch</strong></div> }
+        @foreach (var item in Model.Items)
+        {
+            <article class="card-x mb-3"><div class="d-flex flex-column flex-xl-row justify-content-between gap-3"><div><div class="small text-muted">@item.BrandName</div><h3 class="h5">@item.CampaignTitle</h3><div>Ngân sách: @item.CampaignBudget.ToString("N0", PortalFormat.Vietnamese) ₫ · Phí: <strong>@item.FeeAmount.ToString("N0", PortalFormat.Vietnamese) ₫</strong></div>@if(item.InvoiceNumber is not null){<div class="small mt-1">@item.InvoiceNumber · hạn @item.DueAtUtc?.ToVietnamTime().ToString("dd/MM/yyyy")</div><span class="badge bg-secondary">@PortalFormat.Status(item.Status ?? "NotIssued")</span>}</div><div class="w-100" style="max-width:520px">@if(item.Id is null){<form method="post" asp-page-handler="Generate"><input type="hidden" name="id" value="@item.CampaignId"/><button class="btn btn-primary" data-confirm="Phát hành hóa đơn phí 15%?" data-confirm-title="Xác nhận phát hành hóa đơn">Phát hành hóa đơn</button></form>}else if(item.Status is BillingStatuses.Pending or BillingStatuses.Overdue){@if(item.Status==BillingStatuses.Pending&&item.DueAtUtc<DateTime.UtcNow){<form method="post" asp-page-handler="Status" class="mb-2"><input type="hidden" name="id" value="@item.Id"/><input type="hidden" name="targetStatus" value="Overdue"/><button class="btn btn-warning">Đánh dấu quá hạn</button></form>}<form method="post" asp-page-handler="Status" class="d-flex gap-2 mb-2"><input type="hidden" name="id" value="@item.Id"/><input type="hidden" name="targetStatus" value="Paid"/><input name="note" maxlength="500" class="form-control" required placeholder="Mã tham chiếu thanh toán"/><button class="btn btn-success">Đã thanh toán</button></form><form method="post" asp-page-handler="Status" class="d-flex gap-2"><input type="hidden" name="id" value="@item.Id"/><input type="hidden" name="targetStatus" value="Void"/><input name="note" maxlength="500" class="form-control" required placeholder="Lý do hủy"/><button class="btn btn-outline-danger">Hủy hóa đơn</button></form>}</div></div>@if(item.History.Count>0){<details class="mt-3"><summary class="text-primary">Lịch sử hóa đơn</summary><div class="border-start ps-3 mt-2">@foreach(var h in item.History){<div class="small mb-2"><strong>@PortalFormat.Status(h.ToStatus)</strong> · @h.CreatedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm")<div class="text-muted">@h.Note</div></div>}</div></details>}</article>
+        }
+    </section>
+    </div>
+    <style>
+        .admin-package-review-form textarea.form-control { min-height: 86px; resize: vertical; line-height: 1.5; }
+        .admin-package-review-form__meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 6px; color: #727e8f; }
+        .admin-package-review-form__meta small { font-size: 11px; }
+        .package-payment-details{border:1px solid #e1dced;border-radius:10px;padding:12px 14px;margin:16px 0;color:#69778b;font-size:13px}
+        .package-payment-details>summary{cursor:pointer;font-weight:600}.package-payment-details[open]>summary{margin-bottom:14px}
+        .package-cancellation-review{padding:16px;border:1px solid #e1dced;border-radius:12px}
+        .package-cancellation-review>p{margin:0 0 14px}.package-cancellation-review textarea.form-control{min-height:72px;resize:vertical}
+        .package-refund-total{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#eef8f4;border-radius:8px;padding:12px;margin:14px 0;color:#167b61}
+        .admin-billing-kpis.package-billing-kpis{grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+        .package-billing-kpis article{min-width:0;padding:14px 12px;gap:10px}.package-billing-kpis article>span{min-width:0}.package-billing-kpis strong{font-size:17px;white-space:nowrap}.package-billing-kpis article>i{flex-shrink:0}
+        @@media(max-width:1100px){.admin-billing-kpis.package-billing-kpis{grid-template-columns:repeat(6,minmax(170px,1fr));overflow-x:auto;padding-bottom:6px}}
+    </style>
+</main>
+
+@section Scripts{
+@if(Model.CancelReviewId.HasValue){<span id="restorePackageCancellation" data-id="@Model.CancelReviewId"></span>}
+<script src="~/js/admin/package-cancellation.js" asp-append-version="true"></script>
+}

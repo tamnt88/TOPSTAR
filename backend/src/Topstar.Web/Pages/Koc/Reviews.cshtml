@@ -1,0 +1,78 @@
+@page
+@model Topstar.Web.Pages.Koc.ReviewsModel
+@{
+    ViewData["Title"] = "Đánh giá Brand";
+    var activeTab = Model.Tab == "sent" ? "sent" : "received";
+}
+
+<div class="koc-reviews-page koc-review-datatable-page">
+    <header class="koc-page-heading">
+        <div>
+            <span class="koc-page-eyebrow"><i class="fa-solid fa-star"></i> Uy tín hợp tác</span>
+            <h1><i class="fa-regular fa-star me-2"></i>Đánh giá Brand</h1>
+            <p>Quản lý đánh giá, phản hồi và yêu cầu xem xét tại một nơi.</p>
+        </div>
+        <a asp-page="/Koc/Tasks" class="btn btn-sm btn-outline-secondary">
+            <i class="fa-solid fa-arrow-left me-1"></i>Về đầu việc
+        </a>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div data-koc-flash data-message="@Model.Message" data-type="@(Model.MessageSuccess ? "success" : "error")" hidden></div>
+    }
+
+    <section class="koc-review-overview" aria-label="Tổng quan đánh giá">
+        <article><span class="is-rating"><i class="fa-solid fa-star"></i></span><div><small>Điểm trung bình</small><strong>@Model.ReceivedPage.AverageRating.ToString("0.0")<em>/5</em></strong></div></article>
+        <article><span class="is-received"><i class="fa-solid fa-comments"></i></span><div><small>Brand đánh giá bạn</small><strong>@Model.ReceivedPage.AllCount</strong></div></article>
+        <article><span class="is-reply"><i class="fa-solid fa-reply"></i></span><div><small>Chờ phản hồi</small><strong>@Model.ReceivedPage.UnrepliedCount</strong></div></article>
+        <article><span class="is-pending"><i class="fa-regular fa-clock"></i></span><div><small>Chờ bạn đánh giá</small><strong>@Model.SentPage.PendingCount</strong></div></article>
+    </section>
+
+    <section class="koc-review-workspace">
+        <nav class="ts-tabs koc-review-tabs" role="tablist">
+            <button class="@(activeTab == "received" ? "active" : "")" data-bs-toggle="tab" data-bs-target="#review-pane-received" type="button">
+                <i class="fa-solid fa-comments"></i><span>Brand đánh giá bạn</span><b>@Model.ReceivedPage.AllCount</b>
+            </button>
+            <button class="@(activeTab == "sent" ? "active" : "")" data-bs-toggle="tab" data-bs-target="#review-pane-sent" type="button">
+                <i class="fa-solid fa-paper-plane"></i><span>Bạn đánh giá Brand</span><b>@Model.SentPage.TotalCount</b>
+            </button>
+        </nav>
+
+        <div class="tab-content koc-review-tab-content">
+            <div class="tab-pane fade @(activeTab == "received" ? "show active" : "")" id="review-pane-received" role="tabpanel">
+                <partial name="_ReviewTable" model='new Topstar.Web.Pages.Shared.ReviewTableViewModel("received", "Đánh giá nhận được", "Brand hoặc chiến dịch", Url.Page("/Koc/Reviews", "ReceivedData")!)' />
+            </div>
+            <div class="tab-pane fade @(activeTab == "sent" ? "show active" : "")" id="review-pane-sent" role="tabpanel">
+                <partial name="_ReviewTable" model='new Topstar.Web.Pages.Shared.ReviewTableViewModel("sent", "Đánh giá đã gửi", "Brand hoặc chiến dịch", Url.Page("/Koc/Reviews", "SentData")!)' />
+            </div>
+        </div>
+    </section>
+</div>
+
+<div class="modal fade koc-review-detail-modal" id="reviewDetailModal" tabindex="-1" aria-labelledby="reviewDetailModalTitle"
+     aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="koc-review-modal-heading">
+                    <span><i class="fa-solid fa-star"></i></span>
+                    <div><h2 class="modal-title" id="reviewDetailModalTitle">Chi tiết đánh giá</h2><p data-review-context></p></div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body" data-review-detail></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal"><i class="fa-solid fa-xmark me-1"></i>Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form data-review-token hidden>@Html.AntiForgeryToken()</form>
+
+@section Scripts {
+    <script src="~/lib/datatables/js/dataTables.min.js" asp-append-version="true"></script>
+    <script src="~/lib/datatables/js/dataTables.bootstrap5.min.js" asp-append-version="true"></script>
+    <script src="~/js/koc/reviews.js" asp-append-version="true"></script>
+}

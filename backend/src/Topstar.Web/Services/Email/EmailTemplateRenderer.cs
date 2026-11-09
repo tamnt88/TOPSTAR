@@ -17,7 +17,7 @@ public sealed class EmailTemplateRenderer(IConfiguration configuration) : IEmail
         var address = configuration["Email:Template:Address"] ?? "TP. Hồ Chí Minh, Việt Nam";
         var contactEmail = configuration["Email:Template:ContactEmail"] ?? "hello@topstar.vn";
         var hotline = configuration["Email:Template:Hotline"] ?? "1900-xxxx";
-        var logoUrl = ResolveLogoUrl(configuration["Email:Template:LogoUrl"]);
+        const string logoUrl = "{{TOPSTAR_EMAIL_LOGO}}";
         var projectName = model.ProjectName?.Trim();
         if (string.IsNullOrWhiteSpace(projectName))
         {
@@ -40,7 +40,7 @@ public sealed class EmailTemplateRenderer(IConfiguration configuration) : IEmail
         sb.AppendLine("<table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" style=\"max-width:680px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #ecd7b2;\">");
         sb.AppendLine("<tr><td style=\"background:linear-gradient(135deg,#fff3da 0%,#f8e8c5 100%);padding:18px 22px;border-bottom:1px solid #ecd7b2;\">");
         sb.AppendLine("<table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\"><tr>");
-        sb.AppendLine($"<td style=\"width:84px;vertical-align:top;\"><img src=\"{logoUrl}\" alt=\"{WebUtility.HtmlEncode(websiteName)}\" style=\"height:56px;width:auto;display:block;\"></td>");
+        sb.AppendLine($"<td style=\"width:164px;vertical-align:middle;\"><img src=\"{logoUrl}\" alt=\"{WebUtility.HtmlEncode(websiteName)}\" width=\"148\" style=\"display:block;width:148px;max-width:100%;height:auto;border:0;\"></td>");
         sb.AppendLine("<td style=\"vertical-align:top;padding-left:12px;\">");
         sb.AppendLine($"<div style=\"font-size:14px;color:#7f5e2b;font-weight:600;line-height:1.4;\">{WebUtility.HtmlEncode(projectName)}</div>");
         sb.AppendLine($"<div style=\"font-size:22px;color:#2d1f0f;font-weight:700;line-height:1.3;margin-top:2px;\">{mainTitle}</div>");
@@ -58,15 +58,6 @@ public sealed class EmailTemplateRenderer(IConfiguration configuration) : IEmail
         return sb.ToString();
     }
 
-    private string ResolveLogoUrl(string? configured)
-    {
-        if (!string.IsNullOrWhiteSpace(configured))
-        {
-            return configured;
-        }
-
-        return "https://topstar.vn/logo.png";
-    }
 }
 
 public sealed class EmailTemplateModel

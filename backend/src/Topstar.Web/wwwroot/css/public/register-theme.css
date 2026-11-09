@@ -1,0 +1,216 @@
+.register-page-theme {
+    --register-primary: #7142e8;
+    --register-primary-dark: #40207f;
+    --register-primary-soft: #f1ebff;
+    --register-cyan: #13b8c8;
+    --register-coral: #f46f83;
+    --register-gold: #f3b63f;
+    --register-border: #ddd5ee;
+    --register-ink: #17132f;
+    --register-muted: #665f78;
+    margin: -16px;
+    position: relative;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 8% 22%, rgba(19, 184, 200, .18), transparent 25%),
+        radial-gradient(circle at 88% 16%, rgba(244, 111, 131, .14), transparent 24%),
+        radial-gradient(circle at 76% 88%, rgba(113, 66, 232, .16), transparent 28%),
+        linear-gradient(135deg, #fffdf7 0%, #f8fbff 45%, #f8f3ff 100%);
+    color: var(--register-ink);
+    font-family: "BeVietnamPro", Arial, sans-serif;
+}
+
+.register-page-theme h1,
+.register-page-theme h2,
+.register-page-theme h3,
+.register-page-theme h4,
+.register-page-theme h5,
+.register-page-theme h6,
+.register-page-theme button,
+.register-page-theme input,
+.register-page-theme select,
+.register-page-theme textarea {
+    font-family: "BeVietnamPro", Arial, sans-serif !important;
+}
+
+.register-page-theme .login-shell {
+    position: relative;
+    border-color: rgba(106, 73, 169, .2);
+    box-shadow: 0 28px 70px rgba(54, 30, 99, .18), 0 10px 26px rgba(19, 184, 200, .08);
+}
+
+.register-page-theme .login-shell::before {
+    position: absolute;
+    z-index: 3;
+    top: -1px;
+    left: 12%;
+    width: 58%;
+    height: 3px;
+    border-radius: 0 0 8px 8px;
+    background: linear-gradient(90deg, var(--register-cyan), var(--register-primary), var(--register-coral), var(--register-gold));
+    content: "";
+}
+
+.register-page-theme .login-aside {
+    position: relative;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 12% 12%, rgba(255, 255, 255, .2), transparent 28%),
+        radial-gradient(circle at 82% 72%, rgba(19, 184, 200, .24), transparent 30%),
+        linear-gradient(155deg, #24123f 0%, #5625aa 48%, #7043e6 76%, #365fbd 100%);
+}
+
+.register-page-theme .login-aside::after {
+    content: "";
+    position: absolute;
+    right: -90px;
+    bottom: -110px;
+    width: 270px;
+    height: 270px;
+    border: 1px solid rgba(255, 255, 255, .18);
+    border-radius: 50%;
+    box-shadow: 0 0 0 42px rgba(255, 255, 255, .035), 0 0 0 86px rgba(19, 184, 200, .035);
+}
+
+.register-page-theme .login-aside::before {
+    position: absolute;
+    top: 46%;
+    left: -72px;
+    width: 170px;
+    height: 170px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(244, 111, 131, .34), rgba(244, 111, 131, 0) 68%);
+    content: "";
+}
+
+.register-page-theme .login-aside-content {
+    position: relative;
+    z-index: 1;
+}
+
+.register-page-theme .login-eyebrow {
+    background: rgba(255, 255, 255, .13);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, .16);
+}
+
+.register-page-theme .login-aside h1,
+.register-page-theme .login-aside h1 span {
+    color: #fff;
+    font-weight: 800;
+    letter-spacing: -.035em;
+}
+
+.register-page-theme .login-aside h1 span {
+    color: #8cebf0;
+}
+
+.register-page-theme .login-aside p,
+.register-page-theme .login-aside li {
+    color: #eee7fb;
+}
+
+.register-page-theme .login-aside li i {
+    color: #8cebf0;
+}
+
+.register-page-theme .login-main {
+    background:
+        radial-gradient(circle at 100% 0, rgba(244, 111, 131, .055), transparent 24%),
+        linear-gradient(180deg, #fff 0%, #fffeff 68%, #faf8ff 100%);
+}
+
+.register-page-theme .login-main-content h2 {
+    color: var(--register-ink);
+    font-weight: 800;
+    letter-spacing: -.025em;
+}
+
+.register-page-theme .login-main-content .text-muted,
+.register-page-theme .social-auth-title {
+    color: var(--register-muted) !important;
+}
+
+.register-page-theme .register-tab-head {
+    gap: 10px;
+}
+
+.register-page-theme .register-tab-btn {
+    border-color: var(--register-border);
+    background: linear-gradient(180deg, #fff, #f7f4fd);
+    color: #56358b;
+}
+
+.register-page-theme .register-tab-btn:hover {
+    border-color: #a67ee7;
+    background: var(--register-primary-soft);
+    color: var(--register-primary-dark);
+}
+
+.register-page-theme .register-tab-btn.active {
+    border-color: var(--register-primary);
+    background: linear-gradient(115deg, #5c2bc2 0%, #7543e8 55%, #a34fe0 100%);
+    color: #fff;
+    box-shadow: 0 10px 22px rgba(113, 56, 212, .27), inset 0 1px 0 rgba(255, 255, 255, .18);
+}
+
+.register-page-theme .login-main .form-label {
+    color: #302847;
+}
+
+.register-page-theme .login-main .form-control,
+.register-page-theme .login-main .form-select {
+    border-color: #d8cfea;
+    background-color: #fcfbff;
+    color: var(--register-ink);
+}
+
+.register-page-theme .login-main .form-control:focus,
+.register-page-theme .login-main .form-select:focus {
+    border-color: #7950e6;
+    background-color: #fff;
+    box-shadow: 0 0 0 .2rem rgba(113, 66, 232, .13), 0 8px 18px rgba(19, 184, 200, .07);
+}
+
+.register-page-theme .login-submit-btn {
+    border: 0;
+    background: linear-gradient(110deg, #5625bd 0%, #7543e8 52%, #b14cce 100%);
+    box-shadow: 0 12px 26px rgba(91, 38, 180, .25), 0 5px 14px rgba(244, 111, 131, .12);
+}
+
+.register-page-theme .login-submit-btn:hover,
+.register-page-theme .login-submit-btn:focus {
+    color: #fff;
+    background: linear-gradient(110deg, #43208f 0%, #6634d4 48%, #933ab5 100%);
+    box-shadow: 0 15px 30px rgba(75, 31, 157, .29), 0 6px 16px rgba(19, 184, 200, .12);
+    transform: translateY(-2px);
+}
+
+.register-page-theme .social-auth-btn {
+    border-color: var(--register-border);
+    background: #faf8ff;
+    color: #43365d;
+}
+
+.register-page-theme .social-auth-btn:hover {
+    border-color: rgba(19, 184, 200, .55);
+    background: linear-gradient(135deg, #f2ffff, var(--register-primary-soft));
+    color: var(--register-primary-dark);
+    box-shadow: 0 8px 18px rgba(89, 44, 159, .12);
+}
+
+.register-page-theme .login-link {
+    color: var(--register-primary);
+}
+
+@media (max-width: 991.98px) {
+    .register-page-theme .login-section {
+        align-items: flex-start;
+    }
+
+    .register-page-theme .login-aside-content,
+    .register-page-theme .login-main-content {
+        padding: 28px 24px;
+    }
+}
+.register-honeypot{position:absolute!important;left:-10000px!important;width:1px!important;height:1px!important;overflow:hidden!important}

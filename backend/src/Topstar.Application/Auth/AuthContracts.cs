@@ -41,6 +41,7 @@ public sealed record RegisterRequest(
 public sealed record ForgotPasswordRequest(string EmailOrPhone, DeviceContext Device);
 
 public sealed record ResetPasswordRequest(string Token, string NewPassword, DeviceContext Device);
+public sealed record ChangePasswordRequest(Guid UserId, string CurrentPassword, string NewPassword, DeviceContext Device);
 
 public sealed record AuthenticatedUser(Guid UserId, string Email, string? Phone, UserRoleType Role, string DisplayName);
 
@@ -58,11 +59,13 @@ public interface IAuthService
     Task<AuthResult<AuthenticatedUser>> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default);
     Task<AuthResult<ForgotPasswordResult>> RequestPasswordResetAsync(ForgotPasswordRequest request, CancellationToken cancellationToken = default);
     Task<AuthResult<bool>> ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken = default);
+    Task<AuthResult<bool>> ChangePasswordAsync(ChangePasswordRequest request, CancellationToken cancellationToken = default);
 }
 
 public interface IAuthRepository
 {
     Task<AuthUserRow?> FindUserByEmailOrPhoneAsync(string emailOrPhone, CancellationToken cancellationToken);
+    Task<AuthUserRow?> FindUserByIdAsync(Guid userId, CancellationToken cancellationToken);
     Task<bool> EmailExistsAsync(string email, CancellationToken cancellationToken);
     Task<bool> PhoneExistsAsync(string phone, CancellationToken cancellationToken);
     Task<AuthUserRow> CreateUserAsync(RegisterRequest request, string passwordHash, CancellationToken cancellationToken);
@@ -74,6 +77,7 @@ public interface IAuthRepository
     Task<PasswordResetTokenRow?> FindValidPasswordResetTokenAsync(string tokenHash, CancellationToken cancellationToken);
     Task MarkPasswordResetTokenUsedAsync(Guid tokenId, CancellationToken cancellationToken);
     Task UpdatePasswordAsync(Guid userId, string passwordHash, CancellationToken cancellationToken);
+    Task ConfirmEmailAsync(Guid userId, CancellationToken cancellationToken);
 }
 
 public sealed record AuthUserRow(
@@ -82,6 +86,7 @@ public sealed record AuthUserRow(
     string? Phone,
     string PasswordHash,
     string Status,
+    bool EmailConfirmed,
     DateTime? LockoutEndAtUtc,
     string RoleCode,
     string DisplayName

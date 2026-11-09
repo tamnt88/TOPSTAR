@@ -1,12 +1,14 @@
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Topstar.Application.Website;
 
 namespace Topstar.Web.Pages;
 
-public class IndexModel : PageModel
+public class IndexModel(IHomepageContentService homepage) : PageModel
 {
-    public IActionResult OnGet()
+    public HomepageContent Homepage { get; private set; } = HomepageContent.Default;
+    public async Task OnGetAsync()
     {
-        return Page();
+        var current = await homepage.GetAsync(HttpContext.RequestAborted);
+        Homepage = current.IsPublished ? current : HomepageContent.Default;
     }
 }

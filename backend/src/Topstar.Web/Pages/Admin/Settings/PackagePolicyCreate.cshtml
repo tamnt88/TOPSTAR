@@ -1,0 +1,12 @@
+@page
+@model Topstar.Web.Pages.Admin.Settings.PackagePolicyCreateModel
+@{ ViewData["Title"]="Thêm gói KOC"; ViewData["AdminHeaderTitle"]="Thêm gói KOC"; ViewData["UseCkEditor"]=true; }
+<div class="package-editor-page">
+    <header class="package-editor-heading"><div><span class="admin-page-eyebrow"><i class="fa-solid fa-boxes-stacked"></i> CẤU HÌNH GÓI KOC</span><h1 class="section-title mb-1">Thêm gói KOC</h1><p class="text-muted mb-0">Tạo chính sách gói mới dành cho chiến dịch của Brand.</p></div><a asp-page="./PackagePolicies" class="btn btn-outline-secondary package-back-button"><i class="fa-solid fa-arrow-left"></i> Danh sách gói</a></header>
+    <form method="post" enctype="multipart/form-data" class="card-x package-editor-card" novalidate>
+        <partial name="_PackagePolicyForm" for="Input" />
+        <div class="package-editor-actions"><a asp-page="./PackagePolicies" class="btn btn-light"><i class="fa-solid fa-xmark me-1"></i>Hủy</a><button class="btn btn-primary"><i class="fa-solid fa-plus me-1"></i>Thêm gói</button></div>
+    </form>
+</div>
+<partial name="_ValidationScriptsPartial" />
+@section Scripts { <script src="~/lib/ckeditor5/ckeditor5.umd.js"></script><script src="~/lib/ckeditor5/translations/vi.umd.js"></script><script src="~/js/admin/package-policy-form.js" asp-append-version="true"></script> }

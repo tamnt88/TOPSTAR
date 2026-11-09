@@ -3,70 +3,77 @@
 @{
     var website = await WebsiteContentService.GetWebsiteContentAsync(Context?.RequestAborted ?? default);
     var websiteName = website?.WebsiteName ?? "TopStar";
-    var logoPath = string.IsNullOrWhiteSpace(website?.LogoUrl) ? "/images/logo.png" : website!.LogoUrl!;
-    var contactEmail = string.IsNullOrWhiteSpace(website?.ContactEmail) ? "hello@topstar.vn" : website!.ContactEmail!;
-    var hotline = string.IsNullOrWhiteSpace(website?.Hotline) ? "+84 (0) 28 1234 5678" : website!.Hotline!;
-    var address = string.IsNullOrWhiteSpace(website?.Address) ? "TP. Hồ Chí Minh, Việt Nam" : website!.Address!;
-    var domain = string.IsNullOrWhiteSpace(website?.Domain) ? "#" : website!.Domain!;
-    var copyrightText = string.IsNullOrWhiteSpace(website?.CopyrightText)
-        ? $"© {DateTime.UtcNow.Year} {websiteName}. Tất cả quyền được bảo lưu."
+    var contactEmail = string.IsNullOrWhiteSpace(website?.ContactEmail) ? "info@topstar.vn" : website!.ContactEmail!;
+    var hotline = string.IsNullOrWhiteSpace(website?.Hotline) ? "08 3333 1004" : website!.Hotline!;
+    var domain = string.IsNullOrWhiteSpace(website?.Domain) ? "www.topstar.vn" : website!.Domain!;
+    var address = string.IsNullOrWhiteSpace(website?.Address) ? "Việt Nam" : website!.Address!;
+    var logoUrl = string.IsNullOrWhiteSpace(website?.LogoUrl) ? "/images/logo.png" : website!.LogoUrl!;
+    var copyright = string.IsNullOrWhiteSpace(website?.CopyrightText)
+        ? $"© {DateTime.UtcNow.Year} {websiteName}. Bảo lưu mọi quyền."
         : website!.CopyrightText!;
+    var domainUrl = domain.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || domain.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+        ? domain
+        : $"https://{domain.TrimStart('/')}";
+    var phoneUrl = hotline.Replace(" ", string.Empty).Replace(".", string.Empty).Replace("-", string.Empty);
 }
-<footer class="site-footer">
-    <div class="container py-5">
-        <div class="row g-4 align-items-start">
-            <div class="col-lg-3 col-md-6">
-                <a asp-page="/Index" class="site-footer-brand text-decoration-none">
-                    <img src="@logoPath" alt="@websiteName" class="site-footer-logo" />
+
+
+<footer class="topstar-public-footer" aria-label="Thông tin TopStar">
+    <div class="container">
+        <div class="topstar-public-footer__grid">
+            <section class="topstar-public-footer__brand" aria-labelledby="footer-brand-name">
+                <a class="topstar-public-footer__logo" href="/" aria-label="Về trang chủ @websiteName">
+                    <img src="@logoUrl" alt="@websiteName" />
                 </a>
-                <p class="site-footer-desc">
-                    Nền tảng kết nối KOC, KOL và thương hiệu lớn. Chúng tôi giúp triển khai chiến dịch
-                    chuyên nghiệp, minh bạch và tăng trưởng bền vững.
-                </p>
-                <div class="site-footer-social d-flex gap-2">
-                    <a href="#" class="social-btn" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
-                    <a href="#" class="social-btn" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
-                    <a href="#" class="social-btn" aria-label="X"><i class="fa-brands fa-x-twitter"></i></a>
-                    <a href="#" class="social-btn" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+                <h2 id="footer-brand-name">Kết nối đúng người.<br />Tạo chiến dịch hiệu quả.</h2>
+                <p>Nền tảng quản trị chiến dịch KOC/KOL toàn diện dành cho Brand và nhà sáng tạo nội dung.</p>
+                <div class="topstar-public-footer__actions">
+                    <a class="topstar-public-footer__primary" href="/danh-cho-brand">
+                        Dành cho Brand <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                    </a>
+                    <a class="topstar-public-footer__secondary" href="/dang-ky?tab=koc">Trở thành KOC</a>
                 </div>
-            </div>
+            </section>
 
-            <div class="col-lg-2 col-md-6">
-                <h6 class="site-footer-title">Dịch vụ</h6>
-                <ul class="list-unstyled site-footer-list mb-0">
-                    <li>Chiến dịch KOC</li>
-                    <li>Chiến dịch KOL</li>
-                    <li>Đào tạo Creator</li>
-                    <li>Báo cáo hiệu suất</li>
-                </ul>
-            </div>
+            <nav class="topstar-public-footer__column" aria-label="Khám phá">
+                <h3>Khám phá</h3>
+                <a href="/"><i class="fa-solid fa-house" aria-hidden="true"></i>Trang chủ</a>
+                <a href="/hoc-vien-koc"><i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>Học viện KOC</a>
+                <a href="/danh-cho-brand"><i class="fa-solid fa-briefcase" aria-hidden="true"></i>Dành cho Brand</a>
+                <a href="/goi-koc"><i class="fa-solid fa-box-open" aria-hidden="true"></i>Gói dịch vụ KOC</a>
+            </nav>
 
-            <div class="col-lg-2 col-md-6">
-                <h6 class="site-footer-title">Công ty</h6>
-                <ul class="list-unstyled site-footer-list mb-0">
-                    <li>Về chúng tôi</li>
-                    <li>Tin tức & Blog</li>
-                    <li>Dự án nổi bật</li>
-                    <li>Liên hệ</li>
-                </ul>
-            </div>
+            <nav class="topstar-public-footer__column" aria-label="Tài khoản">
+                <h3>Tài khoản</h3>
+                <a href="/dang-ky?tab=koc"><i class="fa-solid fa-users" aria-hidden="true"></i>Đăng ký KOC/KOL</a>
+                <a href="/dang-ky?tab=brand"><i class="fa-solid fa-building" aria-hidden="true"></i>Đăng ký Brand</a>
+                <a href="/dang-nhap"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i>Đăng nhập</a>
+            </nav>
 
-            <div class="col-lg-3 col-md-6">
-                <h6 class="site-footer-title">Liên hệ</h6>
-                <ul class="list-unstyled site-footer-list mb-0">
-                    <li>@contactEmail</li>
-                    <li>@hotline</li>
-                    <li>@address</li>
-                    <li>@domain</li>
-                </ul>
-            </div>
+            <section class="topstar-public-footer__column topstar-public-footer__contact" aria-labelledby="footer-contact-title">
+                <h3 id="footer-contact-title">Liên hệ</h3>
+                <a href="tel:@phoneUrl">
+                    <span class="topstar-public-footer__contact-icon"><i class="fa-solid fa-phone" aria-hidden="true"></i></span>
+                    <span><small>Hotline</small><strong>@hotline</strong></span>
+                </a>
+                <a href="mailto:@contactEmail">
+                    <span class="topstar-public-footer__contact-icon"><i class="fa-solid fa-envelope" aria-hidden="true"></i></span>
+                    <span><small>Email</small><strong>@contactEmail</strong></span>
+                </a>
+                <a href="@domainUrl" target="_blank" rel="noopener noreferrer">
+                    <span class="topstar-public-footer__contact-icon"><i class="fa-solid fa-globe" aria-hidden="true"></i></span>
+                    <span><small>Website</small><strong>@domain</strong></span>
+                </a>
+                <div class="topstar-public-footer__address">
+                    <span class="topstar-public-footer__contact-icon"><i class="fa-solid fa-location-dot" aria-hidden="true"></i></span>
+                    <span><small>Địa chỉ</small><strong>@address</strong></span>
+                </div>
+            </section>
         </div>
-    </div>
 
-    <div class="site-footer-bottom">
-        <div class="container text-center py-3">
-            @copyrightText
+        <div class="topstar-public-footer__bottom">
+            <span>@copyright</span>
+            <span class="topstar-public-footer__commitment"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i>Minh bạch · An toàn · Đồng hành</span>
         </div>
     </div>
 </footer>
-

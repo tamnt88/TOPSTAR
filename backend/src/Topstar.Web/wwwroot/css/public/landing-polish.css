@@ -1,0 +1,235 @@
+/* Final polish shared by the Academy and Brand public landing pages. */
+.academy-page .academy-image-frame,
+.academy-page .academy-floating-note,
+.academy-page .academy-stat,
+.academy-page .academy-course-card,
+.academy-page .academy-roadmap article,
+.academy-page .academy-card-grid article,
+.academy-page .academy-resources article {
+    border: 0 !important;
+}
+.academy-page .academy-course-card,
+.academy-page .academy-roadmap article,
+.academy-page .academy-card-grid article,
+.academy-page .academy-resources article {
+    border-radius: 22px !important;
+    box-shadow: 0 15px 36px rgba(58, 34, 108, .09) !important;
+}
+.academy-page .academy-course-card:hover,
+.academy-page .academy-roadmap article:hover,
+.academy-page .academy-card-grid article:hover,
+.academy-page .academy-resources article:hover {
+    box-shadow: 0 23px 46px rgba(76, 29, 149, .15) !important;
+    transform: translateY(-5px);
+}
+.topstar-public-site .academy-page .academy-dark {
+    background: radial-gradient(circle at 86% 14%, rgba(236, 72, 153, .2), transparent 28%), linear-gradient(135deg, #0f172a, #2e1065 58%, #4c1d95) !important;
+}
+.topstar-public-site .academy-page .academy-dark .academy-card-grid article {
+    color: #fff !important;
+    background: rgba(255, 255, 255, .085) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1), 0 16px 34px rgba(0, 0, 0, .14) !important;
+}
+.topstar-public-site .academy-page .academy-dark .academy-heading > p { color: #fbbf24 !important; }
+.topstar-public-site .academy-page .academy-dark .academy-heading h2 { color: #fff !important; }
+.topstar-public-site .academy-page .academy-dark .academy-heading > span { color: #ddd6fe !important; }
+.topstar-public-site .academy-page .academy-dark .academy-card-grid h3 { color: #fff !important; }
+.topstar-public-site .academy-page .academy-dark .academy-card-grid p { color: #ddd6fe !important; }
+.topstar-public-site .academy-page .academy-final {
+    background: radial-gradient(circle at 15% 20%, rgba(251, 191, 36, .25), transparent 25%), linear-gradient(115deg, #4c1d95, #7c3aed 55%, #c026d3) !important;
+}
+.topstar-public-site .academy-page .academy-final-label { color: #fde68a !important; }
+.topstar-public-site .academy-page .academy-final h2 { color: #fff !important; }
+.topstar-public-site .academy-page .academy-final p { color: #ede9fe !important; }
+.topstar-public-site .academy-page .academy-final .academy-btn-light {
+    border: 0 !important;
+    color: #4c1d95 !important;
+    background: #fff !important;
+    box-shadow: 0 12px 28px rgba(46, 16, 101, .24);
+}
+
+.brand-landing__visual,
+.brand-landing__benefits article,
+.brand-landing__steps,
+.brand-landing__governance {
+    border: 0 !important;
+}
+.brand-landing__hero {
+    background: radial-gradient(circle at 82% 20%, rgba(168, 85, 247, .28), transparent 31%), radial-gradient(circle at 8% 78%, rgba(249, 115, 22, .15), transparent 24%), linear-gradient(125deg, #fff8ed, #fff 44%, #f3e8ff) !important;
+}
+.brand-landing__hero h1 span {
+    color: #7c3aed;
+    background: linear-gradient(90deg, #6d28d9, #ec4899, #f97316);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.brand-landing__visual {
+    border-radius: 26px !important;
+    box-shadow: 0 28px 64px rgba(76, 29, 149, .2) !important;
+}
+.brand-landing__benefits { gap: 22px !important; }
+.brand-landing__benefits article {
+    border-radius: 22px !important;
+    box-shadow: 0 15px 36px rgba(55, 32, 100, .09) !important;
+}
+.brand-landing__benefits article:hover {
+    box-shadow: 0 23px 46px rgba(76, 29, 149, .15) !important;
+    transform: translateY(-5px);
+}
+.brand-landing__steps {
+    box-shadow: 0 18px 44px rgba(64, 38, 112, .08) !important;
+}
+.brand-landing__governance {
+    box-shadow: 0 20px 48px rgba(64, 38, 112, .1) !important;
+}
+.brand-landing__governance article { border-left: 0 !important; border-right: 0 !important; }
+.topstar-public-site .brand-landing .brand-landing__cta {
+    background: radial-gradient(circle at 84% 20%, rgba(251, 191, 36, .25), transparent 25%), radial-gradient(circle at 12% 80%, rgba(244, 63, 94, .25), transparent 28%), linear-gradient(115deg, #4c1d95, #7c3aed 56%, #c026d3) !important;
+}
+.topstar-public-site .brand-landing .brand-landing__cta p { color: #fde68a !important; }
+.topstar-public-site .brand-landing .brand-landing__cta h2 { color: #fff !important; }
+.topstar-public-site .brand-landing .brand-landing__cta span { color: #ede9fe !important; }
+.topstar-public-site .brand-landing .brand-landing__cta .brand-landing__button--light {
+    border: 0 !important;
+    color: #4c1d95 !important;
+    background: #fff !important;
+    box-shadow: 0 12px 28px rgba(46, 16, 101, .24);
+}
+.topstar-public-site .brand-landing .brand-landing__cta .brand-landing__button--ghost {
+    border-color: rgba(255,255,255,.72) !important;
+    color: #fff !important;
+    background: rgba(255,255,255,.09) !important;
+}
+.brand-landing__button--primary {
+    border: 0 !important;
+    background: linear-gradient(135deg, #5b21b6, #7c3aed 58%, #ec4899) !important;
+    box-shadow: 0 13px 28px rgba(124, 58, 237, .28) !important;
+}
+
+@media (max-width: 767.98px) {
+    .academy-page .academy-floating-note { right: 10px !important; bottom: -20px; }
+    .brand-landing__benefits { gap: 16px !important; }
+    .brand-landing__visual { box-shadow: 0 20px 42px rgba(76, 29, 149, .16) !important; }
+}
+
+/* Brand landing typography and section cleanup. */
+.topstar-public-site .brand-landing__hero h1 {
+    max-width: 610px;
+    font-size: clamp(2.7rem, 4.3vw, 4.25rem) !important;
+    font-weight: 700 !important;
+    line-height: 1.08 !important;
+    letter-spacing: -.04em !important;
+}
+.topstar-public-site .brand-landing__eyebrow,
+.topstar-public-site .brand-landing__section-head > p,
+.topstar-public-site .brand-landing__cta p {
+    font-weight: 700 !important;
+    letter-spacing: .09em !important;
+}
+.topstar-public-site .brand-landing__section-head {
+    max-width: 820px;
+    margin-bottom: 38px;
+}
+.topstar-public-site .brand-landing__section-head h2,
+.topstar-public-site .brand-landing__cta h2 {
+    font-size: clamp(2rem, 3.25vw, 3.25rem) !important;
+    font-weight: 650 !important;
+    line-height: 1.12 !important;
+    letter-spacing: -.035em !important;
+}
+.topstar-public-site .brand-landing__benefits {
+    gap: 18px !important;
+}
+.topstar-public-site .brand-landing__benefits article {
+    min-height: 248px;
+    padding: 25px 23px !important;
+    background: #fff !important;
+    box-shadow: 0 12px 30px rgba(44, 29, 82, .075) !important;
+}
+.topstar-public-site .brand-landing__benefits article > span {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+}
+.topstar-public-site .brand-landing__benefits h3 {
+    margin-top: 22px;
+    font-size: 1.03rem !important;
+    font-weight: 700;
+}
+.topstar-public-site .brand-landing__benefits p {
+    font-size: .92rem;
+    line-height: 1.65;
+}
+.topstar-public-site .brand-landing__process .brand-landing__section-head {
+    max-width: 720px;
+    margin-bottom: 46px;
+}
+@media (min-width: 901px) {
+    .topstar-public-site .brand-landing__steps {
+        padding: 22px 0 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+    }
+    .topstar-public-site .brand-landing__steps li:not(:last-child) > div::after {
+        display: none !important;
+    }
+    .topstar-public-site .brand-landing__steps li > b {
+        border-width: 6px !important;
+        border-color: #f7f4fb !important;
+        box-shadow: 0 9px 20px rgba(113,53,218,.18) !important;
+    }
+}
+.topstar-public-site .brand-landing__steps h3 {
+    font-size: 1rem !important;
+    font-weight: 700;
+}
+.topstar-public-site .brand-landing__steps p {
+    font-size: .9rem;
+    line-height: 1.6;
+}
+.topstar-public-site .brand-landing__governance-layout {
+    grid-template-columns: minmax(300px, .68fr) minmax(0, 1.32fr);
+}
+.topstar-public-site .brand-landing__governance-layout .brand-landing__section-head h2 {
+    max-width: 500px;
+    font-size: clamp(2.15rem, 3.4vw, 3.35rem) !important;
+}
+.topstar-public-site .brand-landing__governance {
+    padding: 6px 26px;
+    box-shadow: 0 16px 38px rgba(64,38,112,.075) !important;
+}
+.topstar-public-site .brand-landing__governance article {
+    padding-block: 22px;
+}
+.topstar-public-site .brand-landing__governance h3 {
+    font-size: 1rem;
+    font-weight: 700;
+}
+.topstar-public-site .brand-landing__cta {
+    border: 0 !important;
+    border-image: none !important;
+}
+.topstar-public-site .brand-landing__cta::before {
+    border: 0 !important;
+}
+.topstar-public-site .brand-landing__cta h2 {
+    max-width: 650px;
+    font-size: clamp(2rem, 3.2vw, 3.15rem) !important;
+}
+
+@media (max-width: 991.98px) {
+    .topstar-public-site .brand-landing__hero h1 { font-size: clamp(2.55rem, 7vw, 3.7rem) !important; }
+    .topstar-public-site .brand-landing__benefits { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .topstar-public-site .brand-landing__governance-layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+    .topstar-public-site .brand-landing__hero h1 { font-size: 2.45rem !important; }
+    .topstar-public-site .brand-landing__section-head h2,
+    .topstar-public-site .brand-landing__cta h2 { font-size: 2rem !important; }
+    .topstar-public-site .brand-landing__benefits { grid-template-columns: 1fr; }
+    .topstar-public-site .brand-landing__benefits article { min-height: 0; }
+}

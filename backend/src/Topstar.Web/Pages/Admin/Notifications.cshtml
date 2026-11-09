@@ -1,0 +1,79 @@
+@page
+@model Topstar.Web.Pages.Admin.NotificationsModel
+@{
+    ViewData["Title"] = "Thông báo";
+    ViewData["AdminHeaderTitle"] = "Thông báo";
+    var filter = Model.Filter?.ToLowerInvariant() is "unread" or "archived" ? Model.Filter.ToLowerInvariant() : "all";
+    var readCount = Math.Max(0, Model.PageData.ActiveCount - Model.PageData.UnreadCount);
+    string TypeLabel(string value) => PortalFormat.Status(value);
+    string TypeIcon(string value) => value.ToLowerInvariant() switch { "dispute" => "fa-scale-balanced", "campaign" => "fa-bullhorn", "payment" => "fa-wallet", "booking" => "fa-calendar-check", _ => "fa-bell" };
+    string TabClass(string value) => filter == value ? "admin-notification-tab is-active" : "admin-notification-tab";
+}
+@section Styles { <link rel="stylesheet" href="~/css/admin/notifications.css" asp-append-version="true" /> }
+
+<main class="admin-notification-page">
+    <header class="admin-notification-heading">
+        <div>
+            <div class="admin-notification-eyebrow"><i class="fa-solid fa-bell"></i> Trung tâm thông báo</div>
+            <h1>Thông báo</h1>
+            <p>Theo dõi cập nhật và mở nhanh công việc cần xử lý.</p>
+        </div>
+        @if (Model.PageData.UnreadCount > 0 && filter != "archived")
+        {
+            <form method="post" asp-page-handler="All"><input type="hidden" name="filter" value="@filter" /><button class="btn btn-outline-primary"><i class="fa-solid fa-check-double"></i> Đọc tất cả</button></form>
+        }
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Message)) { <div class="alert alert-success"><i class="fa-solid fa-circle-check"></i> @Model.Message</div> }
+
+    <section class="admin-notification-stats" aria-label="Thống kê thông báo">
+        <article><span class="is-purple"><i class="fa-solid fa-inbox"></i></span><div><small>Đang hiển thị</small><strong>@Model.PageData.ActiveCount</strong></div></article>
+        <article><span class="is-red"><i class="fa-solid fa-envelope"></i></span><div><small>Chưa đọc</small><strong>@Model.PageData.UnreadCount</strong></div></article>
+        <article><span class="is-green"><i class="fa-solid fa-envelope-open"></i></span><div><small>Đã đọc</small><strong>@readCount</strong></div></article>
+        <article><span class="is-slate"><i class="fa-solid fa-box-archive"></i></span><div><small>Đã lưu trữ</small><strong>@Model.PageData.ArchivedCount</strong></div></article>
+    </section>
+
+    <nav class="ts-tabs admin-notification-tabs" aria-label="Lọc nhanh">
+        <a asp-route-filter="all" class="@TabClass("all")"><i class="fa-solid fa-list"></i> Tất cả <b>@Model.PageData.ActiveCount</b></a>
+        <a asp-route-filter="unread" class="@TabClass("unread")"><i class="fa-solid fa-envelope"></i> Chưa đọc <b>@Model.PageData.UnreadCount</b></a>
+        <a asp-route-filter="archived" class="@TabClass("archived")"><i class="fa-solid fa-box-archive"></i> Đã lưu trữ <b>@Model.PageData.ArchivedCount</b></a>
+    </nav>
+
+    <section class="admin-notification-card">
+        <div class="admin-notification-card-title"><div><h2>Danh sách thông báo</h2><p>Tìm kiếm, lọc và xử lý thông báo tại một nơi.</p></div><span>@Model.PageData.Items.Count kết quả</span></div>
+        <div class="admin-notification-filters">
+            <label class="admin-notification-search"><span>Từ khóa</span><div><i class="fa-solid fa-magnifying-glass"></i><input id="notificationSearch" type="search" placeholder="Tìm theo tiêu đề hoặc nội dung" /></div></label>
+            <label><span>Loại thông báo</span><select id="notificationType"><option value="">Tất cả loại</option>@foreach(var type in Model.PageData.Items.Select(x=>x.Type).Distinct().OrderBy(x=>x)){<option value="@TypeLabel(type)">@TypeLabel(type)</option>}</select></label>
+            <label><span>Hiển thị</span><select id="notificationLength"><option value="10">10 dòng</option><option value="20">20 dòng</option><option value="50">50 dòng</option></select></label>
+            <button id="notificationApply" type="button" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Lọc</button>
+        </div>
+        <div class="table-responsive admin-notification-table-wrap">
+            <table id="adminNotificationTable" class="table align-middle mb-0" data-list-actions="false">
+                <thead><tr><th>STT</th><th>Thông báo</th><th>Loại</th><th>Thời gian</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+                <tbody>
+                @foreach (var item in Model.PageData.Items)
+                {
+                    <tr class="@(!item.IsRead && item.IsVisible ? "is-unread" : "")">
+                        <td></td>
+                        <td><div class="admin-notification-item"><span><i class="fa-solid @TypeIcon(item.Type)"></i></span><div><strong>@item.Title</strong><p>@item.Body</p>@if(!string.IsNullOrWhiteSpace(item.SourceEntityType)){<small>Nguồn: @TypeLabel(item.SourceEntityType)</small>}</div></div></td>
+                        <td><span class="admin-notification-type">@TypeLabel(item.Type)</span></td>
+                        <td data-order="@item.CreatedAtUtc.Ticks"><strong>@item.CreatedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy")</strong><small>@item.CreatedAtUtc.ToVietnamTime().ToString("HH:mm")</small></td>
+                        <td>@if(!item.IsVisible){<span class="admin-notification-status is-archived">Đã lưu trữ</span>}else if(!item.IsRead){<span class="admin-notification-status is-new">Chưa đọc</span>}else{<span class="admin-notification-status is-read">Đã đọc</span>}</td>
+                        <td><div class="admin-notification-actions">
+                            @if(item.IsVisible && !string.IsNullOrWhiteSpace(item.TargetUrl)){<form method="post" asp-page-handler="Open"><input type="hidden" name="id" value="@item.Id"/><input type="hidden" name="filter" value="@filter"/><button title="Mở công việc"><i class="fa-solid fa-arrow-up-right-from-square"></i></button></form>}
+                            @if(item.IsVisible && !item.IsRead){<form method="post" asp-page-handler="Read"><input type="hidden" name="id" value="@item.Id"/><input type="hidden" name="filter" value="@filter"/><button title="Đánh dấu đã đọc"><i class="fa-solid fa-envelope-open"></i></button></form>}
+                            <form method="post" asp-page-handler="@(item.IsVisible ? "Archive" : "Restore")"><input type="hidden" name="id" value="@item.Id"/><input type="hidden" name="filter" value="@filter"/><button title="@(item.IsVisible ? "Lưu trữ" : "Khôi phục")"><i class="fa-solid @(item.IsVisible ? "fa-box-archive" : "fa-rotate-left")"></i></button></form>
+                        </div></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+@section Scripts {
+    <script src="~/lib/datatables/js/dataTables.min.js?v=2.3.8"></script>
+    <script src="~/lib/datatables/js/dataTables.bootstrap5.min.js?v=2.3.8"></script>
+    <script src="~/js/admin/notifications.js" asp-append-version="true"></script>
+}

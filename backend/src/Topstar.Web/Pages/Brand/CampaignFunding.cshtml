@@ -1,0 +1,234 @@
+@page
+@model Topstar.Web.Pages.Brand.CampaignFundingModel
+@using Topstar.Application.Billing
+@{ViewData["Title"]="Thanh toán chiến dịch";var item=Model.Selected;var equalPreview=item is null?new Dictionary<Guid,decimal>():CampaignFundingRules.SplitEqual(item.CampaignBudget,item.Allocations.Select(x=>x.ParticipationId).ToList());}
+<div class="brand-funding-page"><header class="brand-page-heading"><div><span class="brand-page-eyebrow"><i class="fa-solid fa-vault"></i> QUỸ CHIẾN DỊCH</span><h1>Thanh toán chiến dịch</h1><p>Theo dõi thanh toán, phân bổ thù lao KOC và các khoản hoàn tiền.</p></div></header>
+@if(!string.IsNullOrWhiteSpace(Model.Message)){<div hidden data-ts-notification="@(Model.Success ? "success" : "error")">@Model.Message</div>}
+@if(item is null){
+<section class="brand-campaign-card">
+<div class="brand-funding-section-head"><div><h2><i class="fa-solid fa-list"></i> Danh sách thanh toán chiến dịch</h2><p>Chọn chiến dịch để xem chi tiết thanh toán và đối soát. Chiến dịch đã ngừng chỉ cho phép tra cứu.</p></div></div>
+<form id="fundingListFilters" class="funding-list-filters" novalidate>
+<div class="funding-list-search"><label for="fundingKeyword">Từ khóa</label><div><i class="fa-solid fa-magnifying-glass"></i><input id="fundingKeyword" class="form-control" placeholder="Tìm theo tên chiến dịch"/></div></div>
+<div><label for="fundingStatus">Trạng thái chiến dịch</label><select id="fundingStatus" class="form-select"><option value="">Tất cả trạng thái</option>@foreach(var state in new[]{"Published","InProgress","Paused","Cancelled","Completed"}){<option value="@state">@PortalFormat.Status(state)</option>}</select></div>
+<div><label for="fundingPageLength">Hiển thị</label><select id="fundingPageLength" class="form-select"><option value="20">20 dòng</option></select></div>
+<button class="btn brand-btn-primary"><i class="fa-solid fa-filter"></i> Lọc</button>
+</form>
+<table class="table brand-data-table w-100" id="brandFundingList" data-list-actions="false"><thead><tr><th>STT</th><th>Chiến dịch</th><th>Trạng thái chiến dịch</th><th class="text-end">Ngân sách</th><th class="text-end">Đã ký quỹ đợt này</th><th>Trạng thái ký quỹ</th><th>Thao tác</th></tr></thead><tbody>
+@{var index=0;}
+@foreach(var row in Model.Items){index++;<tr data-campaign-status="@row.CampaignStatus"><td>@index</td><td><div class="funding-list-name"><span><i class="fa-solid fa-bullhorn"></i></span><strong>@row.CampaignTitle</strong></div></td><td><span class="funding-list-badge is-@row.CampaignStatus.ToLowerInvariant()">@PortalFormat.Status(row.CampaignStatus)</span></td><td class="text-end" data-order="@row.TotalCampaignBudget">@PortalFormat.Money(row.TotalCampaignBudget)</td><td class="text-end" data-order="@(row.PaidAtUtc.HasValue?row.TotalPayableSnapshot:0)">@PortalFormat.Money(row.PaidAtUtc.HasValue?row.TotalPayableSnapshot:0)</td><td><span class="funding-list-badge is-@row.Status.ToLowerInvariant()">@FundingLabel(row.Status)</span></td><td class="text-center"><a asp-page="/Brand/CampaignFunding" asp-route-campaignId="@row.CampaignId" class="funding-list-view" aria-label="Xem ký quỹ @row.CampaignTitle" title="Xem chi tiết"><i class="fa-solid fa-eye"></i></a></td></tr>}
+</tbody></table>
+</section>
+}
+else{
+<div class="d-flex justify-content-between align-items-center mb-3"><h2 class="h5 mb-0">@item.CampaignTitle</h2><a asp-page="/Brand/CampaignFunding" class="btn btn-outline-secondary"><i class="fa-solid fa-arrow-left"></i> Danh sách thanh toán</a></div>
+@if(item.CampaignStatus is not ("Published" or "InProgress") && !(Model.CreationCheckout&&item.CampaignStatus=="Draft")){<div class="alert alert-info">Chiến dịch @PortalFormat.Status(item.CampaignStatus). Chỉ tra cứu và đối soát các khoản đã phát sinh; không tạo ký quỹ mới.</div>}
+<section class="brand-funding-stats"><article><span><i class="fa-solid fa-coins"></i></span><div><small>Ngân sách đợt này</small><strong>@item.CampaignBudget.ToString("N0", PortalFormat.Vietnamese) ₫</strong></div></article><article><span><i class="fa-solid fa-wallet"></i></span><div><small>Còn lại sau đợt này</small><strong>@item.RemainingCampaignBudget.ToString("N0", PortalFormat.Vietnamese) ₫</strong></div></article><article><span><i class="fa-solid fa-users"></i></span><div><small>KOC đã xác nhận</small><strong>@item.ConfirmedKocCount/@item.DesiredKocCount</strong></div></article><article><span><i class="fa-solid fa-file-shield"></i></span><div><small>Trạng thái ký quỹ</small><strong>@(item.AllocationMode==CampaignAllocationModes.Prepaid&&item.Status==CampaignFundingStatuses.Draft ? "Sẵn sàng ký quỹ trước" : item.Status==CampaignFundingStatuses.Draft && item.EligibilityError is not null ? "Chưa đủ điều kiện phân bổ" : FundingLabel(item.Status))</strong></div></article></section>
+@if(item.CampaignStatus is ("Published" or "InProgress") && item.AvailableToPrepay>0 && (item.Id is null || item.Status is not (CampaignFundingStatuses.Draft or CampaignFundingStatuses.Pending)))
+{
+<section class="brand-campaign-card brand-prepay-choice">
+    <h2 class="h5"><i class="fa-solid fa-vault"></i> Ký quỹ trước cho chiến dịch</h2>
+    <p class="text-muted">Chọn số tiền muốn thanh toán trước, không cần đợi KOC xác nhận. Bạn có thể ký quỹ bổ sung sau.</p>
+    <form method="post" asp-page-handler="PrepareFull" class="brand-prepay-amount-form">
+        <input type="hidden" name="campaignId" value="@item.CampaignId"/>
+        <div><label for="prepayAmount" class="form-label">Số tiền ký quỹ trước</label><div class="input-group"><input id="prepayAmount" name="prepayAmount" class="form-control" inputmode="numeric" required value="@item.AvailableToPrepay.ToString("0",System.Globalization.CultureInfo.InvariantCulture)"/><span class="input-group-text">₫</span></div><small class="text-muted">Tối đa @item.AvailableToPrepay.ToString("N0",PortalFormat.Vietnamese) ₫ ngân sách còn lại.</small></div>
+        <button type="submit" class="btn brand-btn-primary"><i class="fa-solid fa-shield-halved"></i> Tiếp tục ký quỹ</button>
+    </form>
+</section>
+}
+@if(item.Status==CampaignFundingStatuses.Draft && item.AllocationMode!=CampaignAllocationModes.Prepaid && item.EligibilityError is not null)
+{
+    <section class="brand-empty-state brand-funding-blocked" role="status">
+        <span><i class="fa-solid fa-users"></i></span><h2>Chưa đủ điều kiện phân bổ thù lao</h2>
+        <p>@item.EligibilityError</p>
+        <a href="/Brand/CampaignWorkspace?id=@item.CampaignId#tab-koc" class="btn brand-btn-primary"><i class="fa-solid fa-users"></i> Xem danh sách KOC</a>
+    </section>
+}
+@if((item.AllocationMode!=CampaignAllocationModes.Prepaid || item.IsAllocatingPrepaidReserve || item.Allocations.Count>0) && (item.Status!=CampaignFundingStatuses.Draft || item.EligibilityError is null))
+{
+<section class="brand-campaign-card"><div class="brand-funding-section-head"><div><h2><i class="fa-solid fa-scale-balanced"></i> Phân bổ thù lao đợt @item.VersionNo</h2><p>Chỉ gồm KOC chưa được ký quỹ. Tổng phân bổ đợt này là @item.CampaignBudget.ToString("N0",PortalFormat.Vietnamese) ₫ và không cần chờ đủ quota chiến dịch.</p></div></div>
+@if(item.CampaignStatus is ("Published" or "InProgress") && item.CanEditAllocations)
+{
+<form method="post" asp-page-handler="Save" class="js-funding-form" data-budget="@((item.CampaignBudget+item.RemainingCampaignBudget).ToString("0.##",System.Globalization.CultureInfo.InvariantCulture))" data-mode-budget="@item.CampaignBudget.ToString("0.##",System.Globalization.CultureInfo.InvariantCulture)" novalidate>
+    <input type="hidden" name="campaignId" value="@item.CampaignId"/>
+    <div class="brand-funding-mode">
+        <label><input type="radio" name="allocationMode" value="Equal" checked="@(item.AllocationMode==CampaignAllocationModes.Equal)"/><span><i class="fa-solid fa-equals"></i><b>Chia đều ngân sách</b><small>Chia toàn bộ ngân sách cho danh sách KOC đã xác nhận.</small></span></label>
+        <label><input type="radio" name="allocationMode" value="Custom" checked="@(item.AllocationMode==CampaignAllocationModes.Custom||item.IsAllocatingPrepaidReserve)"/><span><i class="fa-solid fa-sliders"></i><b>Nhập riêng từng KOC</b><small>Nhập mức thù lao trước thuế đã thỏa thuận với từng KOC.</small></span></label>
+    </div>
+    <div class="brand-funding-quick-tools">
+        <div><span>Đã phân bổ <strong data-allocated>0 ₫</strong></span><span>Còn lại <strong data-remaining>@item.CampaignBudget.ToString("N0", PortalFormat.Vietnamese) ₫</strong></span></div>
+        <div><button type="button" data-funding-action="equal"><i class="fa-solid fa-equals"></i> Chia đều nhanh</button><button type="button" data-funding-action="remaining"><i class="fa-solid fa-wand-magic-sparkles"></i> Phân bổ số dư</button><button type="button" data-funding-action="clear"><i class="fa-solid fa-eraser"></i> Xóa số tiền</button></div>
+    </div>
+    <div class="brand-funding-allocation-list">
+    @foreach(var a in item.Allocations)
+    {
+        var equalAmount=equalPreview.GetValueOrDefault(a.ParticipationId);var displayAmount=item.AllocationMode==CampaignAllocationModes.Equal?equalAmount:a.Amount;
+        <div><span><i class="fa-solid fa-user"></i></span><strong>@a.KocName</strong><div class="brand-money-input"><input name="amount_@a.ParticipationId" value="@(displayAmount>0?displayAmount.ToString("N0", PortalFormat.Vietnamese):"")" data-equal-value="@equalAmount.ToString("0.##",System.Globalization.CultureInfo.InvariantCulture)" data-custom-value="@(item.AllocationMode==CampaignAllocationModes.Custom&&a.Amount>0?a.Amount.ToString("0.##",System.Globalization.CultureInfo.InvariantCulture):"")" inputmode="numeric" placeholder="Thù lao trước thuế"/><b>₫</b><i class="fa-solid fa-circle-exclamation"></i></div></div>
+    }
+    </div>
+    <div class="brand-funding-error" role="alert"></div>
+    <button type="submit" class="btn brand-btn-primary" disabled><i class="fa-solid fa-floppy-disk"></i> @(item.Status==CampaignFundingStatuses.Cancelled ? "Lưu bảng phân bổ mới" : "Lưu bảng phân bổ")</button>
+</form>
+}
+else{<div class="brand-funding-allocation-list is-readonly">@foreach(var a in item.Allocations){<div><span><i class="fa-solid fa-user"></i></span><strong>@a.KocName</strong><b>@a.Amount.ToString("N0", PortalFormat.Vietnamese) ₫</b></div>@await Component.InvokeAsync("KocTaxSummary",new{participationId=a.ParticipationId})}</div>}
+</section>
+}
+@if(item.CampaignStatus is ("Published" or "InProgress") && item.CanSubmit && Model.FeePolicy is not null && (Model.PaymentConfig.BankTransferEnabled || Model.PaymentConfig.OnePayEnabled || Model.PaymentConfig.VnPayEnabled) && Model.HasRefundAccount)
+{
+<section class="brand-campaign-card brand-funding-confirm brand-escrow-checkout">
+    <div><h2><i class="fa-solid fa-lock"></i> Kiểm tra và xác nhận ký quỹ</h2><p>Kiểm tra tổng tiền và chọn phương thức thanh toán. Tạo yêu cầu ký quỹ sẽ khóa bảng phân bổ; chưa đồng nghĩa với việc đã thanh toán.</p></div>
+    <form method="post" asp-page-handler="Submit" data-funding-review data-budget="@item.CampaignBudget.ToString("0",System.Globalization.CultureInfo.InvariantCulture)" data-vat-added="@Model.PreviewVatAdded.ToString("0",System.Globalization.CultureInfo.InvariantCulture)" data-platform-fee="@Model.PreviewPlatformFee.ToString("0",System.Globalization.CultureInfo.InvariantCulture)" data-gateway-fee="@Model.PreviewGatewayFee.ToString("0",System.Globalization.CultureInfo.InvariantCulture)">
+        <input type="hidden" name="campaignId" value="@item.CampaignId" />
+        <input type="hidden" name="expectedTotal" value="@((item.CampaignBudget+Model.PreviewPlatformFee+Model.PreviewVatAdded+(Model.PaymentConfig.BankTransferEnabled?0:Model.PreviewGatewayFee)).ToString("0",System.Globalization.CultureInfo.InvariantCulture))" />
+        <div class="brand-escrow-columns"><div class="brand-escrow-methods">
+        <h3 class="h6 mb-2"><i class="fa-solid fa-credit-card"></i> Chọn phương thức thanh toán</h3>
+        <div class="brand-funding-mode">
+            @if(Model.PaymentConfig.BankTransferEnabled){<label><input type="radio" name="paymentMethod" value="BankTransfer" checked/><span><i class="fa-solid fa-building-columns"></i><b>Chuyển khoản ngân hàng</b><small>TopStar xác nhận ký quỹ sau khi đối soát.</small></span></label>}
+            @if(Model.PaymentConfig.VnPayEnabled){<label><input type="radio" name="paymentMethod" value="VnPay" checked="@(!Model.PaymentConfig.BankTransferEnabled)"/><span><i class="fa-solid fa-credit-card"></i><b>Thanh toán online</b><small>Kết quả thanh toán được xác nhận tự động.</small></span></label>}
+            @if(Model.PaymentConfig.OnePayEnabled&&!Model.PaymentConfig.VnPayEnabled){<label><input type="radio" name="paymentMethod" value="OnePay" checked="@(!Model.PaymentConfig.BankTransferEnabled)"/><span><i class="fa-solid fa-credit-card"></i><b>Thanh toán online</b><small>Kết quả được xác nhận qua cổng thanh toán.</small></span></label>}
+        </div>
+        <p class="brand-escrow-hint"><i class="fa-solid fa-circle-info"></i> Tạo yêu cầu trước, sau đó thanh toán theo hướng dẫn của phương thức đã chọn.</p>
+        </div><div class="brand-escrow-totals">
+        <h3 class="h6 mb-3"><i class="fa-solid fa-receipt"></i> Chi tiết số tiền</h3>
+        <dl class="campaign-workspace-costs">
+            <div><dt>Thù lao KOC trước thuế</dt><dd>@item.CampaignBudget.ToString("N0",PortalFormat.Vietnamese) đ</dd></div>
+            <div><dt>Phí nền tảng</dt><dd>@Model.PreviewPlatformFee.ToString("N0",PortalFormat.Vietnamese) đ</dd></div>
+            <div><dt>Phí thanh toán</dt><dd data-review-gateway>@((Model.PaymentConfig.BankTransferEnabled?0:Model.PreviewGatewayFee).ToString("N0",PortalFormat.Vietnamese)) đ</dd></div>
+            @if(Model.TaxQuote is {Mode:not "None"} tax){<div><dt>Thuế GTGT @tax.Rate% @(tax.Mode=="Included"?"(đã gồm)":"")</dt><dd>@PortalFormat.Money(tax.Vat)</dd></div>}
+            <div class="is-total"><dt>Tổng tiền ký quỹ</dt><dd data-review-total>@((item.CampaignBudget+Model.PreviewPlatformFee+Model.PreviewVatAdded+(Model.PaymentConfig.BankTransferEnabled?0:Model.PreviewGatewayFee)).ToString("N0",PortalFormat.Vietnamese)) đ</dd></div>
+        </dl>
+        <p class="small text-muted">Chưa bao gồm chi phí sản phẩm và các khoản chi ngoài hệ thống. Phí áp dụng được kiểm tra lại khi xác nhận.</p>
+        </div></div>
+        <div class="brand-escrow-refund"><span class="brand-escrow-refund-icon"><i class="fa-solid fa-building-columns"></i></span><div><small>Tài khoản nhận hoàn tiền</small><strong>@Model.RefundBankName · @Model.RefundAccountNumber</strong><span>@Model.RefundAccountHolder</span></div><a asp-page="/Brand/Profile"><i class="fa-solid fa-address-card"></i> Hồ sơ Brand</a></div>
+        <div class="brand-escrow-actions"><span><i class="fa-solid fa-shield-halved"></i> Chỉ ghi nhận đã ký quỹ sau khi xác nhận thanh toán.</span><button type="submit" class="btn brand-btn-primary"><i class="fa-solid fa-lock"></i> Xác nhận và tạo yêu cầu ký quỹ</button></div>
+    </form>
+</section>
+@if (item.Id.HasValue && item.Status == CampaignFundingStatuses.Draft)
+{
+    <div class="brand-funding-draft-cancel">
+        <p class="small text-muted mb-0">Muốn đổi số tiền? Hủy bản nháp này rồi tạo đợt ký quỹ mới.</p>
+        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelDraftFundingModal"><i class="fa-solid fa-ban"></i> Hủy ký quỹ</button>
+    </div>
+    <div class="modal fade" id="cancelDraftFundingModal" tabindex="-1" aria-labelledby="cancelDraftFundingTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+            <form method="post" asp-page-handler="Cancel" class="js-cancel-funding" novalidate>
+                <div class="modal-header"><h2 class="modal-title h5" id="cancelDraftFundingTitle">Hủy bản nháp ký quỹ</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div>
+                <div class="modal-body">
+                    <input type="hidden" name="fundingId" value="@item.Id"/><input type="hidden" name="campaignId" value="@item.CampaignId"/>
+                    <p>Bản nháp được giữ trong lịch sử. Sau khi hủy, bạn có thể nhập số tiền ký quỹ mới.</p>
+                    <label for="draftCancellationReason" class="form-label">Lý do hủy</label>
+                    <textarea id="draftCancellationReason" name="cancellationReason" class="form-control" required minlength="10" maxlength="500" rows="3" placeholder="Nhập lý do từ 10 đến 500 ký tự"></textarea>
+                    <div class="invalid-feedback">Vui lòng nhập lý do từ 10 đến 500 ký tự.</div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Quay lại</button><button type="submit" class="btn btn-danger">Xác nhận hủy</button></div>
+            </form>
+        </div></div>
+    </div>
+}
+<div class="modal fade" id="fundingReviewModal" tabindex="-1" aria-labelledby="fundingReviewTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+        <div class="modal-header"><h2 class="modal-title h5" id="fundingReviewTitle">Xác nhận yêu cầu ký quỹ</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div>
+        <div class="modal-body"><p>Tổng tiền ký quỹ: <strong data-review-modal-total></strong></p><p>Bảng phân bổ sẽ được khóa sau khi tạo yêu cầu. Bạn cần hoàn tất thanh toán để chiến dịch được ghi nhận đã ký quỹ.</p></div>
+        <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Kiểm tra lại</button><button type="button" class="btn brand-btn-primary" data-review-confirm>Tạo yêu cầu ký quỹ</button></div>
+    </div></div>
+</div>
+}
+else if(item.CampaignStatus is ("Published" or "InProgress") && item.CanSubmit && !Model.HasRefundAccount)
+{
+    <div class="alert alert-warning" role="status"><i class="fa-solid fa-circle-exclamation"></i> Vui lòng bổ sung tài khoản nhận hoàn tiền trong hồ sơ Brand trước khi tạo yêu cầu ký quỹ. <a asp-page="/Brand/EditProfile" class="alert-link">Cập nhật hồ sơ Brand</a></div>
+}
+else if(item.CampaignStatus is ("Published" or "InProgress") && item.CanSubmit)
+{
+    <div class="alert alert-warning" role="status">Bảng phân bổ đã được lưu. Chức năng ký quỹ chưa sẵn sàng do thiếu chính sách phí hoặc phương thức thanh toán đang tạm khóa.</div>
+}
+else if(item.CampaignStatus is ("Published" or "InProgress") && item.CanEditAllocations && item.Id.HasValue)
+{
+    <div class="alert alert-info" role="status">Vui lòng kiểm tra và lưu bảng phân bổ đủ ngân sách trước khi tạo yêu cầu ký quỹ.</div>
+}
+@if((item.CampaignStatus is ("Published" or "InProgress") || Model.CreationCheckout&&item.CampaignStatus=="Draft") && item.Status==CampaignFundingStatuses.Pending)
+{
+<section class="brand-campaign-card brand-payment-panel">
+    <div class="brand-payment-panel-head">
+        <div><span class="brand-payment-panel-icon"><i class="fa-solid fa-money-check-dollar"></i></span><div><h2>Thông tin thanh toán</h2><p>Yêu cầu <strong>@item.OrderNumber</strong> đang chờ hoàn tất thanh toán.</p></div></div>
+        <span class="brand-payment-status"><i class="fa-solid fa-clock"></i> Chờ thanh toán</span>
+    </div>
+    <div class="brand-funding-summary"><div><span>Ngân sách KOC</span><strong>@item.CampaignBudget.ToString("N0", PortalFormat.Vietnamese) ₫</strong></div><div><span>Phí nền tảng (@((item.FeeRateSnapshot*100).ToString("0.##"))%)</span><strong>@item.PlatformFeeSnapshot.ToString("N0", PortalFormat.Vietnamese) ₫</strong></div><div><span>Phí thanh toán</span><strong>@item.GatewayFeeSnapshot.ToString("N0", PortalFormat.Vietnamese) ₫</strong></div>@if(item.VatMode!="None"){<div><span>Thuế GTGT @item.VatRate% @(item.VatMode=="Included"?"(đã gồm)":"")</span><strong>@PortalFormat.Money(item.VatAmount)</strong></div>}<div class="is-total"><span>Còn cần thanh toán</span><strong>@item.RemainingPayment.ToString("N0", PortalFormat.Vietnamese) ₫</strong></div></div>
+    @if(item.BalanceAppliedAmount>0){
+        <div class="p-3 mx-3 mb-3 border rounded-3"><strong>Đã dùng số dư Brand: @PortalFormat.Money(item.BalanceAppliedAmount)</strong><span class="d-block">Còn thanh toán bên ngoài: @PortalFormat.Money(item.RemainingPayment)</span></div>
+    }
+    @if(!item.OnlinePaymentStartedAtUtc.HasValue&&!item.PaymentProofSubmittedAtUtc.HasValue&&item.PaymentMethod!="OnePay"){
+        <section class="p-3 mx-3 mb-3 border rounded-3">
+            <div class="d-flex justify-content-between flex-wrap gap-2"><h3 class="h6">Dùng số dư Brand</h3><a asp-page="/Brand/Balance">Xem số dư khả dụng</a></div>
+            <p class="small text-muted">Dùng số dư trước khi chuyển tiền hoặc bắt đầu thanh toán online. Phần còn thiếu sẽ thanh toán theo phương thức đã chọn.</p>
+            <form method="post" asp-page-handler="Balance" class="d-flex gap-2 flex-wrap" data-confirm="Xác nhận dùng số dư cho yêu cầu ký quỹ này?">
+                <input type="hidden" name="campaignId" value="@item.CampaignId"/><input type="hidden" name="fundingId" value="@item.Id"/><input type="hidden" name="operation" value="@Guid.NewGuid()"/>
+                <input name="balanceAmount" class="form-control" style="max-width:280px" required inputmode="numeric" placeholder="Số tiền muốn dùng (đ)"/><button class="btn brand-btn-primary">Sử dụng số dư</button>
+            </form>
+        </section>
+    }
+    <div class="brand-funding-payment-grid">
+    @if(item.PaymentMethod==CampaignPaymentMethods.BankTransfer&&Model.PaymentConfig.BankTransferEnabled)
+    {
+        <div class="brand-pending-payment-account brand-bank-transfer-card">
+            <header><span><i class="fa-solid fa-building-columns"></i></span><div><h3>Chuyển khoản ngân hàng</h3><p>Chuyển đúng tổng tiền và ghi chính xác nội dung để TopStar đối soát tự động.</p></div></header>
+            <div><span>Ngân hàng</span><strong>@Model.PaymentConfig.BankName</strong></div><div><span>Số tài khoản</span><strong class="brand-payment-copy-value">@Model.PaymentConfig.BankAccountNumber</strong></div><div><span>Chủ tài khoản</span><strong>@Model.PaymentConfig.BankAccountHolder</strong></div><div class="is-reference"><span>Nội dung chuyển khoản</span><strong class="brand-payment-copy-value">@item.OrderNumber</strong></div>
+            <aside><i class="fa-solid fa-circle-info"></i><span>Sau khi chuyển khoản, yêu cầu sẽ được TopStar đối soát. Chiến dịch chỉ bắt đầu khi quỹ chuyển sang trạng thái <b>Đã ký quỹ</b>.</span></aside>
+        </div>
+    }
+    @if(item.PaymentMethod==CampaignPaymentMethods.VnPay&&Model.PaymentConfig.VnPayEnabled)
+    {
+        <div class="brand-pending-payment-account"><header><h3><i class="fa-solid fa-credit-card"></i> Thanh toán online</h3><p>Hoàn tất thanh toán để ký quỹ cho chiến dịch. Kết quả được cập nhật tự động.</p></header>
+        <form method="post" asp-page-handler="VnPay" data-native-navigation><input type="hidden" name="fundingId" value="@item.Id"/><input type="hidden" name="campaignId" value="@item.CampaignId"/><button class="btn brand-btn-primary" type="submit">Thanh toán online</button></form></div>
+    }
+    @if(item.PaymentMethod==CampaignPaymentMethods.OnePay&&Model.PaymentConfig.OnePayEnabled)
+    {
+        <div class="brand-pending-payment-account brand-onepay-options"><header><span><i class="fa-solid fa-credit-card"></i></span><div><h3>Thanh toán online</h3><p>Chọn hình thức thanh toán phù hợp để tiếp tục trên cổng thanh toán.</p></div></header><form method="post" asp-page-handler="OnePay"><input type="hidden" name="fundingId" value="@item.Id"/><input type="hidden" name="campaignId" value="@item.CampaignId"/>@if(Model.PaymentConfig.OnePayDomesticEnabled){<button name="cardList" value="DOMESTIC"><i class="fa-solid fa-building-columns"></i><span>Thẻ nội địa<small>ATM / Internet Banking</small></span></button>}@if(Model.PaymentConfig.OnePayInternationalEnabled){<button name="cardList" value="INTERNATIONAL"><i class="fa-regular fa-credit-card"></i><span>Thẻ quốc tế<small>Visa / Mastercard / JCB</small></span></button>}@if(Model.PaymentConfig.OnePayEWalletEnabled){<button name="cardList" value="QR"><i class="fa-solid fa-qrcode"></i><span>QR / Ví điện tử<small>Ứng dụng ngân hàng hỗ trợ</small></span></button>}</form></div>
+    }
+    </div>
+    @if(item.PaymentMethod==CampaignPaymentMethods.BankTransfer&&Model.PaymentConfig.BankTransferEnabled)
+    {
+    <section class="brand-payment-proof">
+        <div class="brand-payment-proof-head"><span><i class="fa-solid fa-receipt"></i></span><div><h3>Chứng từ chuyển khoản</h3><p>Tải chứng từ giao dịch để TopStar xác minh và đối soát thanh toán.</p></div>@if(!string.IsNullOrWhiteSpace(item.PaymentProofUrl)){<em><i class="fa-solid fa-circle-check"></i> Đã gửi</em>}</div>
+        @if(!string.IsNullOrWhiteSpace(item.PaymentProofUrl))
+        {
+            <div class="brand-payment-proof-existing"><a href="@item.PaymentProofUrl" target="_blank" rel="noopener"><img src="@item.PaymentProofUrl" alt="Bằng chứng chuyển khoản"><span><i class="fa-solid fa-up-right-from-square"></i> Xem ảnh</span></a><div><strong>Đã gửi lúc @item.PaymentProofSubmittedAtUtc?.AddHours(7).ToString("dd/MM/yyyy HH:mm")</strong><p>@item.PaymentProofNote</p><small>Bạn có thể gửi lại ảnh mới nếu chứng từ trước chưa rõ. Lần gửi mới sẽ được ghi vào audit.</small></div></div>
+        }
+        <form method="post" asp-page-handler="PaymentProof" enctype="multipart/form-data" class="js-payment-proof-form" novalidate>
+            <input type="hidden" name="fundingId" value="@item.Id"><input type="hidden" name="campaignId" value="@item.CampaignId">
+            <div class="brand-payment-proof-fields"><div class="brand-payment-proof-file"><label>Ảnh giao dịch <em>*</em></label><input type="file" name="proofFile" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"><span><i class="fa-solid fa-cloud-arrow-up"></i><b>Chọn ảnh từ thiết bị</b><small>JPG, PNG hoặc WEBP · tối đa 5 MB</small></span><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Vui lòng chọn ảnh hợp lệ không quá 5 MB.</div></div><div class="brand-validation-field brand-payment-proof-note"><label>Ghi chú chuyển khoản <em>*</em></label><textarea name="proofNote" minlength="10" maxlength="500" rows="3" placeholder="Nhập thời gian chuyển khoản và tài khoản gửi" required></textarea><i class="fa-solid fa-circle-exclamation brand-field-error-icon"></i><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Vui lòng nhập ghi chú từ 10 đến 500 ký tự.</div></div><button class="btn brand-btn-primary brand-payment-proof-submit"><i class="fa-solid fa-paper-plane"></i> Gửi</button></div>
+        </form>
+    </section>
+    }
+    <footer class="brand-payment-panel-footer"><span><i class="fa-solid fa-shield-halved"></i> Bảng phân bổ đã được khóa và lưu lịch sử.</span><button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelFundingModal"><i class="fa-solid fa-ban"></i> Hủy yêu cầu</button></footer>
+</section>
+<div class="modal fade" id="cancelFundingModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><div class="d-flex align-items-center gap-3"><span class="brand-modal-icon"><i class="fa-solid fa-triangle-exclamation"></i></span><h2 class="modal-title fs-5">Hủy yêu cầu thanh toán</h2></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><form method="post" asp-page-handler="Cancel" class="js-cancel-funding" novalidate><div class="modal-body"><input type="hidden" name="fundingId" value="@item.Id"/><input type="hidden" name="campaignId" value="@item.CampaignId"/><div class="alert alert-info"><i class="fa-solid fa-circle-info"></i> Snapshot hiện tại được giữ trong lịch sử. Sau khi hủy, Brand có thể lập phiên bản phân bổ mới.</div><label class="form-label">Lý do hủy <span class="text-danger">*</span></label><div class="brand-validation-field"><textarea name="cancellationReason" minlength="10" maxlength="500" rows="4" class="form-control" placeholder="Nhập lý do hủy từ 10 đến 500 ký tự" required></textarea><i class="fa-solid fa-circle-exclamation brand-field-error-icon"></i><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Vui lòng nhập lý do hủy từ 10 đến 500 ký tự.</div></div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Đóng</button><button class="btn btn-danger"><i class="fa-solid fa-ban"></i> Xác nhận hủy</button></div></form></div></div></div>
+}
+@if(item.Status is CampaignFundingStatuses.Paid or CampaignFundingStatuses.PartiallyReleased or CampaignFundingStatuses.Released or CampaignFundingStatuses.Refunded)
+{
+    var settledCount=item.Allocations.Count(x=>x.ReleasedAtUtc.HasValue);
+    var acceptedTotal=item.Allocations.Sum(x=>x.AcceptedAmount);
+    var refundableTotal=item.Allocations.Sum(x=>x.RefundedAmount);
+<section class="brand-campaign-card brand-payment-panel brand-payment-panel-complete">
+    <div class="brand-payment-panel-head">
+        <div><span class="brand-payment-panel-icon"><i class="fa-solid fa-shield-halved"></i></span><div><h2>Thông tin ký quỹ</h2><p>Yêu cầu <strong>@item.OrderNumber</strong> đã được ghi nhận và khóa theo snapshot.</p></div></div>
+        <span class="brand-payment-status is-paid"><i class="fa-solid fa-circle-check"></i> @FundingLabel(item.Status)</span>
+    </div>
+    <div class="brand-funding-summary"><div><span>Ngân sách KOC</span><strong>@item.CampaignBudget.ToString("N0", PortalFormat.Vietnamese) ₫</strong></div><div><span>Phí nền tảng</span><strong>@item.PlatformFeeSnapshot.ToString("N0", PortalFormat.Vietnamese) ₫</strong></div><div><span>Phí thanh toán</span><strong>@item.GatewayFeeSnapshot.ToString("N0", PortalFormat.Vietnamese) ₫</strong></div>@if(item.VatMode!="None"){<div><span>Thuế GTGT @item.VatRate% @(item.VatMode=="Included"?"(đã gồm)":"")</span><strong>@PortalFormat.Money(item.VatAmount)</strong></div>}<div class="is-total"><span>Tổng đã thanh toán</span><strong>@item.TotalPayableSnapshot.ToString("N0", PortalFormat.Vietnamese) ₫</strong></div></div>
+    <div class="brand-paid-payment-details">
+        <div><span>Phương thức</span><strong><i class="fa-solid @(item.PaymentMethod!=CampaignPaymentMethods.BankTransfer?"fa-credit-card":"fa-building-columns")"></i> @(item.PaymentMethod!=CampaignPaymentMethods.BankTransfer?"Thanh toán online":"Chuyển khoản ngân hàng")</strong></div>
+        <div><span>Ngày thanh toán</span><strong>@(item.PaidAtUtc?.AddHours(7).ToString("dd/MM/yyyy HH:mm")??"Chưa ghi nhận")</strong></div>
+        <div><span>Mã giao dịch</span><strong>@(string.IsNullOrWhiteSpace(item.PaymentReference)?"TopStar đã đối soát":item.PaymentReference)</strong></div>
+        <div><span>Tiến độ nghiệm thu</span><strong>@settledCount/@item.Allocations.Count KOC</strong></div>
+    </div>
+    @if(!string.IsNullOrWhiteSpace(item.PaymentProofUrl))
+    {
+        <div class="brand-paid-proof"><a href="@item.PaymentProofUrl" target="_blank" rel="noopener"><i class="fa-solid fa-image"></i> Xem chứng từ Brand đã gửi</a><span>@item.PaymentProofSubmittedAtUtc?.AddHours(7).ToString("dd/MM/yyyy HH:mm")</span></div>
+    }
+    <div class="brand-funding-settlement-summary"><span><small>Đã nghiệm thu</small><strong>@acceptedTotal.ToString("N0", PortalFormat.Vietnamese) ₫</strong></span><span><small>Được duyệt hoàn</small><strong>@refundableTotal.ToString("N0", PortalFormat.Vietnamese) ₫</strong></span><span><small>Đã hoàn cho Brand</small><strong>@item.RefundedAmount.ToString("N0", PortalFormat.Vietnamese) ₫</strong></span></div>
+    <footer class="brand-payment-panel-footer"><span><i class="fa-solid fa-shield-halved"></i> Bảng phân bổ và chính sách phí được giữ nguyên theo phiên bản ký quỹ này.</span></footer>
+</section>
+}
+}
+</div>
+@functions{string FundingLabel(string s)=>s switch{CampaignFundingStatuses.Draft=>"Chưa tạo yêu cầu ký quỹ",CampaignFundingStatuses.Pending=>"Chờ thanh toán",CampaignFundingStatuses.Paid=>"Đã ký quỹ",CampaignFundingStatuses.PartiallyReleased=>"Đang giải ngân",CampaignFundingStatuses.Released=>"Đã giải ngân",CampaignFundingStatuses.Cancelled=>"Đã hủy yêu cầu",CampaignFundingStatuses.Refunded=>"Đã hoàn tiền",_=>"Chưa xác định"};}
+@section Styles{<link rel="stylesheet" href="~/css/brand/funding-list.css" asp-append-version="true"/>}
+@section Scripts{<script src="~/lib/datatables/js/dataTables.min.js"></script><script src="~/lib/datatables/js/dataTables.bootstrap5.min.js"></script><script src="~/js/brand/brand-campaign-funding.js" asp-append-version="true"></script><script src="~/js/brand/funding-list.js" asp-append-version="true"></script>}

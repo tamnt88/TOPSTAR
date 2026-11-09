@@ -38,6 +38,13 @@ internal sealed class AuthService(IAuthRepository authRepository) : IAuthService
             return AuthResult<AuthenticatedUser>.Fail("Mật khẩu không chính xác.");
         }
 
+        if (!user.RoleCode.Equals("ADMIN", StringComparison.OrdinalIgnoreCase) && !user.EmailConfirmed)
+        {
+            var deviceId = await authRepository.UpsertDeviceAsync(user.UserId, request.Device, cancellationToken);
+            await authRepository.AddAuthEventAsync(user.UserId, lookup, "Login", "Blocked", "Email chưa được xác minh", deviceId, request.Device, cancellationToken);
+            return AuthResult<AuthenticatedUser>.Fail("Email chưa được xác minh. Vui lòng kích hoạt tài khoản trước khi đăng nhập.");
+        }
+
         await authRepository.UpdateLoginSuccessAsync(user.UserId, cancellationToken);
         var successDeviceId = await authRepository.UpsertDeviceAsync(user.UserId, request.Device, cancellationToken);
         await authRepository.AddAuthEventAsync(user.UserId, lookup, "Login", "Success", null, successDeviceId, request.Device, cancellationToken);
@@ -111,6 +118,36 @@ internal sealed class AuthService(IAuthRepository authRepository) : IAuthService
         await authRepository.AddAuthEventAsync(tokenRow.UserId, null, "ResetPassword", "Success", null, deviceId, request.Device, cancellationToken);
 
         return AuthResult<bool>.Ok(true, "Đặt lại mật khẩu thành công.");
+    }
+
+    public async Task<AuthResult<bool>> ChangePasswordAsync(ChangePasswordRequest request, CancellationToken cancellationToken = default)
+    {
+        var user = await authRepository.FindUserByIdAsync(request.UserId, cancellationToken);
+        if (user is null)
+        {
+            return AuthResult<bool>.Fail("Không tìm thấy tài khoản.");
+        }
+
+        if (!PasswordHasher.Verify(request.CurrentPassword, user.PasswordHash))
+        {
+            await authRepository.AddAuthEventAsync(
+                user.UserId, user.Email, "ChangePassword", "Failed", "Mật khẩu hiện tại không chính xác",
+                null, request.Device, cancellationToken);
+            return AuthResult<bool>.Fail("Mật khẩu hiện tại không chính xác.");
+        }
+
+        if (PasswordHasher.Verify(request.NewPassword, user.PasswordHash))
+        {
+            return AuthResult<bool>.Fail("Mật khẩu mới phải khác mật khẩu hiện tại.");
+        }
+
+        await authRepository.UpdatePasswordAsync(user.UserId, PasswordHasher.HashPassword(request.NewPassword), cancellationToken);
+        var deviceId = await authRepository.UpsertDeviceAsync(user.UserId, request.Device, cancellationToken);
+        await authRepository.AddAuthEventAsync(
+            user.UserId, user.Email, "ChangePassword", "Success", null,
+            deviceId, request.Device, cancellationToken);
+
+        return AuthResult<bool>.Ok(true, "Đổi mật khẩu thành công.");
     }
 
     private static AuthenticatedUser MapToAuthenticated(AuthUserRow row)

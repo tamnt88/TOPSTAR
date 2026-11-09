@@ -1,0 +1,14 @@
+.home-feature-list article>span{overflow:hidden}
+.home-feature-list article>span img{width:28px;height:28px;object-fit:contain}
+
+/* Khối nền tối phải tự khóa màu, tránh kế thừa màu heading của giao diện cũ. */
+.landing-home .home-process,
+.landing-home .home-process h2,
+.landing-home .home-process__grid h3{color:#fff}
+.landing-home .home-process .home-eyebrow{color:#c8a9ff}
+.landing-home .home-process__grid p{color:#d2ccdf}
+
+.landing-home .home-final,
+.landing-home .home-final h2,
+.landing-home .home-final p{color:#fff}
+.landing-home .home-final .home-eyebrow{color:#eadfff}

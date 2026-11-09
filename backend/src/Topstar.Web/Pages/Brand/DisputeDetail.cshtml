@@ -1,0 +1,108 @@
+@page
+@model Topstar.Web.Pages.Brand.DisputeDetailModel
+@using Topstar.Application.Disputes
+@{
+    Layout = "_BrandLayout";
+    ViewData["Title"] = "Chi tiết yêu cầu hỗ trợ";
+    var detail = Model.Detail!;
+    var item = detail.Case;
+    string StatusLabel(string value) => value switch { DisputeStatuses.Open => "Mới tiếp nhận", DisputeStatuses.InReview => "Đang xử lý", DisputeStatuses.Resolved => "Đã giải quyết", DisputeStatuses.Rejected => "Đã từ chối", DisputeStatuses.Cancelled => "Đã hủy", _ => value };
+    string CategoryLabel(string value) => value switch { "Booking" => "Lịch làm việc", "Shipment" => "Giao nhận sản phẩm", "Deliverable" => "Nội dung bàn giao", "Payment" => "Thanh toán", "Review" => "Đánh giá KOC", _ => "Hỗ trợ khác" };
+    string RoleLabel(string value) => value.ToUpperInvariant() switch { "BRAND" => "Brand", "KOC" => "KOC", "ADMIN" => "Topstar", _ => value };
+    var statusClass = item.Status switch { DisputeStatuses.Open => "is-open", DisputeStatuses.InReview => "is-review", DisputeStatuses.Resolved => "is-resolved", DisputeStatuses.Rejected => "is-rejected", _ => "is-cancelled" };
+}
+
+<div class="brand-support-detail">
+    <header class="brand-support-hero">
+        <div>
+            <div class="brand-page-eyebrow"><i class="fa-solid fa-headset"></i> HỒ SƠ HỖ TRỢ</div>
+            <h1>@item.Subject</h1>
+            <p>@item.CampaignTitle <span>·</span> @CategoryLabel(item.Category)</p>
+        </div>
+        <div class="brand-support-hero-actions">
+            <span class="brand-support-status @statusClass"><i class="fa-solid fa-circle"></i> @StatusLabel(item.Status)</span>
+            <a asp-page="/Brand/Disputes" class="btn btn-outline-secondary"><i class="fa-solid fa-arrow-left"></i> Quay lại danh sách</a>
+        </div>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div class="brand-support-notice @(Model.MessageSuccess ? "is-success" : "is-danger")"><i class="fa-solid @(Model.MessageSuccess ? "fa-circle-check" : "fa-circle-exclamation")"></i><div><strong>@(Model.MessageSuccess ? "Thành công" : "Không thể thực hiện")</strong><span>@Model.Message</span></div></div>
+    }
+
+    <div class="brand-support-layout">
+        <main>
+            <section class="brand-support-card">
+                <header class="brand-support-section-title"><span><i class="fa-solid fa-file-lines"></i></span><div><h2>Nội dung yêu cầu</h2><p>Thông tin Brand cung cấp khi gửi yêu cầu hỗ trợ.</p></div></header>
+                <div class="brand-support-description">@item.Description</div>
+                @if (!string.IsNullOrWhiteSpace(item.ResolutionNote))
+                {
+                    <div class="brand-support-resolution"><i class="fa-solid fa-gavel"></i><div><strong>Kết luận xử lý</strong><p>@item.ResolutionNote</p></div></div>
+                }
+            </section>
+
+            <section class="brand-support-card">
+                <header class="brand-support-section-title"><span><i class="fa-solid fa-comments"></i></span><div><h2>Trao đổi và bằng chứng</h2><p>@detail.Messages.Count phản hồi trong yêu cầu này.</p></div></header>
+                @if (detail.Messages.Count == 0)
+                {
+                    <div class="brand-support-empty"><span><i class="fa-regular fa-comments"></i></span><div><strong>Chưa có phản hồi bổ sung</strong><p>Topstar sẽ trao đổi tại đây khi tiếp nhận và xử lý yêu cầu.</p></div></div>
+                }
+                else
+                {
+                    <div class="brand-support-conversation">
+                    @foreach (var message in detail.Messages)
+                    {
+                        var own = message.AuthorRole.Equals("BRAND", StringComparison.OrdinalIgnoreCase);
+                        <article class="brand-support-message @(own ? "is-own" : "")">
+                            <span><i class="fa-solid @(own ? "fa-building" : "fa-headset")"></i></span>
+                            <div><header><strong>@message.AuthorName</strong><b>@RoleLabel(message.AuthorRole)</b><time><i class="fa-regular fa-clock"></i> @message.CreatedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm")</time></header><p>@message.Body</p>
+                            @if (!string.IsNullOrWhiteSpace(message.EvidenceUrl)) { <a href="@message.EvidenceUrl" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-paperclip"></i> Xem bằng chứng</a> }
+                            </div>
+                        </article>
+                    }
+                    </div>
+                }
+            </section>
+
+            @if (detail.CanReply)
+            {
+                <section class="brand-support-card">
+                    <header class="brand-support-section-title"><span><i class="fa-solid fa-reply"></i></span><div><h2>Gửi phản hồi</h2><p>Bổ sung thông tin để Topstar kiểm tra và xử lý chính xác hơn.</p></div></header>
+                    <form id="brandDisputeReplyForm" method="post" asp-page-handler="Message" novalidate>
+                        <div class="brand-support-field"><label for="brandReplyBody">Nội dung phản hồi <em>*</em></label><div class="brand-support-control"><textarea id="brandReplyBody" name="body" rows="5" maxlength="2000" placeholder="Nhập nội dung xác minh, phản hồi hoặc thông tin cần bổ sung"></textarea><i class="fa-solid fa-circle-exclamation"></i></div><span class="brand-support-error" data-error-for="body"><i class="fa-solid fa-circle-exclamation"></i><b></b></span></div>
+                        <div class="brand-support-field"><label for="brandEvidenceUrl">Link bằng chứng <span>(không bắt buộc)</span></label><div class="brand-support-control"><input id="brandEvidenceUrl" name="evidenceUrl" type="url" maxlength="1000" placeholder="https://..."><i class="fa-solid fa-circle-exclamation"></i></div><small><i class="fa-solid fa-shield-halved"></i> Hãy dùng liên kết có quyền truy cập để Topstar có thể kiểm tra.</small><span class="brand-support-error" data-error-for="evidenceUrl"><i class="fa-solid fa-circle-exclamation"></i><b></b></span></div>
+                        <footer><span><i class="fa-solid fa-clock-rotate-left"></i> Phản hồi được lưu vào lịch sử xử lý.</span><button class="btn btn-primary" type="submit"><i class="fa-solid fa-paper-plane"></i> Gửi phản hồi</button></footer>
+                    </form>
+                </section>
+            }
+            else
+            {
+                <div class="brand-support-notice is-neutral"><i class="fa-solid fa-lock"></i><div><strong>Yêu cầu đã đóng</strong><span>Nội dung được giữ ở chế độ chỉ đọc.</span></div></div>
+            }
+        </main>
+
+        <aside>
+            <section class="brand-support-card">
+                <header class="brand-support-section-title is-compact"><span><i class="fa-solid fa-circle-info"></i></span><div><h2>Thông tin yêu cầu</h2></div></header>
+                <dl class="brand-support-facts">
+                    <div><dt>Mã yêu cầu</dt><dd>@item.Id.ToString()[..8].ToUpperInvariant()</dd></div>
+                    <div><dt>Chiến dịch</dt><dd>@item.CampaignTitle</dd></div>
+                    <div><dt>KOC liên quan</dt><dd>@item.KocName</dd></div>
+                    <div><dt>Nhóm hỗ trợ</dt><dd>@CategoryLabel(item.Category)</dd></div>
+                    <div><dt>Ngày gửi</dt><dd>@item.CreatedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm")</dd></div>
+                </dl>
+            </section>
+            <section class="brand-support-card">
+                <header class="brand-support-section-title is-compact"><span><i class="fa-solid fa-timeline"></i></span><div><h2>Tiến trình xử lý</h2><p>@item.History.Count cập nhật</p></div></header>
+                <div class="brand-support-timeline">
+                @foreach (var history in item.History.OrderByDescending(x => x.CreatedAtUtc))
+                {
+                    <article><i></i><strong>@StatusLabel(history.ToStatus)</strong><time>@history.CreatedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm")</time>@if (!string.IsNullOrWhiteSpace(history.Note)) { <p>@history.Note</p> }</article>
+                }
+                </div>
+            </section>
+        </aside>
+    </div>
+</div>
+
+@section Scripts { <script src="~/js/brand/brand-dispute-detail.js" asp-append-version="true"></script> }

@@ -1,344 +1,122 @@
-﻿@page "/"
+@page "/"
 @model Topstar.Web.Pages.IndexModel
 @{
-    ViewData["Title"] = "TopStar - Trang chủ";
+    var home = Model.Homepage;
+    ViewData["Title"] = "TopStar - Nền tảng KOC/KOL dành cho Brand";
+    ViewData["Description"] = home.HeroDescription;
+    ViewData["ShareImage"] = home.HeroImageUrl;
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/public/homepage.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/public/homepage-feature-icons.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/public/homepage-partners-swiper.css" asp-append-version="true" />
 }
 
-<div class="landing-home">
+<main class="landing-home home-cms">
     <section class="landing-hero py-5 reveal-up">
-        <div class="starfield starfield-hero" aria-hidden="true">
-            <span class="star" style="--x:8%;--y:16%;--size:18px;--delay:.1s;--dur:3.2s;">★</span>
-            <span class="star" style="--x:14%;--y:34%;--size:12px;--delay:.6s;--dur:3.8s;">★</span>
-            <span class="star" style="--x:23%;--y:24%;--size:14px;--delay:1.2s;--dur:4.1s;">★</span>
-            <span class="star" style="--x:36%;--y:15%;--size:16px;--delay:.9s;--dur:3.5s;">★</span>
-            <span class="star" style="--x:49%;--y:28%;--size:13px;--delay:1.5s;--dur:4.4s;">★</span>
-            <span class="star" style="--x:61%;--y:18%;--size:17px;--delay:.3s;--dur:3.3s;">★</span>
-            <span class="star" style="--x:74%;--y:30%;--size:12px;--delay:1.1s;--dur:3.9s;">★</span>
-            <span class="star" style="--x:86%;--y:22%;--size:15px;--delay:.8s;--dur:4.2s;">★</span>
-            <span class="star" style="--x:92%;--y:40%;--size:11px;--delay:1.7s;--dur:4.6s;">★</span>
-            <span class="star" style="--x:18%;--y:62%;--size:13px;--delay:1.4s;--dur:3.7s;">★</span>
-            <span class="star" style="--x:67%;--y:66%;--size:16px;--delay:.5s;--dur:3.4s;">★</span>
-            <span class="star" style="--x:84%;--y:58%;--size:14px;--delay:1.9s;--dur:4.3s;">★</span>
-            <span class="star" style="--x:5%;--y:44%;--size:12px;--delay:.4s;--dur:3.6s;">★</span>
-            <span class="star" style="--x:11%;--y:74%;--size:10px;--delay:1.8s;--dur:4.5s;">★</span>
-            <span class="star" style="--x:27%;--y:10%;--size:11px;--delay:1.1s;--dur:4.2s;">★</span>
-            <span class="star" style="--x:33%;--y:38%;--size:13px;--delay:.7s;--dur:3.3s;">★</span>
-            <span class="star" style="--x:41%;--y:72%;--size:10px;--delay:2s;--dur:4.6s;">★</span>
-            <span class="star" style="--x:54%;--y:11%;--size:12px;--delay:1.3s;--dur:3.8s;">★</span>
-            <span class="star" style="--x:58%;--y:52%;--size:11px;--delay:.2s;--dur:3.1s;">★</span>
-            <span class="star" style="--x:71%;--y:12%;--size:14px;--delay:1.6s;--dur:4.1s;">★</span>
-            <span class="star" style="--x:79%;--y:46%;--size:10px;--delay:.9s;--dur:3.4s;">★</span>
-            <span class="star" style="--x:89%;--y:9%;--size:12px;--delay:1.4s;--dur:3.9s;">★</span>
-            <span class="star" style="--x:95%;--y:63%;--size:11px;--delay:2.2s;--dur:4.7s;">★</span>
-            <span class="star" style="--x:46%;--y:43%;--size:10px;--delay:.5s;--dur:3.2s;">★</span>
-            <span class="star" style="--x:7%;--y:27%;--size:11px;--delay:1.9s;--dur:4.4s;">★</span>
-            <span class="star" style="--x:16%;--y:12%;--size:10px;--delay:2.3s;--dur:4.9s;">★</span>
-            <span class="star" style="--x:25%;--y:55%;--size:12px;--delay:2.1s;--dur:4.2s;">★</span>
-            <span class="star" style="--x:31%;--y:78%;--size:11px;--delay:1.2s;--dur:3.9s;">★</span>
-            <span class="star" style="--x:39%;--y:27%;--size:10px;--delay:.3s;--dur:3.5s;">★</span>
-            <span class="star" style="--x:44%;--y:59%;--size:13px;--delay:1.8s;--dur:4.6s;">★</span>
-            <span class="star" style="--x:52%;--y:38%;--size:10px;--delay:2.5s;--dur:5s;">★</span>
-            <span class="star" style="--x:63%;--y:74%;--size:12px;--delay:1s;--dur:3.7s;">★</span>
-            <span class="star" style="--x:69%;--y:41%;--size:10px;--delay:2s;--dur:4.8s;">★</span>
-            <span class="star" style="--x:77%;--y:13%;--size:11px;--delay:.6s;--dur:3.4s;">★</span>
-            <span class="star" style="--x:82%;--y:71%;--size:13px;--delay:1.7s;--dur:4.1s;">★</span>
-            <span class="star" style="--x:90%;--y:52%;--size:10px;--delay:2.4s;--dur:5.1s;">★</span>
-        </div>
         <div class="container">
-            <div class="row align-items-center g-4">
-                <div class="col-lg-6">
-                    <span class="landing-pill"><i class="fi-rr-arrow-alt-circle-right"></i> Khởi động sự nghiệp KOC ngay hôm nay</span>
-                    <h1 class="landing-title mt-3">Bệ phóng KOC<br><span>Từ đam mê đến thu nhập chuyên nghiệp</span></h1>
-                    <p class="landing-desc mt-3">Tham gia cộng đồng KOC hàng đầu Việt Nam. Được đào tạo bài bản, kết nối với thương hiệu lớn, và phát triển sự nghiệp bền vững.</p>
+            <div class="row align-items-center g-3">
+                <div class="col-lg-6 hero-copy-col">
+                    <span class="landing-pill"><i class="fi-rr-sparkles"></i> @home.TrustLabel</span>
+                    <h1 class="landing-title mt-3">@home.HeroTitle</h1>
+                    <p class="landing-desc mt-3">@home.HeroDescription</p>
                     <div class="d-flex gap-2 mt-4 flex-wrap">
-                        <a asp-page="/Public/RegisterKocStep1" class="btn landing-btn-primary">Đăng ký trở thành KOC</a>
-                        <a asp-page="/Public/Academy" class="btn landing-btn-outline">Tìm hiểu chương trình</a>
+                        <a class="btn landing-btn-primary" href="@home.PrimaryCtaUrl">@home.PrimaryCtaText</a>
+                        <a class="btn landing-btn-outline" href="@home.SecondaryCtaUrl">@home.SecondaryCtaText</a>
                     </div>
                 </div>
-                <div class="col-lg-6">
-                    <div class="landing-photo-wrap">
-                        <div class="swiper hero-banner-swiper">
-                            <div class="swiper-wrapper">
-                                <div class="swiper-slide">
-                                    <img src="~/images/banner/banner-1.webp" alt="Banner 1" class="img-fluid landing-photo" />
-                                </div>
-                                <div class="swiper-slide">
-                                    <img src="~/images/banner/2.jpg" alt="Banner 2" class="img-fluid landing-photo" />
-                                </div>
-                                <div class="swiper-slide">
-                                    <img src="~/images/banner/3.jpg" alt="Banner 3" class="img-fluid landing-photo" />
-                                </div>
-                                <div class="swiper-slide">
-                                    <img src="~/images/banner/4.jpg" alt="Banner 4" class="img-fluid landing-photo" />
-                                </div>
+                <div class="col-lg-6 hero-right-col">
+                    <div class="hero-visual-wrap">
+                        <img src="@home.HeroImageUrl" alt="TopStar KOC/KOL" class="hero-main-couple" />
+                    </div>
+                </div>
+            </div>
+            @if (home.ShowFeaturedCreators)
+            {
+                <div class="swiper hero-koc-swiper">
+                    <div class="swiper-wrapper">
+                        @foreach (var item in home.Creators.Where(x => x.IsVisible).OrderBy(x => x.DisplayOrder))
+                        {
+                            <div class="swiper-slide">
+                                <article class="hero-koc-card">
+                                    <img src="@item.ImageUrl" alt="@item.Name" loading="lazy" />
+                                    <div class="hero-koc-tags"><span>@item.Category</span><span>@item.Followers</span></div>
+                                    <div class="hero-koc-card-body"><strong>@item.Name</strong><small>KOC nổi bật TopStar</small></div>
+                                </article>
                             </div>
-                            <div class="swiper-pagination hero-banner-pagination"></div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+
+    <section class="home-section home-about reveal-up">
+        <div class="container home-about__grid"><div class="home-about__visual"><img src="~/images/icon/12.png" alt="Hệ sinh thái TopStar" loading="lazy"/><span class="home-float-card"><b>500+</b> Brand tin dùng</span></div><div><p class="home-eyebrow">@home.AboutEyebrow</p><h2>@home.AboutTitle</h2><p class="home-lead">@home.AboutDescription</p><div class="home-feature-list">@foreach(var item in home.Features.Where(x=>x.IsVisible).OrderBy(x=>x.DisplayOrder)){<article><span>@if(item.IconClass.StartsWith('/')){<img src="@item.IconClass" alt="" loading="lazy"/>}else{<i class="@item.IconClass"></i>}</span><div><h3>@item.Title</h3><p>@item.Description</p></div></article>}</div></div></div>
+    </section>
+
+    <section class="home-section home-process reveal-up"><div class="container"><p class="home-eyebrow text-center">QUY TRÌNH TINH GỌN</p><h2 class="text-center">@home.ProcessTitle</h2><div class="home-process__grid">@foreach(var item in home.ProcessSteps.Where(x=>x.IsVisible).OrderBy(x=>x.DisplayOrder)){<article><span>@item.StepNumber</span><h3>@item.Title</h3><p>@item.Description</p></article>}</div><div class="text-center mt-4"><a class="home-btn home-btn--primary" href="@home.PrimaryCtaUrl">Bắt đầu chiến dịch <i class="fa-solid fa-arrow-right"></i></a></div></div></section>
+
+    @if (home.ShowMetrics)
+    {
+        var metricIcons = new[] { "fa-building", "fa-users", "fa-bullhorn", "fa-face-smile-beam" };
+        var metricIndex = 0;
+        <section class="home-section home-proof reveal-up">
+            <div class="container">
+                <div class="home-proof__heading">
+                    <p class="home-eyebrow">SỐ LIỆU VẬN HÀNH</p>
+                    <h2>@home.MetricsTitle</h2>
+                    <p>Những con số phản ánh quy mô cộng đồng và năng lực triển khai chiến dịch của TopStar.</p>
+                </div>
+                <div class="home-metrics">
+                    @foreach (var item in home.Metrics.Where(x => x.IsVisible).OrderBy(x => x.DisplayOrder))
+                    {
+                        var digits = System.Text.RegularExpressions.Regex.Replace(item.Value ?? string.Empty, "[^0-9]", string.Empty);
+                        var suffix = (item.Value ?? string.Empty).Trim().EndsWith("+", StringComparison.Ordinal) ? "+" : (item.Value ?? string.Empty).Trim().EndsWith("%", StringComparison.Ordinal) ? "%" : string.Empty;
+                        var iconClass = metricIcons[metricIndex % metricIcons.Length];
+                        <article class="home-metric">
+                            <span class="home-metric__icon" aria-hidden="true"><i class="fa-solid @iconClass"></i></span>
+                            <div>
+                                <strong class="counter-value" data-target="@digits" data-suffix="@suffix">@item.Value</strong>
+                                <span>@item.Label</span>
+                            </div>
+                        </article>
+                        metricIndex++;
+                    }
+                </div>
+                <div class="home-proof__foot">
+                    <span><i class="fa-solid fa-circle-check"></i> Hồ sơ được xác thực</span>
+                    <span><i class="fa-solid fa-chart-line"></i> Hiệu quả được theo dõi</span>
+                    <span><i class="fa-solid fa-shield-halved"></i> Quy trình có lưu vết</span>
+                </div>
+            </div>
+        </section>
+    }
+
+    @if (home.ShowPartners)
+    {
+        var visiblePartners = home.Partners.Where(x => x.IsVisible).OrderBy(x => x.DisplayOrder).ToArray();
+        <section class="home-section home-partners reveal-up">
+            <div class="container">
+                <p class="home-eyebrow text-center">ĐỐI TÁC TIN CẬY</p>
+                <h2 class="text-center">@home.PartnerTitle</h2>
+                <p class="home-section-desc">@home.PartnerDescription</p>
+                @if (visiblePartners.Length > 0)
+                {
+                    <div class="home-partners__shell">
+                        <div class="swiper home-partners-swiper" data-partner-count="@visiblePartners.Length">
+                            <div class="swiper-wrapper">
+                                @foreach (var item in visiblePartners)
+                                {
+                                    <div class="swiper-slide"><a href="@item.Url" aria-label="@item.Name"><img src="@item.LogoUrl" alt="@item.Name" loading="lazy" /></a></div>
+                                }
+                            </div>
                         </div>
                     </div>
-                </div>
+                }
             </div>
-        </div>
-    </section>
+        </section>
+    }
 
-    <section class="landing-section landing-section-reasons section-flow py-5 reveal-up">
-        <div class="container">
-            <h2 class="landing-section-title text-center flow-item">Tại sao chọn chúng tôi?</h2>
-            <p class="text-center text-muted mb-4 flow-item">Đã có hơn 10.000 KOC tin tưởng</p>
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <div class="landing-card h-100 flow-item">
-                        <div class="landing-icon"><i class="fi-rr-briefcase"></i></div>
-                        <h3>Nguồn Job ổn định</h3>
-                        <p>Kết nối trực tiếp với hơn 200+ thương hiệu lớn. Thu nhập bình quân KOC nhận 15-20 triệu đ/tháng.</p>
-                        <ul>
-                            <li>Campaign liên tục từ các brand</li>
-                            <li>Phù hợp với mọi quy mô follower</li>
-                            <li>Thanh toán đúng hạn 100%</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="landing-card h-100 flow-item">
-                        <div class="landing-icon"><i class="fi-rr-book"></i></div>
-                        <h3>Đào tạo chuyên sâu</h3>
-                        <p>Lộ trình đào tạo từ cơ bản đến nâng cao, trực tiếp bởi top KOC và các chuyên gia 5+ năm trong ngành.</p>
-                        <ul>
-                            <li>Kỹ năng content và storytelling</li>
-                            <li>Xây dựng personal branding</li>
-                            <li>Tối ưu doanh thu và engagement</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="landing-card h-100 flow-item">
-                        <div class="landing-icon"><i class="fi-rr-shield-check"></i></div>
-                        <h3>Quản lý & Bảo vệ</h3>
-                        <p>Đội ngũ pháp lý và quản lý chuyên nghiệp bảo vệ quyền lợi của bạn, hỗ trợ 24/7 trong suốt hành trình.</p>
-                        <ul>
-                            <li>Hợp đồng rõ ràng, minh bạch</li>
-                            <li>Tư vấn chiến lược phát triển</li>
-                            <li>Hỗ trợ xử lý khủng hoảng nhanh</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="landing-band landing-partner-section section-flow py-5 reveal-up">
-        <div class="container">
-            <p class="landing-eyebrow text-center flow-item">ĐỐI TÁC TIN CẬY</p>
-            <h2 class="landing-section-title text-center flow-item">Được tin dùng bởi các thương hiệu hàng đầu</h2>
-            <p class="text-center text-muted mb-4 flow-item">Hơn 1.000+ thương hiệu đã thành công với KOC Platform</p>
-            <div class="brand-marquee flow-item">
-                <div class="brand-track">
-                    <div class="brand-item"><img src="~/images/brand/shopee.png" alt="Shopee" /></div>
-                    <div class="brand-item"><img src="~/images/brand/lazada.svg" alt="Lazada" /></div>
-                    <div class="brand-item"><img src="~/images/brand/grab.png" alt="Grab" /></div>
-                    <div class="brand-item"><img src="~/images/brand/tiktok.svg" alt="TikTok" /></div>
-                    <div class="brand-item"><img src="~/images/brand/samsung.svg" alt="Samsung" /></div>
-                    <div class="brand-item"><img src="~/images/brand/fpt.png" alt="FPT" /></div>
-                    <div class="brand-item"><img src="~/images/brand/honda.png" alt="Honda" /></div>
-                    <div class="brand-item"><img src="~/images/brand/techcombank.png" alt="Techcombank" /></div>
-                    <div class="brand-item"><img src="~/images/brand/vietcombank.png" alt="Vietcombank" /></div>
-                    <div class="brand-item"><img src="~/images/brand/mitsubishi.png" alt="Mitsubishi Electric" /></div>
-                    <div class="brand-item"><img src="~/images/brand/thegioididong.webp" alt="Thế Giới Di Động" /></div>
-                </div>
-                <div class="brand-track" aria-hidden="true">
-                    <div class="brand-item"><img src="~/images/brand/shopee.png" alt="" /></div>
-                    <div class="brand-item"><img src="~/images/brand/lazada.svg" alt="" /></div>
-                    <div class="brand-item"><img src="~/images/brand/grab.png" alt="" /></div>
-                    <div class="brand-item"><img src="~/images/brand/tiktok.svg" alt="" /></div>
-                    <div class="brand-item"><img src="~/images/brand/samsung.svg" alt="" /></div>
-                    <div class="brand-item"><img src="~/images/brand/fpt.png" alt="" /></div>
-                    <div class="brand-item"><img src="~/images/brand/honda.png" alt="" /></div>
-                    <div class="brand-item"><img src="~/images/brand/techcombank.png" alt="" /></div>
-                    <div class="brand-item"><img src="~/images/brand/vietcombank.png" alt="" /></div>
-                    <div class="brand-item"><img src="~/images/brand/mitsubishi.png" alt="" /></div>
-                    <div class="brand-item"><img src="~/images/brand/thegioididong.webp" alt="" /></div>
-                </div>
-            </div>
-            <div class="text-center mt-3 flow-item"><a href="#" class="landing-link">Xem danh sách đối tác & case studies <i class="fa-solid fa-arrow-right"></i></a></div>
-        </div>
-    </section>
-
-    <section class="landing-section landing-metric-section section-flow py-5 reveal-up">
-        <div class="container">
-            <p class="landing-eyebrow text-center flow-item">SỐ LIỆU TÓM TẮT</p>
-            <h2 class="landing-section-title text-center flow-item">Hiệu quả được chứng minh bằng dữ liệu thực tế</h2>
-            <p class="text-center text-muted mb-4 flow-item">Các chỉ số tăng trưởng được cập nhật liên tục theo thời gian thực</p>
-            <div class="row text-center">
-                <div class="col-6 col-md-3 mb-3 mb-md-0">
-                    <div class="landing-stat-card flow-item">
-                        <div class="landing-stat counter-value" data-target="1000" data-suffix="+">0</div>
-                        <small class="text-muted">THƯƠNG HIỆU</small>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3 mb-3 mb-md-0">
-                    <div class="landing-stat-card flow-item">
-                        <div class="landing-stat counter-value" data-target="5000" data-suffix="+">0</div>
-                        <small class="text-muted">KOCS</small>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="landing-stat-card flow-item">
-                        <div class="landing-stat counter-value" data-target="15000" data-suffix="+">0</div>
-                        <small class="text-muted">CHIẾN DỊCH</small>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="landing-stat-card flow-item">
-                        <div class="landing-stat counter-value" data-target="98" data-suffix="%">0</div>
-                        <small class="text-muted">HÀI LÒNG</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="landing-section section-flow py-5 reveal-up">
-        <div class="container">
-            <p class="landing-eyebrow text-center flow-item">ĐƯỢC BẢO CHỨNG</p>
-            <h2 class="landing-section-title text-center flow-item">Nền tảng vận hành chuẩn cho brand lớn</h2>
-            <div class="row g-3 mt-2">
-                <div class="col-md-4">
-                    <div class="landing-card h-100 flow-item">
-                        <h3>Quy trình kiểm duyệt 4 lớp</h3>
-                        <ul>
-                            <li>Xác thực danh tính KOC/KOL</li>
-                            <li>Đối soát chất lượng follower</li>
-                            <li>Duyệt nội dung trước khi đăng</li>
-                            <li>Đánh giá hiệu suất sau chiến dịch</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="landing-card h-100 flow-item">
-                        <h3>Minh bạch số liệu</h3>
-                        <ul>
-                            <li>View, Reach, Like, Comment realtime</li>
-                            <li>CTR, CPL, Conversion theo chiến dịch</li>
-                            <li>Lưu lịch sử đối soát theo từng bài đăng</li>
-                            <li>Tải báo cáo PDF/Excel theo kỳ</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="landing-card h-100 flow-item">
-                        <h3>Bảo mật & pháp lý</h3>
-                        <ul>
-                            <li>Hợp đồng điện tử rõ điều khoản</li>
-                            <li>NDA theo yêu cầu từng brand</li>
-                            <li>Kiểm soát phân quyền theo vai trò</li>
-                            <li>Quy trình xử lý sự cố 24/7</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="landing-section section-flow py-5 reveal-up">
-        <div class="container">
-            <p class="landing-eyebrow text-center flow-item">BRAND NÓI GÌ</p>
-            <h2 class="landing-section-title text-center flow-item">Phản hồi từ các doanh nghiệp đã triển khai</h2>
-            <div class="row g-3 mt-2">
-                <div class="col-md-4">
-                    <div class="landing-card h-100 flow-item">
-                        <p class="mb-2">“TopStar giúp chúng tôi rút ngắn 60% thời gian triển khai chiến dịch KOC và kiểm soát tốt chất lượng nội dung.”</p>
-                        <strong>Head of Digital - FMCG Brand</strong>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="landing-card h-100 flow-item">
-                        <p class="mb-2">“Dashboard realtime giúp team marketing theo dõi hiệu quả ngay trong ngày, không phải chờ tổng hợp thủ công.”</p>
-                        <strong>Marketing Manager - Retail Chain</strong>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="landing-card h-100 flow-item">
-                        <p class="mb-2">“Tỷ lệ hoàn thành đúng deadline tăng rõ rệt nhờ cơ chế chấm điểm và kiểm duyệt nhiều lớp.”</p>
-                        <strong>Brand Director - Beauty Brand</strong>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="landing-section landing-section-creators section-flow py-5 reveal-up">
-        <div class="container">
-            <p class="landing-eyebrow text-center flow-item">KOC CỦA THÁNG</p>
-            <h2 class="landing-section-title text-center flow-item">Gương mặt tiêu biểu</h2>
-            <p class="text-center text-muted mb-4 flow-item">Những câu chuyện thành công truyền cảm hứng</p>
-
-            <div class="swiper creator-swiper flow-item">
-                <div class="swiper-wrapper">
-                    <div class="swiper-slide">
-                        <article class="creator-card">
-                            <div class="creator-media"></div>
-                            <div class="p-3">
-                                <h3>Minh Anh</h3>
-                                <p class="mb-1 text-muted"><i class="fa-regular fa-user"></i> 125K followers</p>
-                                <p class="mb-0 text-success">+ 12.500.000 đ (VNĐ)</p>
-                            </div>
-                        </article>
-                    </div>
-                    <div class="swiper-slide">
-                        <article class="creator-card">
-                            <div class="creator-media creator-media-2"></div>
-                            <div class="p-3">
-                                <h3>Bảo Trâm</h3>
-                                <p class="mb-1 text-muted"><i class="fa-regular fa-user"></i> 210K followers</p>
-                                <p class="mb-0 text-success">+ 18.000.000 đ (VNĐ)</p>
-                            </div>
-                        </article>
-                    </div>
-                    <div class="swiper-slide">
-                        <article class="creator-card">
-                            <div class="creator-media creator-media-3"></div>
-                            <div class="p-3">
-                                <h3>Quang Huy</h3>
-                                <p class="mb-1 text-muted"><i class="fa-regular fa-user"></i> 156K followers</p>
-                                <p class="mb-0 text-success">+ 15.800.000 đ (VNĐ)</p>
-                            </div>
-                        </article>
-                    </div>
-                </div>
-                <div class="swiper-pagination mt-3"></div>
-            </div>
-        </div>
-    </section>
-
-    <section class="landing-cta section-flow py-5 reveal-up">
-        <div class="starfield starfield-cta" aria-hidden="true">
-            <span class="star" style="--x:10%;--y:26%;--size:17px;--delay:.2s;--dur:3.3s;">★</span>
-            <span class="star" style="--x:20%;--y:48%;--size:12px;--delay:.9s;--dur:4.1s;">★</span>
-            <span class="star" style="--x:31%;--y:22%;--size:14px;--delay:1.4s;--dur:3.6s;">★</span>
-            <span class="star" style="--x:43%;--y:42%;--size:13px;--delay:.6s;--dur:4.5s;">★</span>
-            <span class="star" style="--x:56%;--y:24%;--size:16px;--delay:1.1s;--dur:3.9s;">★</span>
-            <span class="star" style="--x:66%;--y:46%;--size:11px;--delay:1.8s;--dur:4.2s;">★</span>
-            <span class="star" style="--x:76%;--y:20%;--size:15px;--delay:.4s;--dur:3.4s;">★</span>
-            <span class="star" style="--x:84%;--y:44%;--size:12px;--delay:1.6s;--dur:4.4s;">★</span>
-            <span class="star" style="--x:92%;--y:28%;--size:17px;--delay:.7s;--dur:3.7s;">★</span>
-            <span class="star" style="--x:6%;--y:62%;--size:11px;--delay:2s;--dur:4.8s;">★</span>
-            <span class="star" style="--x:16%;--y:14%;--size:10px;--delay:1.5s;--dur:4.1s;">★</span>
-            <span class="star" style="--x:26%;--y:66%;--size:12px;--delay:2.2s;--dur:5s;">★</span>
-            <span class="star" style="--x:37%;--y:18%;--size:10px;--delay:1s;--dur:3.6s;">★</span>
-            <span class="star" style="--x:47%;--y:70%;--size:11px;--delay:2.4s;--dur:4.9s;">★</span>
-            <span class="star" style="--x:59%;--y:58%;--size:10px;--delay:1.3s;--dur:4.2s;">★</span>
-            <span class="star" style="--x:69%;--y:12%;--size:12px;--delay:.5s;--dur:3.5s;">★</span>
-            <span class="star" style="--x:73%;--y:64%;--size:10px;--delay:2.1s;--dur:4.6s;">★</span>
-            <span class="star" style="--x:88%;--y:14%;--size:11px;--delay:1.9s;--dur:4.4s;">★</span>
-            <span class="star" style="--x:96%;--y:60%;--size:10px;--delay:2.5s;--dur:5.2s;">★</span>
-        </div>
-        <div class="container text-center text-white">
-            <h2 class="landing-cta-title flow-item">Sẵn sàng bắt đầu hành trình KOC chuyên nghiệp?</h2>
-            <p class="mb-4 flow-item">Tham gia cùng hơn 10.000 KOC đang xây dựng sự nghiệp bền vững</p>
-            <div class="d-flex justify-content-center gap-2 flex-wrap flow-item">
-                <a asp-page="/Public/RegisterKocStep1" class="btn landing-btn-light">Đăng ký ngay</a>
-                <a asp-page="/Public/Academy" class="btn landing-btn-dark">Xem chương trình đào tạo</a>
-            </div>
-        </div>
-    </section>
-
-</div>
+    <section class="home-final reveal-up"><div class="container"><div><p class="home-eyebrow">ĐỒNG HÀNH CÙNG TOPSTAR</p><h2>@home.FinalCtaTitle</h2><p>@home.FinalCtaDescription</p></div><div class="home-actions"><a class="home-btn home-btn--light" href="@home.FinalPrimaryCtaUrl">@home.FinalPrimaryCtaText</a><a class="home-btn home-btn--ghost" href="@home.FinalSecondaryCtaUrl">@home.FinalSecondaryCtaText</a></div></div></section>
+</main>

@@ -1,0 +1,4 @@
+@page
+@model Topstar.Web.Pages.Brand.OnePayReturnModel
+@{ViewData["Title"]="Kết quả thanh toán OnePAY";}
+<div class="brand-funding-page"><section class="brand-campaign-card brand-payment-result @(Model.Result.Success?"is-success":"is-error")"><span class="brand-payment-result-icon"><i class="fa-solid @(Model.Result.Success?"fa-circle-check":"fa-circle-exclamation")"></i></span><h1>@(Model.Result.Success?"Thanh toán thành công":"Thanh toán chưa thành công")</h1><p>@Model.Result.Message</p><a class="btn brand-btn-primary" asp-page="/Brand/CampaignFunding"><i class="fa-solid fa-arrow-left"></i> Về thanh toán chiến dịch</a></section></div>

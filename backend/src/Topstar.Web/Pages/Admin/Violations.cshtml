@@ -1,0 +1,62 @@
+@page
+@model Topstar.Web.Pages.Admin.ViolationsModel
+@using Topstar.Application.Profiles
+@{
+    ViewData["Title"] = "Vi phạm tài khoản";
+    ViewData["AdminHeaderTitle"] = "Vi phạm tài khoản";
+    var active = Model.Items.Count(x => x.Status == "Active");
+    var revoked = Model.Items.Count(x => x.Status == "Revoked");
+    var totalPenalty = Model.Items.Where(x => x.Status == "Active").Sum(x => x.PenaltyPoints);
+    string StatusLabel(string status) => status == "Active" ? "Đang hiệu lực" : status == "Revoked" ? "Đã thu hồi" : status;
+    string SeverityLabel(string severity) => severity switch { "Low" => "Nhẹ", "Medium" => "Trung bình", "High" => "Nghiêm trọng", _ => severity };
+}
+<link rel="stylesheet" href="~/css/admin/admin-violations.css?v=20260804-2" />
+<main class="admin-violation-page">
+    <header class="admin-violation-heading">
+        <div><span class="admin-page-eyebrow"><i class="fa-solid fa-triangle-exclamation"></i> QUẢN LÝ TUÂN THỦ</span><h1>Vi phạm Brand/KOC</h1><p>Ghi nhận cảnh báo có căn cứ, theo dõi điểm phạt và lịch sử thu hồi minh bạch.</p></div>
+        <button type="button" class="btn btn-admin-primary" data-bs-toggle="modal" data-bs-target="#createViolationModal"><i class="fa-solid fa-plus-circle"></i> Ghi nhận vi phạm</button>
+    </header>
+    @if (Model.IsAccountScoped)
+    {
+        <section class="admin-violation-context" aria-label="Tài khoản đang xem">
+            <span><i class="fa-solid @(Model.AccountListType == "Brand" ? "fa-building" : "fa-user")"></i></span>
+            <div><small>Đang xem vi phạm của @Model.AccountListType</small><strong>@(string.IsNullOrWhiteSpace(Model.AccountName) ? "Tài khoản đã chọn" : Model.AccountName)</strong><p>@Model.AccountEmail</p></div>
+            <div class="admin-violation-context-actions">
+                <a asp-page="/Admin/Brands" asp-route-Type="@Model.AccountListType" class="btn btn-light"><i class="fa-solid fa-arrow-left"></i> Quay lại danh sách @Model.AccountListType</a>
+                <a asp-page="/Admin/Violations" class="btn btn-outline-primary"><i class="fa-solid fa-list"></i> Xem tất cả vi phạm</a>
+            </div>
+        </section>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.Message)) { <div class="alert @(Model.MessageSuccess ? "alert-success" : "alert-danger") admin-funding-alert"><i class="fa-solid @(Model.MessageSuccess ? "fa-circle-check" : "fa-circle-exclamation")"></i> @Model.Message</div> }
+    <section class="admin-violation-stats">
+        <article><span class="is-total"><i class="fa-solid fa-clipboard-list"></i></span><div><small>Tổng vi phạm</small><strong>@Model.Items.Count</strong></div></article>
+        <article><span class="is-active"><i class="fa-solid fa-triangle-exclamation"></i></span><div><small>Đang hiệu lực</small><strong>@active</strong></div></article>
+        <article><span class="is-revoked"><i class="fa-solid fa-rotate-left"></i></span><div><small>Đã thu hồi</small><strong>@revoked</strong></div></article>
+        <article><span class="is-penalty"><i class="fa-solid fa-arrow-trend-down"></i></span><div><small>Tổng điểm phạt hiệu lực</small><strong>@totalPenalty</strong></div></article>
+    </section>
+    <nav class="ts-tabs admin-violation-tabs" aria-label="Lọc trạng thái">
+        <button type="button" class="is-active" data-violation-status=""><i class="fa-solid fa-list"></i> Tất cả <b>@Model.Items.Count</b></button>
+        <button type="button" data-violation-status="Đang hiệu lực"><i class="fa-solid fa-circle-exclamation"></i> Đang hiệu lực <b>@active</b></button>
+        <button type="button" data-violation-status="Đã thu hồi"><i class="fa-solid fa-clock-rotate-left"></i> Đã thu hồi <b>@revoked</b></button>
+    </nav>
+    <section class="admin-violation-panel">
+        <div class="admin-violation-panel-head"><h2>@(Model.IsAccountScoped ? $"Vi phạm của {Model.AccountName}" : "Danh sách vi phạm")</h2><p>@(Model.IsAccountScoped ? "Danh sách đã được giới hạn đúng theo tài khoản đang chọn." : "Tra cứu hồ sơ và mở chi tiết để xem căn cứ, lịch sử hoặc thu hồi.")</p></div>
+        <div class="admin-violation-filters">
+            <div class="admin-profile-search"><label for="violationSearch">Từ khóa</label><div><i class="fa-solid fa-magnifying-glass"></i><input id="violationSearch" type="search" placeholder="Tìm người dùng, email, loại vi phạm hoặc căn cứ"></div></div>
+            <div><label for="violationRole">Đối tượng</label><select id="violationRole"><option value="">Tất cả đối tượng</option><option value="Brand">Brand</option><option value="KOC">KOC</option></select></div>
+            <div><label for="violationSeverity">Mức độ</label><select id="violationSeverity"><option value="">Tất cả mức độ</option><option value="Nhẹ">Nhẹ</option><option value="Trung bình">Trung bình</option><option value="Nghiêm trọng">Nghiêm trọng</option></select></div>
+            <div><label for="violationLength">Hiển thị</label><select id="violationLength"><option value="10">10 dòng</option><option value="20">20 dòng</option><option value="50">50 dòng</option></select></div>
+            <button type="button" id="violationFilter" class="btn btn-admin-primary"><i class="fa-solid fa-filter"></i> Lọc</button>
+        </div>
+        <div class="table-responsive"><table id="violationTable" class="table admin-violation-table w-100" data-list-actions="false"><thead><tr><th>STT</th><th>Người dùng</th><th>Đối tượng</th><th>Vi phạm</th><th>Mức độ</th><th>Điểm phạt</th><th>Ngày ghi nhận</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>
+        @foreach (var item in Model.Items) { <tr><td></td><td><strong>@item.DisplayName</strong><small>@item.Email</small></td><td><span class="admin-profile-type is-@item.Role.ToLowerInvariant()">@item.Role</span></td><td><strong>@item.Category</strong><small>@item.Reason</small></td><td><span class="admin-violation-severity is-@item.Severity.ToLowerInvariant()">@SeverityLabel(item.Severity)</span></td><td data-order="@item.PenaltyPoints"><strong class="admin-penalty">@(item.PenaltyPoints > 0 ? $"-{item.PenaltyPoints}" : "0") điểm</strong></td><td data-order="@item.CreatedAtUtc.ToString("O")"><strong>@item.CreatedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy")</strong><small>@item.CreatedAtUtc.ToVietnamTime().ToString("HH:mm")</small></td><td><span class="admin-violation-status is-@item.Status.ToLowerInvariant()">@StatusLabel(item.Status)</span></td><td><button type="button" class="admin-icon-btn" data-bs-toggle="modal" data-bs-target="#violation-@item.Id" title="Xem chi tiết" aria-label="Xem chi tiết vi phạm của @item.DisplayName"><i class="fa-regular fa-eye"></i></button></td></tr> }
+        </tbody></table></div>
+    </section>
+</main>
+
+<div class="modal fade admin-action-modal" id="createViolationModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content"><form method="post" asp-page-handler="Create" class="js-violation-form" novalidate><div class="modal-header"><div class="admin-modal-heading"><span><i class="fa-solid fa-triangle-exclamation"></i></span><div><h2>Ghi nhận vi phạm</h2><small>Thông tin được lưu vào lịch sử và audit.</small></div></div><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="row g-3"><div class="col-md-6 admin-validation-field"><label>Email Brand/KOC <span>*</span></label><input name="email" type="email" class="form-control" data-rule="email"><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><div class="invalid-feedback"></div></div><div class="col-md-6 admin-validation-field"><label>Loại vi phạm <span>*</span></label><input name="category" maxlength="100" class="form-control" placeholder="Ví dụ: Trễ thời hạn bàn giao" data-min="2"><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><div class="invalid-feedback"></div></div><div class="col-md-6 admin-validation-field"><label>Mức độ <span>*</span></label><select name="severity" class="form-select">@foreach(var s in UserViolationRules.Severities){<option value="@s">@SeverityLabel(s)</option>}</select></div><div class="col-md-6 admin-validation-field"><label>Điểm phạt KOC <span>*</span></label><input name="penaltyPoints" type="number" min="0" max="100" value="0" class="form-control" data-rule="penalty"><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><div class="invalid-feedback"></div></div><div class="col-12 admin-validation-field"><label>Căn cứ xử lý <span>*</span></label><textarea name="reason" maxlength="2000" rows="4" class="form-control" placeholder="Mô tả hành vi, thời điểm và căn cứ xác minh" data-min="10"></textarea><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><div class="invalid-feedback"></div></div></div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Đóng</button><button class="btn btn-danger"><i class="fa-solid fa-floppy-disk"></i> Lưu vi phạm</button></div></form></div></div></div>
+
+@foreach (var item in Model.Items) { <div class="modal fade admin-action-modal" id="violation-@item.Id" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content"><div class="modal-header"><div class="admin-modal-heading"><span><i class="fa-solid fa-shield-halved"></i></span><div><h2>@item.DisplayName</h2><small>@item.Role · @item.Email</small></div></div><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="admin-violation-detail"><div><span>Loại vi phạm</span><strong>@item.Category</strong></div><div><span>Mức độ</span><strong>@SeverityLabel(item.Severity)</strong></div><div><span>Điểm phạt</span><strong>@item.PenaltyPoints điểm</strong></div><div><span>Trạng thái</span><strong>@StatusLabel(item.Status)</strong></div></div><section class="admin-violation-reason"><h3><i class="fa-solid fa-file-circle-check"></i> Căn cứ ghi nhận</h3><p>@item.Reason</p></section>@if(!string.IsNullOrWhiteSpace(item.ResolutionNote)){<section class="admin-violation-resolution"><h3><i class="fa-solid fa-rotate-left"></i> Căn cứ thu hồi</h3><p>@item.ResolutionNote</p></section>}@if(item.History.Count>0){<section class="admin-violation-history"><h3><i class="fa-solid fa-clock-rotate-left"></i> Lịch sử</h3>@foreach(var h in item.History){<article><span></span><div><strong>@StatusLabel(h.ToStatus)</strong><small>@h.CreatedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm")</small><p>@h.Note</p></div></article>}</section>}@if(item.Status=="Active"){<form method="post" asp-page-handler="Revoke" class="js-revoke-form admin-violation-revoke" novalidate><input type="hidden" name="id" value="@item.Id"><div class="admin-validation-field"><label>Lý do thu hồi <span>*</span></label><textarea name="reason" maxlength="1000" rows="3" class="form-control" placeholder="Nhập căn cứ thu hồi hoặc đính chính từ 10 đến 1.000 ký tự" data-min="10"></textarea><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><div class="invalid-feedback"></div></div><button class="btn btn-outline-danger"><i class="fa-solid fa-rotate-left"></i> Xác nhận thu hồi</button></form>}</div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Đóng</button></div></div></div></div> }
+
+<script id="violationCategoryData" type="application/json">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Categories.Select(x=>new{x.Code,x.Name,x.DefaultSeverity,x.DefaultPenaltyPoints})))</script>
+@section Scripts { <script src="~/lib/datatables/js/dataTables.min.js?v=2.3.8"></script><script src="~/lib/datatables/js/dataTables.bootstrap5.min.js?v=2.3.8"></script><script src="~/js/admin/violation-categories.js" asp-append-version="true"></script><script src="~/js/admin/violations.js?v=20260804-2"></script> }

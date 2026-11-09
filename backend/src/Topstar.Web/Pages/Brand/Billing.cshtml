@@ -1,0 +1,110 @@
+@page
+@model Topstar.Web.Pages.Brand.BillingModel
+@using Topstar.Application.Billing
+@using Topstar.Application.Matching
+@{
+    ViewData["Title"] = "Tài chính và hóa đơn";
+    var paidAmount = new[]{"Paid","Consumed","Expired","CancelRequested"}.Sum(status=>Model.PackageWindow.Amounts.GetValueOrDefault(status));
+    var availableCount = Model.PackageWindow.AvailableCount;
+}
+
+<div class="brand-finance-page">
+    <header class="brand-page-heading brand-finance-heading">
+        <div>
+            <span class="brand-page-eyebrow"><i class="fa-solid fa-wallet"></i> TÀI CHÍNH</span>
+            <h1>Tài chính và hóa đơn</h1>
+            <p>Tra cứu hóa đơn và các đơn mua gói trước đây. Thanh toán chiến dịch được theo dõi riêng.</p>
+        </div>
+        <a asp-page="/Brand/CampaignNeeds" class="btn brand-btn-primary btn-sm"><i class="fa-solid fa-cart-shopping"></i> Tạo chiến dịch</a>
+    </header>
+    @if(!string.IsNullOrWhiteSpace(Model.Message)){<div hidden data-ts-notification="@(Model.Success?"success":"error")">@Model.Message</div>}
+
+    <section class="brand-campaign-stats mb-4" aria-label="Tổng quan tài chính">
+        <article><span class="brand-stat-icon is-review"><i class="fa-regular fa-clock"></i></span><div><small>Đơn gói cũ chờ thanh toán</small><strong>@Model.PackageWindow.Counts.GetValueOrDefault(BrandPackagePurchaseStatuses.Pending)</strong></div></article>
+        <article><span class="brand-stat-icon is-running"><i class="fa-solid fa-box-open"></i></span><div><small>Gói cũ còn sử dụng được</small><strong>@availableCount</strong></div></article>
+        <article><span class="brand-stat-icon is-done"><i class="fa-solid fa-money-bill-wave"></i></span><div><small>Giá trị đơn gói cũ</small><strong class="brand-finance-amount">@paidAmount.ToString("N0", PortalFormat.Vietnamese) ₫</strong></div></article>
+        <article><span class="brand-stat-icon is-draft"><i class="fa-solid fa-file-invoice-dollar"></i></span><div><small>Phí dịch vụ chờ thanh toán</small><strong class="brand-finance-amount">@((Model.InvoiceWindow.Amounts.GetValueOrDefault(BillingStatuses.Pending) + Model.InvoiceWindow.Amounts.GetValueOrDefault(BillingStatuses.Overdue)).ToString("N0", PortalFormat.Vietnamese)) ₫</strong></div></article>
+    </section>
+
+    <section class="brand-campaign-card mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div><h2 class="h5 mb-1"><i class="fa-solid fa-box"></i> Đơn gói trước đây</h2><p class="text-muted mb-0">Lịch sử các gói đã mua theo luồng cũ.</p></div>
+        </div>
+        @if (Model.PackageWindow.Total > 0) { <partial name="_ListWindow" model='new Topstar.Web.Features.Common.Paging.ListWindowViewModel("brandPackagePurchaseTable", Model.PackageWindow, "Filters")' /> }
+        @if (Model.PackagePurchases.Count == 0)
+        {
+            <div class="brand-empty-state brand-finance-empty"><span><i class="fa-solid fa-cart-shopping"></i></span><h3>Chưa có đơn gói trước đây</h3><p>Bạn có thể tạo chiến dịch và thanh toán trực tiếp, không cần mua gói trước.</p><a asp-page="/Brand/CampaignNeeds" class="btn brand-btn-primary btn-sm"><i class="fa-solid fa-box-open"></i> Tạo chiến dịch</a></div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                
+<table id="brandPackagePurchaseTable" class="table brand-data-table align-middle">
+                    <thead><tr><th>Mã đơn</th><th>Gói KOC</th><th>Giá trị</th><th>Ngày mua</th><th>Trạng thái</th><th>Chiến dịch sử dụng</th><th class="text-end">Thao tác</th></tr></thead>
+                    <tbody>
+                    @foreach (var p in Model.PackagePurchases)
+                    {
+                        var statusClass = p.Status switch { "Refunded" => "is-completed", "CancelRequested" => "is-warning", BrandPackagePurchaseStatuses.Paid => "is-completed", BrandPackagePurchaseStatuses.Pending => "is-warning", BrandPackagePurchaseStatuses.Consumed => "is-published", BrandPackagePurchaseStatuses.Expired or BrandPackagePurchaseStatuses.Cancelled => "is-danger", _ => "is-muted" };
+                        var statusIcon = p.Status switch { "Refunded" => "fa-money-bill-transfer", "CancelRequested" => "fa-hourglass-half", BrandPackagePurchaseStatuses.Paid => "fa-circle-check", BrandPackagePurchaseStatuses.Pending => "fa-clock", BrandPackagePurchaseStatuses.Consumed => "fa-circle-check", BrandPackagePurchaseStatuses.Expired => "fa-calendar-xmark", _ => "fa-ban" };
+                        <tr>
+                            <td><strong>@p.OrderNumber</strong>@if(!string.IsNullOrWhiteSpace(p.PaymentReference)){<div class="small text-muted">GD: @p.PaymentReference</div>}</td>
+                            <td><strong>@PackagesModel.DisplayPurchasedPackageName(p)</strong></td>
+                            <td class="fw-semibold">@p.Amount.ToString("N0", PortalFormat.Vietnamese) ₫</td>
+                            <td>@p.PurchasedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy")@if(p.ExpiresAtUtc.HasValue){<div class="small text-muted">Hạn @p.ExpiresAtUtc.Value.ToVietnamTime().ToString("dd/MM/yyyy")</div>}</td>
+                            <td><span class="brand-status-pill @statusClass"><i class="fa-solid @statusIcon"></i> @BillingModel.PackageStatusLabel(p.Status)</span></td>
+                            <td>@(string.IsNullOrWhiteSpace(p.CampaignTitle) ? "—" : p.CampaignTitle)</td>
+                            <td class="text-end brand-finance-actions">
+                                @if(p.Status==BrandPackagePurchaseStatuses.Pending)
+                                {
+                                    <div class="brand-finance-pending-actions">
+                                        <a asp-page="/Brand/PackageCheckout" asp-route-packageId="@p.PackagePolicyId" asp-route-purchaseId="@p.Id" class="btn brand-btn-primary btn-sm"><i class="fa-solid fa-credit-card"></i> Thanh toán ngay</a>
+                                        <button type="button" class="brand-package-cancel-link js-cancel-package" data-bs-toggle="modal" data-bs-target="#brandPackageCancelModal" data-id="@p.Id" data-name="@PackagesModel.DisplayPurchasedPackageName(p)"><i class="fa-solid fa-xmark"></i> Hủy đơn</button>
+                                    </div>
+                                }
+                                else if(p.Status=="Refunded")
+                                {<a asp-page="/Brand/Balance" asp-route-tab="history" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-clock-rotate-left"></i> Xem tiền hoàn</a>}
+                                else if(p.CanCreateCampaign)
+                                {
+                                    <a asp-page="/Brand/CampaignEdit" asp-route-purchaseId="@p.Id" class="btn brand-btn-primary btn-sm brand-finance-create-campaign"><i class="fa-solid fa-bullhorn"></i> Tạo chiến dịch</a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+            <partial name="_ListWindow" model='new Topstar.Web.Features.Common.Paging.ListWindowViewModel("brandPackagePurchaseTable", Model.PackageWindow, "Pager")' />
+        }
+    </section>
+
+    <section class="brand-campaign-card">
+        <div class="mb-3"><h2 class="h5 mb-1"><i class="fa-solid fa-file-invoice-dollar"></i> Phí dịch vụ chiến dịch</h2><p class="text-muted mb-0">Phí được phát hành sau khi chiến dịch hoàn tất và được theo dõi riêng với giao dịch mua gói.</p></div>
+        @if (Model.InvoiceWindow.Total > 0) { <partial name="_ListWindow" model='new Topstar.Web.Features.Common.Paging.ListWindowViewModel("brandServiceFeeTable", Model.InvoiceWindow, "Filters")' /> }
+        @if (Model.Items.Count == 0)
+        {
+            <div class="brand-empty-state brand-finance-empty"><span><i class="fa-solid fa-file-circle-check"></i></span><h3>Chưa có phí dịch vụ</h3><p>Khoản phí sẽ xuất hiện tại đây sau khi chiến dịch hoàn tất và hóa đơn được phát hành.</p></div>
+        }
+        else
+        {
+            <div class="table-responsive">
+<table id="brandServiceFeeTable" class="table brand-data-table align-middle"><thead><tr><th>Chiến dịch</th><th>Ngân sách KOC</th><th>Phí dịch vụ</th><th>Hạn thanh toán</th><th>Trạng thái</th><th class="text-end">Chứng từ</th></tr></thead><tbody>
+            @foreach (var item in Model.Items)
+            {
+                var label = item.Status switch { BillingStatuses.Paid => "Đã thanh toán", BillingStatuses.Overdue => "Quá hạn", BillingStatuses.Pending => "Chờ thanh toán", BillingStatuses.Void => "Đã hủy", _ => "Chưa phát hành" };
+                var invoiceStatusClass = item.Status switch { BillingStatuses.Paid => "is-completed", BillingStatuses.Overdue => "is-danger", BillingStatuses.Pending => "is-warning", BillingStatuses.Void => "is-muted", _ => "is-muted" };
+                <tr><td><strong>@item.CampaignTitle</strong><div class="small text-muted">@item.InvoiceNumber</div></td><td>@item.CampaignBudget.ToString("N0", PortalFormat.Vietnamese) ₫</td><td class="fw-semibold">@item.FeeAmount.ToString("N0", PortalFormat.Vietnamese) ₫</td><td>@(item.DueAtUtc?.ToVietnamTime().ToString("dd/MM/yyyy") ?? "—")</td><td><span class="brand-status-pill @invoiceStatusClass">@label</span></td><td class="text-end">@if(item.Id.HasValue){<a asp-page="/Brand/BillingReceipt" asp-route-id="@item.Id" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-receipt"></i> Xem chứng từ</a>}else{<span class="text-muted">Chưa có</span>}</td></tr>
+            }
+            </tbody></table></div>
+            <partial name="_ListWindow" model='new Topstar.Web.Features.Common.Paging.ListWindowViewModel("brandServiceFeeTable", Model.InvoiceWindow, "Pager")' />
+        }
+    </section>
+</div>
+<partial name="_BrandPackageCancelModal"/>
+<div id="brandPackageCancelRestore" class="d-none" data-open="@(!string.IsNullOrWhiteSpace(Model.CancelError) ? "true" : "false")" data-id="@Model.CancelPurchaseId" data-name="@Model.CancelPackageName" data-reason="@Model.CancelReason" data-error="@Model.CancelError"></div>
+@section Scripts{
+    <script src="/js/brand/brand-package-cancel.js?v=20260731-brand-cancel-id-5"></script>
+}

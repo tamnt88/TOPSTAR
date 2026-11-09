@@ -1,0 +1,5 @@
+@page
+@model Topstar.Web.Pages.Admin.Settings.SeoSocialDeleteModel
+@{ViewData["Title"]="Xóa cấu hình SEO";ViewData["AdminHeaderTitle"]=ViewData["Title"];ViewData["AdminActivePath"]="/Admin/Settings/SeoSocial";}
+@section Styles{<link rel="stylesheet" href="~/css/admin/seo-social.css" asp-append-version="true"/>}
+<main class="seo-form-page"><header><a asp-page="SeoSocial"><i class="fa-solid fa-arrow-left"></i> Quay lại danh sách</a><h1>Xóa cấu hình SEO</h1><p>Xác nhận trước khi xóa cấu hình khỏi hệ thống.</p></header><section class="seo-delete-card"><div><i class="fa-solid fa-triangle-exclamation"></i><span><strong>Bạn có chắc muốn xóa “@Model.Item?.PageKey”?</strong><p>Đường dẫn <code>@Model.Item?.PagePath</code> sẽ không còn sử dụng cấu hình SEO và chia sẻ này.</p></span></div><form method="post"><input type="hidden" name="id" value="@Model.Item?.Id"/><a asp-page="SeoSocial" class="btn btn-light">Hủy</a><button class="btn btn-danger"><i class="fa-solid fa-trash"></i> Xóa cấu hình</button></form></section></main>

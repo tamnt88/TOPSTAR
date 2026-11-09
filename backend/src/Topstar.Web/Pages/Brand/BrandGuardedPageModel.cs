@@ -2,19 +2,19 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Topstar.Application.Dashboard;
+using Topstar.Application.Profiles;
 
 namespace Topstar.Web.Pages.Brand;
 
 [Authorize(Roles = "Brand")]
 public abstract class BrandGuardedPageModel : PageModel
 {
-    protected BrandGuardedPageModel(IDashboardDataService dashboardDataService)
+    protected BrandGuardedPageModel(IProfileAccessService profileAccessService)
     {
-        DashboardDataService = dashboardDataService;
+        ProfileAccessService = profileAccessService;
     }
 
-    protected IDashboardDataService DashboardDataService { get; }
+    protected IProfileAccessService ProfileAccessService { get; }
 
     protected async Task<IActionResult?> RedirectIfProfileIncompleteAsync(bool allowProfilePages)
     {
@@ -24,8 +24,8 @@ public abstract class BrandGuardedPageModel : PageModel
             return RedirectToPage("/Public/Login");
         }
 
-        var brandData = await DashboardDataService.GetBrandDashboardAsync(parsedUserId, HttpContext.RequestAborted);
-        if (!allowProfilePages && brandData.NeedsProfileCompletion)
+        var access = await ProfileAccessService.CheckBrandAsync(parsedUserId, HttpContext.RequestAborted);
+        if (!allowProfilePages && !access.CanUseFeatures)
         {
             return RedirectToPage("/Brand/EditProfile", new { forceComplete = 1 });
         }

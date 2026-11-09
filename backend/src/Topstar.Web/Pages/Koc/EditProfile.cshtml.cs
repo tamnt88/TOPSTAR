@@ -1,23 +1,29 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
+using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Topstar.Application.Dashboard;
+using Topstar.Application.Profiles;
 using Topstar.Application.KocRegistration;
 using Topstar.Infrastructure.Entities;
 using Topstar.Infrastructure.Persistence;
+using Topstar.Web.Services.Storage;
+using Topstar.Web.Services.Profiles;
 
 namespace Topstar.Web.Pages.Koc;
 
 [Authorize(Roles = "Koc")]
 public sealed class EditProfileModel(
-    IDashboardDataService dashboardDataService,
+    IProfileAccessService profileAccessService,
     IKocRegistrationService kocRegistrationService,
     TopstarDbContext dbContext,
-    ILogger<EditProfileModel> logger) : KocGuardedPageModel(dashboardDataService)
+    IFileStorageService fileStorageService,
+    IKocProfileSectionService profileSectionService,
+    ILogger<EditProfileModel> logger) : KocGuardedPageModel(profileAccessService)
 {
     [TempData]
     public string? SuccessMessage { get; set; }
@@ -27,6 +33,24 @@ public sealed class EditProfileModel(
 
     [BindProperty]
     public InputModel Input { get; set; } = new();
+    [BindProperty]
+    public IFormFile? AvatarFile { get; set; }
+    [BindProperty]
+    public IFormFile? ProfileDocumentFile { get; set; }
+    [BindProperty]
+    public List<IFormFile>? GalleryFiles { get; set; }
+    [BindProperty]
+    public List<IFormFile>? VideoFiles { get; set; }
+    [BindProperty]
+    public string? GalleryOrderCsv { get; set; }
+    [BindProperty]
+    public string? GalleryDeleteCsv { get; set; }
+    [BindProperty]
+    public string? VideoOrderCsv { get; set; }
+    [BindProperty]
+    public string? VideoDeleteCsv { get; set; }
+    [BindProperty]
+    public long ProfileVersionTicks { get; set; }
 
     public List<SelectListItem> ProvinceOptions { get; private set; } = new();
     public List<SelectListItem> WardOptions { get; private set; } = new();
@@ -56,14 +80,25 @@ public sealed class EditProfileModel(
 
     public async Task<IActionResult> OnPostAsync(string? saveSection, CancellationToken cancellationToken)
     {
+        var createdFiles = new List<string>();
         try
         {
-            var section = NormalizeSection(saveSection);
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!Guid.TryParse(userId, out var parsedUserId))
             {
                 return RedirectToPage("/Public/Login");
             }
+
+            var submittedSection = (saveSection ?? string.Empty).Trim().ToLowerInvariant();
+            if (submittedSection is not ("basic" or "social" or "personal" or "gallery" or "video"))
+            {
+                await LoadLookupAsync(cancellationToken);
+                await LoadCurrentDataAsync(parsedUserId, cancellationToken);
+                ActiveTab = "basic";
+                ErrorMessage = "Không xác định được nhóm thông tin cần lưu. Vui lòng tải lại trang và thử lại.";
+                return Page();
+            }
+            var section = submittedSection;
 
             NormalizeInput();
             ModelState.Clear();
@@ -157,6 +192,32 @@ public sealed class EditProfileModel(
                 }
             }
 
+            if (section == "basic")
+            {
+                ValidateUpload(AvatarFile, "AvatarFile", [".jpg", ".jpeg", ".png", ".webp"], 5 * 1024 * 1024, "Ảnh đại diện");
+                ValidateUpload(ProfileDocumentFile, "ProfileDocumentFile", [".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png", ".webp"], 10 * 1024 * 1024, "Hồ sơ năng lực");
+            }
+            else if (section == "gallery")
+            {
+                foreach (var file in GalleryFiles ?? [])
+                    ValidateUpload(file, "GalleryFiles", [".jpg", ".jpeg", ".png", ".webp"], 8 * 1024 * 1024, "Ảnh thư viện");
+            }
+            else if (section == "video")
+            {
+                foreach (var file in VideoFiles ?? [])
+                    ValidateUpload(file, "VideoFiles", [".mp4", ".webm", ".mov"], 100 * 1024 * 1024, "Video");
+            }
+            else if (section == "personal")
+            {
+                ValidateRange(Input.HeightCm, 80, 250, "Input.HeightCm", "Chiều cao");
+                ValidateRange(Input.WeightKg, 20, 300, "Input.WeightKg", "Cân nặng");
+                if (Input.ServicePriceVnd is < 0)
+                    ModelState.AddModelError("Input.ServicePriceVnd", "Mức ngân sách mong muốn không được âm.");
+                for (var i = 0; i < Input.Children.Count; i++)
+                    if (Input.Children[i].Age is < 0 or > 17)
+                        ModelState.AddModelError($"Input.Children[{i}].Age", "Tuổi của con phải nằm trong khoảng 0–17.");
+            }
+
             await LoadLookupAsync(cancellationToken);
             if (!ModelState.IsValid)
             {
@@ -164,11 +225,25 @@ public sealed class EditProfileModel(
                 return Page();
             }
 
-            var user = await dbContext.Users.FirstOrDefaultAsync(x => x.Id == parsedUserId, cancellationToken);
-            var kocProfile = await dbContext.KocProfiles.FirstOrDefaultAsync(x => x.UserId == parsedUserId, cancellationToken);
-            if (user is null || kocProfile is null)
+            var kocProfileId = await profileSectionService.GetKocProfileIdAsync(parsedUserId, cancellationToken);
+            if (!kocProfileId.HasValue)
             {
                 ErrorMessage = "Không tìm thấy hồ sơ KOC.";
+                return Page();
+            }
+
+            await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+            var expectedUpdatedAt = ProfileVersionTicks > 0 ? new DateTime(ProfileVersionTicks, DateTimeKind.Utc) : (DateTime?)null;
+            var versionUpdated = await dbContext.KocProfiles
+                .Where(x => x.Id == kocProfileId.Value && x.UpdatedAtUtc == expectedUpdatedAt)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.UpdatedAtUtc, DateTime.UtcNow), cancellationToken);
+            if (versionUpdated != 1)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                await CleanupCreatedFilesAsync(createdFiles);
+                await LoadCurrentDataAsync(parsedUserId, cancellationToken);
+                ErrorMessage = "Hồ sơ đã được cập nhật ở một cửa sổ hoặc phiên khác. Dữ liệu mới nhất đã được tải lại; vui lòng kiểm tra rồi lưu lại.";
+                ActiveTab = section;
                 return Page();
             }
 
@@ -180,144 +255,181 @@ public sealed class EditProfileModel(
                     ActiveTab = section;
                     return Page();
                 }
-                user.Email = Input.Email.Trim();
-                user.Phone = Input.Phone.Trim();
-                user.Gender = Input.Gender;
-                user.DateOfBirth = Input.DateOfBirth;
-                user.UpdatedAtUtc = DateTime.UtcNow;
+                string? avatarUrl = null;
+                string? documentUrl = null;
+                if (AvatarFile is not null && AvatarFile.Length > 0)
+                {
+                    var storedUrl = await fileStorageService.SaveKocProfileUploadAsync(AvatarFile, "avatar", cancellationToken);
+                    if (storedUrl is null) throw new InvalidOperationException("Không thể lưu ảnh đại diện hợp lệ.");
+                    createdFiles.Add(storedUrl);
+                    avatarUrl = storedUrl;
+                }
+                if (ProfileDocumentFile is not null && ProfileDocumentFile.Length > 0)
+                {
+                    var ext = Path.GetExtension(ProfileDocumentFile.FileName)?.ToLowerInvariant() ?? string.Empty;
+                    var allowedExt = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png", ".webp"
+                    };
+                    if (!allowedExt.Contains(ext))
+                    {
+                        await CleanupCreatedFilesAsync(createdFiles);
+                        ModelState.AddModelError("ProfileDocumentFile", "Định dạng file không hợp lệ. Vui lòng chọn PDF, Word hoặc hình ảnh.");
+                        ActiveTab = section;
+                        return Page();
+                    }
 
-                kocProfile.DisplayName = Input.FullName.Trim();
-                kocProfile.StreetAddress = Input.StreetAddress.Trim();
-                kocProfile.ProvinceId = Input.ProvinceId;
-                kocProfile.WardId = Input.WardId;
-                kocProfile.Status = "PendingReview";
-                kocProfile.UpdatedAtUtc = DateTime.UtcNow;
+                    var storedUrl = await fileStorageService.SaveKocProfileUploadAsync(ProfileDocumentFile, "document", cancellationToken);
+                    if (storedUrl is null) throw new InvalidOperationException("Không thể lưu hồ sơ năng lực hợp lệ.");
+                    createdFiles.Add(storedUrl);
+                    documentUrl = storedUrl;
+                }
+                try
+                {
+                    await profileSectionService.SaveBasicAsync(parsedUserId, new KocBasicSectionInput(
+                        Input.FullName, Input.Email, Input.Phone, Input.Gender, Input.DateOfBirth,
+                        Input.StreetAddress, Input.ProvinceId, Input.WardId, avatarUrl, documentUrl), cancellationToken);
+                    AddProfileAudit(parsedUserId, kocProfileId.Value, "UpdateIdentityProfile", new
+                    {
+                        Section = "basic",
+                        Fields = new[] { "FullName", "Email", "Phone", "Gender", "DateOfBirth", "StreetAddress", "ProvinceId", "WardId" },
+                        HasAvatarUpload = avatarUrl is not null,
+                        HasProfileDocumentUpload = documentUrl is not null
+                    });
+                }
+                catch (SqlException ex) when (ex.Message.Contains("KocMediaAssets", StringComparison.OrdinalIgnoreCase))
+                {
+                    await CleanupCreatedFilesAsync(createdFiles);
+                    ModelState.AddModelError("ProfileDocumentFile", "CSDL chưa cập nhật bảng thư viện media KOC. Vui lòng chạy script cập nhật database.");
+                    ActiveTab = section;
+                    return Page();
+                }
             }
             else if (section == "social")
             {
-                var existingSocial = await dbContext.KocSocialAccounts.Where(x => x.KocProfileId == kocProfile.Id).ToListAsync(cancellationToken);
-                dbContext.KocSocialAccounts.RemoveRange(existingSocial);
-
-                var existingProfileCategories = await dbContext.KocProfileCategories.Where(x => x.KocProfileId == kocProfile.Id).ToListAsync(cancellationToken);
-                dbContext.KocProfileCategories.RemoveRange(existingProfileCategories);
-
-                var categoryMap = await dbContext.KocCategories.AsNoTracking().ToDictionaryAsync(x => x.Code, x => x.Id, StringComparer.OrdinalIgnoreCase, cancellationToken);
-                var allCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-                foreach (var social in Input.Platforms)
+                var socialItems = Input.Platforms
+                    .Where(x => !string.IsNullOrWhiteSpace(x.ChannelUrl))
+                    .Select(x => new KocSocialSectionItem(x.Platform, x.ChannelUrl!.Trim(), x.Followers ?? 0, x.SelectedCategoryCodes))
+                    .ToList();
+                await profileSectionService.SaveSocialAsync(kocProfileId.Value, socialItems, cancellationToken);
+                AddProfileAudit(parsedUserId, kocProfileId.Value, "ReplaceSocialAccounts", new
                 {
-                    if (!string.IsNullOrWhiteSpace(social.ChannelUrl))
-                    {
-                        dbContext.KocSocialAccounts.Add(new KocSocialAccountEntity
-                        {
-                            Id = Guid.NewGuid(),
-                            KocProfileId = kocProfile.Id,
-                            Platform = social.Platform,
-                            ChannelUrl = social.ChannelUrl.Trim(),
-                            Followers = social.Followers ?? 0,
-                            IsPrimary = social.Platform.Equals("TikTok", StringComparison.OrdinalIgnoreCase),
-                            IsVerified = false,
-                            ViewCount = 0,
-                            IsVisible = true,
-                            CreatedAtUtc = DateTime.UtcNow
-                        });
-                    }
-
-                    foreach (var code in social.SelectedCategoryCodes.Where(x => !string.IsNullOrWhiteSpace(x)))
-                    {
-                        allCodes.Add(code.Trim());
-                    }
+                    Section = "social",
+                    AccountCount = socialItems.Count,
+                    Platforms = socialItems.Select(x => x.Platform).Distinct(StringComparer.OrdinalIgnoreCase).ToArray(),
+                    CategoryLinkCount = socialItems.Sum(x => x.CategoryCodes.Distinct(StringComparer.OrdinalIgnoreCase).Count())
+                });
+            }
+            else if (section is "gallery" or "video")
+            {
+                var isGallery = section == "gallery";
+                var files = isGallery ? GalleryFiles ?? [] : VideoFiles ?? [];
+                var newUrls = new List<string>();
+                foreach (var file in files.Where(x => x is not null && x.Length > 0))
+                {
+                    var storedUrl = await fileStorageService.SaveKocProfileUploadAsync(file, isGallery ? "gallery" : "video", cancellationToken);
+                    if (storedUrl is null) throw new InvalidOperationException(isGallery ? "Không thể lưu ảnh thư viện hợp lệ." : "Không thể lưu video hợp lệ.");
+                    createdFiles.Add(storedUrl);
+                    newUrls.Add(storedUrl);
                 }
-
-                foreach (var code in allCodes)
+                try
                 {
-                    if (categoryMap.TryGetValue(code, out var categoryId))
-                    {
-                        dbContext.KocProfileCategories.Add(new KocProfileCategoryEntity
-                        {
-                            KocProfileId = kocProfile.Id,
-                            CategoryId = categoryId,
-                            CreatedAtUtc = DateTime.UtcNow
-                        });
-                    }
+                    await profileSectionService.SaveMediaAsync(
+                        kocProfileId.Value,
+                        isGallery ? "GalleryImage" : "GalleryVideo",
+                        ParseGuidCsv(isGallery ? GalleryOrderCsv : VideoOrderCsv),
+                        ParseGuidCsv(isGallery ? GalleryDeleteCsv : VideoDeleteCsv),
+                        newUrls,
+                        cancellationToken);
+                }
+                catch (SqlException ex) when (ex.Message.Contains("KocMediaAssets", StringComparison.OrdinalIgnoreCase))
+                {
+                    await CleanupCreatedFilesAsync(createdFiles);
+                    ModelState.AddModelError(isGallery ? "GalleryFiles" : "VideoFiles", "CSDL chưa cập nhật bảng thư viện media KOC. Vui lòng chạy script cập nhật database.");
+                    ActiveTab = section;
+                    return Page();
                 }
             }
             else
             {
-                var bodyProfile = await dbContext.KocBodyProfiles.FirstOrDefaultAsync(x => x.KocProfileId == kocProfile.Id, cancellationToken);
-                if (bodyProfile is null)
+                var personalInput = new KocPersonalSectionInput(
+                    Input.WeightKg, Input.HeightCm, Input.BustCm, Input.WaistCm, Input.HipCm,
+                    Input.MaritalStatus, Input.HasChildren, Input.ServicePriceVnd,
+                    Input.Children.Select(x => new KocChildSectionItem(x.Age, x.Gender)).ToList());
+                await profileSectionService.SavePersonalAsync(kocProfileId.Value, personalInput, cancellationToken);
+                AddProfileAudit(parsedUserId, kocProfileId.Value, "UpdatePersonalProfile", new
                 {
-                    bodyProfile = new KocBodyProfileEntity
-                    {
-                        Id = Guid.NewGuid(),
-                        KocProfileId = kocProfile.Id,
-                        CreatedAtUtc = DateTime.UtcNow
-                    };
-                    dbContext.KocBodyProfiles.Add(bodyProfile);
-                }
-
-                bodyProfile.WeightKg = Input.WeightKg;
-                bodyProfile.HeightCm = Input.HeightCm;
-                bodyProfile.BustCm = Input.BustCm;
-                bodyProfile.WaistCm = Input.WaistCm;
-                bodyProfile.HipCm = Input.HipCm;
-                bodyProfile.MaritalStatus = Input.MaritalStatus;
-                bodyProfile.HasChildren = Input.HasChildren;
-                bodyProfile.ChildrenCount = Input.HasChildren ? Input.Children.Count : 0;
-                bodyProfile.UpdatedAtUtc = DateTime.UtcNow;
-
-                var existingChildren = await dbContext.KocChildren.Where(x => x.KocBodyProfileId == bodyProfile.Id).ToListAsync(cancellationToken);
-                dbContext.KocChildren.RemoveRange(existingChildren);
-                if (Input.HasChildren)
-                {
-                    foreach (var child in Input.Children)
-                    {
-                        dbContext.KocChildren.Add(new KocChildEntity
-                        {
-                            Id = Guid.NewGuid(),
-                            KocBodyProfileId = bodyProfile.Id,
-                            AgeYears = child.Age,
-                            Gender = child.Gender,
-                            BirthYear = child.Age.HasValue ? DateTime.UtcNow.Year - child.Age.Value : null,
-                            CreatedAtUtc = DateTime.UtcNow
-                        });
-                    }
-                }
-
-                var jobPreference = await dbContext.KocJobPreferences.FirstOrDefaultAsync(x => x.KocProfileId == kocProfile.Id, cancellationToken);
-                if (jobPreference is null)
-                {
-                    jobPreference = new KocJobPreferenceEntity
-                    {
-                        Id = Guid.NewGuid(),
-                        KocProfileId = kocProfile.Id,
-                        CreatedAtUtc = DateTime.UtcNow
-                    };
-                    dbContext.KocJobPreferences.Add(jobPreference);
-                }
-
-                jobPreference.MinBudgetAmount = Input.ServicePriceVnd;
-                jobPreference.UpdatedAtUtc = DateTime.UtcNow;
+                    Section = "personal",
+                    Fields = new[] { "WeightKg", "HeightCm", "MaritalStatus", "HasChildren", "ServicePriceVnd", "Children" }
+                });
             }
 
             await dbContext.SaveChangesAsync(cancellationToken);
-            SuccessMessage = "Lưu thông tin thành công.";
+            await transaction.CommitAsync(cancellationToken);
+            var savedAt = Topstar.Web.Features.Common.PortalFormat.ToVietnamTime(DateTime.UtcNow);
+            SuccessMessage = $"Đã lưu thông tin lúc {savedAt:HH:mm, dd/MM/yyyy}.";
             return RedirectToPage(new { activeTab = section });
         }
         catch (DbUpdateException dbEx) when (TryMapUniqueViolationToModelState(dbEx))
         {
+            await CleanupCreatedFilesAsync(createdFiles);
             await LoadLookupAsync(cancellationToken);
             ActiveTab = NormalizeSection(saveSection);
             return Page();
         }
         catch (Exception ex)
         {
+            await CleanupCreatedFilesAsync(createdFiles);
             logger.LogError(ex, "KOC profile update failed for user {UserId}", User.FindFirstValue(ClaimTypes.NameIdentifier));
             await LoadLookupAsync(cancellationToken);
             ErrorMessage = BuildFriendlySaveErrorMessage(ex);
             ActiveTab = NormalizeSection(saveSection);
             return Page();
         }
+    }
+
+    private void AddProfileAudit(Guid actorUserId, Guid profileId, string actionName, object safeMetadata)
+    {
+        dbContext.AuditLogs.Add(new AuditLogEntity
+        {
+            ActorUserId = actorUserId,
+            EntityName = "KocProfile",
+            EntityId = profileId.ToString(),
+            ActionName = actionName,
+            PayloadJson = JsonSerializer.Serialize(safeMetadata),
+            CreatedAtUtc = DateTime.UtcNow
+        });
+    }
+
+    private async Task CleanupCreatedFilesAsync(IEnumerable<string> paths)
+    {
+        foreach (var path in paths.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            try
+            {
+                await fileStorageService.DeleteKocProfileUploadAsync(path, CancellationToken.None);
+            }
+            catch (Exception cleanupException)
+            {
+                logger.LogWarning(cleanupException, "Could not remove orphaned KOC profile upload {Path}", path);
+            }
+        }
+    }
+
+    private void ValidateUpload(IFormFile? file, string fieldName, IReadOnlyCollection<string> allowedExtensions, long maximumBytes, string label)
+    {
+        if (file is null || file.Length == 0) return;
+        var extension = Path.GetExtension(file.FileName)?.ToLowerInvariant() ?? string.Empty;
+        if (!allowedExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase))
+            ModelState.AddModelError(fieldName, $"{label} không đúng định dạng hỗ trợ.");
+        if (file.Length > maximumBytes)
+            ModelState.AddModelError(fieldName, $"{label} vượt quá dung lượng tối đa {maximumBytes / 1024 / 1024} MB.");
+    }
+
+    private void ValidateRange(decimal? value, decimal minimum, decimal maximum, string fieldName, string label)
+    {
+        if (value.HasValue && (value.Value < minimum || value.Value > maximum))
+            ModelState.AddModelError(fieldName, $"{label} phải nằm trong khoảng {minimum:0.#}–{maximum:0.#}.");
     }
 
     public async Task<IActionResult> OnGetWardsByProvinceAsync(Guid? provinceId, CancellationToken cancellationToken)
@@ -334,65 +446,22 @@ public sealed class EditProfileModel(
 
     private async Task LoadCurrentDataAsync(Guid userId, CancellationToken cancellationToken)
     {
-        var user = await dbContext.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
-        var koc = await dbContext.KocProfiles.AsNoTracking().FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
-        if (user is null || koc is null)
-        {
-            return;
-        }
-
-        var body = await dbContext.KocBodyProfiles.AsNoTracking().FirstOrDefaultAsync(x => x.KocProfileId == koc.Id, cancellationToken);
-        var children = body is null
-            ? []
-            : await dbContext.KocChildren.AsNoTracking().Where(x => x.KocBodyProfileId == body.Id).ToListAsync(cancellationToken);
-
-        var socials = await dbContext.KocSocialAccounts.AsNoTracking().Where(x => x.KocProfileId == koc.Id).ToListAsync(cancellationToken);
-        var selectedCategoryCodes = await (
-            from pc in dbContext.KocProfileCategories.AsNoTracking()
-            join c in dbContext.KocCategories.AsNoTracking() on pc.CategoryId equals c.Id
-            where pc.KocProfileId == koc.Id
-            select c.Code
-        ).Distinct().ToListAsync(cancellationToken);
-
-        var jobPref = await dbContext.KocJobPreferences.AsNoTracking().FirstOrDefaultAsync(x => x.KocProfileId == koc.Id, cancellationToken);
-
+        var snapshot = await profileSectionService.GetEditSnapshotAsync(userId, Platforms, cancellationToken);
+        if (snapshot is null) return;
         Input = new InputModel
         {
-            FullName = koc.DisplayName,
-            Email = user.Email,
-            Phone = user.Phone ?? string.Empty,
-            Gender = user.Gender ?? string.Empty,
-            DateOfBirth = user.DateOfBirth,
-            StreetAddress = koc.StreetAddress ?? string.Empty,
-            ProvinceId = koc.ProvinceId,
-            WardId = koc.WardId,
-            WeightKg = body?.WeightKg,
-            HeightCm = body?.HeightCm,
-            BustCm = body?.BustCm,
-            WaistCm = body?.WaistCm,
-            HipCm = body?.HipCm,
-            MaritalStatus = body?.MaritalStatus,
-            HasChildren = body?.HasChildren ?? false,
-            ServicePriceVnd = jobPref?.MinBudgetAmount,
-            Children = children.Select(x => new ChildInput { Age = x.AgeYears, Gender = x.Gender }).ToList(),
-            Platforms = Platforms.Select(platform =>
-            {
-                var social = socials.FirstOrDefault(x => x.Platform.Equals(platform, StringComparison.OrdinalIgnoreCase));
-                return new SocialInput
-                {
-                    Platform = platform,
-                    ChannelUrl = social?.ChannelUrl,
-                    Followers = social?.Followers,
-                    SelectedCategoryCodes = social is null ? [] : selectedCategoryCodes.ToList()
-                };
-            }).ToList()
+            FullName = snapshot.FullName, Email = snapshot.Email, Phone = snapshot.Phone, Gender = snapshot.Gender,
+            DateOfBirth = snapshot.DateOfBirth, CurrentAvatarUrl = snapshot.AvatarUrl, StreetAddress = snapshot.StreetAddress,
+            ProvinceId = snapshot.ProvinceId, WardId = snapshot.WardId, WeightKg = snapshot.WeightKg, HeightCm = snapshot.HeightCm,
+            BustCm = snapshot.BustCm, WaistCm = snapshot.WaistCm, HipCm = snapshot.HipCm, MaritalStatus = snapshot.MaritalStatus,
+            HasChildren = snapshot.HasChildren, ServicePriceVnd = snapshot.ServicePriceVnd,
+            Children = snapshot.Children.Select(x => new ChildInput { Age = x.Age, Gender = x.Gender }).ToList(),
+            Platforms = snapshot.Socials.Select(x => new SocialInput { Platform = x.Platform, ChannelUrl = x.ChannelUrl, Followers = x.Followers, SelectedCategoryCodes = x.CategoryCodes.ToList() }).ToList(),
+            ExistingGalleryItems = snapshot.Gallery.Select(x => new MediaItem { Id = x.Id, FileUrl = x.FileUrl, SortOrder = x.SortOrder }).ToList(),
+            ExistingVideoItems = snapshot.Videos.Select(x => new MediaItem { Id = x.Id, FileUrl = x.FileUrl, SortOrder = x.SortOrder }).ToList(),
+            CurrentProfileDocumentUrl = snapshot.ProfileDocumentUrl
         };
-
-        if (Input.Platforms.Count == 0)
-        {
-            Input.Platforms = Platforms.Select(x => new SocialInput { Platform = x }).ToList();
-        }
-
+        ProfileVersionTicks = snapshot.ProfileUpdatedAtUtc?.Ticks ?? 0;
         if (Input.ProvinceId.HasValue && Input.ProvinceId.Value != Guid.Empty)
         {
             var wards = await kocRegistrationService.GetActiveWardsByProvinceAsync(Input.ProvinceId.Value, cancellationToken);
@@ -454,7 +523,20 @@ public sealed class EditProfileModel(
     private static string NormalizeSection(string? saveSection)
     {
         var section = (saveSection ?? string.Empty).Trim().ToLowerInvariant();
-        return section is "basic" or "social" or "personal" ? section : "basic";
+        return section is "basic" or "social" or "personal" or "gallery" or "video" ? section : "basic";
+    }
+
+    private static List<Guid> ParseGuidCsv(string? csv)
+    {
+        if (string.IsNullOrWhiteSpace(csv))
+        {
+            return [];
+        }
+
+        return csv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(x => Guid.TryParse(x, out var g) ? g : Guid.Empty)
+            .Where(x => x != Guid.Empty)
+            .ToList();
     }
 
     private static string BuildFriendlySaveErrorMessage(Exception ex)
@@ -536,6 +618,10 @@ public sealed class EditProfileModel(
 
         [Required(ErrorMessage = "Vui lòng nhập số nhà và tên đường.")]
         public string StreetAddress { get; set; } = string.Empty;
+        public string? CurrentAvatarUrl { get; set; }
+        public string? CurrentProfileDocumentUrl { get; set; }
+        public List<MediaItem> ExistingGalleryItems { get; set; } = [];
+        public List<MediaItem> ExistingVideoItems { get; set; } = [];
 
         [Required(ErrorMessage = "Vui lòng chọn Tỉnh/Thành phố.")]
         public Guid? ProvinceId { get; set; }
@@ -568,5 +654,12 @@ public sealed class EditProfileModel(
         public string? ChannelUrl { get; set; }
         public int? Followers { get; set; }
         public List<string> SelectedCategoryCodes { get; set; } = [];
+    }
+
+    public sealed class MediaItem
+    {
+        public Guid Id { get; set; }
+        public string FileUrl { get; set; } = string.Empty;
+        public int SortOrder { get; set; }
     }
 }

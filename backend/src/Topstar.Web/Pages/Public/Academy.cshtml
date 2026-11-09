@@ -1,287 +1,102 @@
-﻿@page "/hoc-vien-koc"
+@page "/hoc-vien-koc"
+@model Topstar.Web.Pages.Public.AcademyModel
 @{
-    ViewData["Title"] = "Học viện KOC";
-    ViewData["Description"] = "Học viện KOC TopStar - lộ trình đào tạo từ Zero đến Hero dành cho KOC chuyên nghiệp tại Việt Nam.";
+    var c = Model.LandingContent;
+    var statIcons = new[] { "fa-route", "fa-book-open-reader", "fa-id-card" };
+    ViewData["Title"] = c.HeroTitle;
+    ViewData["Description"] = c.HeroDescription;
     ViewData["Keywords"] = "học viện KOC, khóa học KOC, đào tạo KOC, TopStar";
 }
 
-<div class="academy-page">
-    <section class="academy-hero section-flow reveal-up py-5">
+@section Styles {
+    <link rel="stylesheet" href="/css/public/academy.css?v=20260916-dark-contrast" />
+    <link rel="stylesheet" href="/css/public/landing-polish.css?v=20260916-dark-contrast" />
+}
+
+<main class="academy-page">
+    <section class="academy-hero">
+        <div class="container academy-hero-grid">
+            <div class="academy-hero-copy">
+                <p class="academy-eyebrow"><i class="fa-solid fa-graduation-cap"></i> @c.Eyebrow</p>
+                <h1>@c.HeroTitle <span>@c.HeroHighlight</span></h1>
+                <p class="academy-lead">@c.HeroDescription</p>
+                <div class="academy-actions">
+                    <a href="@c.PrimaryCtaUrl" class="academy-btn academy-btn-primary">@c.PrimaryCtaText <i class="fa-solid fa-arrow-right"></i></a>
+                    <a href="@c.SecondaryCtaUrl" class="academy-btn academy-btn-outline">@c.SecondaryCtaText</a>
+                </div>
+                <div class="academy-proof"><i class="fa-solid fa-circle-check"></i><span>Lộ trình thực hành</span><i class="fa-solid fa-circle-check"></i><span>Hồ sơ minh bạch</span><i class="fa-solid fa-circle-check"></i><span>Cơ hội hợp tác thực tế</span></div>
+            </div>
+            <div class="academy-hero-visual">
+                <div class="academy-image-frame"><img src="@c.HeroImageUrl" alt="@c.HeroTitle" /></div>
+                <div class="academy-floating-note"><i class="fa-solid fa-star"></i><div><strong>Học để làm được</strong><span>Nội dung gắn với quy trình chiến dịch</span></div></div>
+            </div>
+        </div>
+        <div class="container academy-stats">
+            @{ var statIndex = 0; }
+            @foreach (var item in c.Stats.Where(x => x.IsVisible).OrderBy(x => x.DisplayOrder))
+            {
+                var icon = statIcons[Math.Min(statIndex, statIcons.Length - 1)];
+                <article class="academy-stat academy-stat-@((statIndex % 3) + 1)">
+                    <span class="academy-stat-icon"><i class="fa-solid @icon"></i></span>
+                    <span class="academy-stat-copy"><strong>@item.Value</strong><small>@item.Label</small></span>
+                    <i class="fa-solid fa-arrow-trend-up academy-stat-accent" aria-hidden="true"></i>
+                </article>
+                statIndex++;
+            }
+        </div>
+    </section>
+
+    <section id="academy-courses" class="academy-block academy-course-section">
         <div class="container">
-            <div class="academy-hero-content text-center mt-2 flow-item">
-                <p class="academy-eyebrow mb-2"><i class="fa-solid fa-star"></i> Lộ trình đào tạo bài bản</p>
-                <h1 class="academy-title">Học viện KOC<br><span>Từ Zero đến Hero</span></h1>
-                <p class="academy-subtitle mx-auto">Được đào tạo trực tiếp bởi top KOC/KOL hơn 5 năm kinh nghiệm. Hơn 5.000 học viên đã thành công với lộ trình của chúng tôi.</p>
-            </div>
-
-            <div class="row g-3 justify-content-center mt-2">
-                <div class="col-6 col-md-4 col-lg-3">
-                    <div class="academy-stat flow-item">
-                        <div class="academy-stat-value counter-value" data-target="5000" data-suffix="+">0</div>
-                        <div class="academy-stat-label">Học viên thành công</div>
-                    </div>
+            <div class="academy-heading"><p>Chương trình đào tạo</p><h2>Các khóa học đang mở</h2><span>Chọn chương trình phù hợp với kinh nghiệm hiện tại và mục tiêu phát triển của bạn.</span></div>
+            @if (Model.Courses.Count == 0)
+            { <div class="academy-empty"><i class="fa-solid fa-book-open"></i><strong>Chương trình mới đang được cập nhật</strong><span>Đăng ký tài khoản để nhận thông báo khi khóa học mở.</span></div> }
+            else
+            {
+                <div class="academy-course-grid">
+                    @foreach (var course in Model.Courses)
+                    {
+                        <article class="academy-course-card">
+                            <div class="academy-course-meta"><span>@course.Level</span><span><i class="fa-regular fa-clock"></i> @course.DurationWeeks tuần</span></div>
+                            <h3>@course.Title</h3><p>@course.Summary</p>
+                            @if (!string.IsNullOrWhiteSpace(course.Syllabus))
+                            { <ul>@foreach (var line in course.Syllabus.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)) { <li><i class="fa-solid fa-check"></i>@line</li> }</ul> }
+                        </article>
+                    }
                 </div>
-                <div class="col-6 col-md-4 col-lg-3">
-                    <div class="academy-stat flow-item">
-                        <div class="academy-stat-value counter-value" data-target="95" data-suffix="%">0</div>
-                        <div class="academy-stat-label">Tỷ lệ hoàn thành</div>
-                    </div>
-                </div>
-                <div class="col-6 col-md-4 col-lg-3">
-                    <div class="academy-stat flow-item">
-                        <div class="academy-stat-value">4.9/5</div>
-                        <div class="academy-stat-label">Đánh giá trung bình</div>
-                    </div>
-                </div>
-            </div>
+            }
         </div>
     </section>
 
-    <section class="academy-section academy-courses section-flow reveal-up py-5">
-        <div class="container">
-            <h2 class="academy-section-title text-center flow-item">Các khóa học chuyên sâu</h2>
-            <p class="academy-section-subtitle text-center flow-item">Chương trình đào tạo toàn diện cho mọi cấp độ</p>
-
-            <div class="row g-4 mt-1">
-                <div class="col-lg-6">
-                    <article class="academy-course-card flow-item">
-                        <div class="academy-course-head">
-                            <span class="academy-course-icon blue"><i class="fa-solid fa-video"></i></span>
-                            <div>
-                                <h3>Kỹ năng Edit Video</h3>
-                                <p><span class="badge-level">Cơ bản</span><span class="badge-time">4 tuần</span></p>
-                            </div>
-                        </div>
-                        <ul>
-                            <li>CapCut Pro</li>
-                            <li>Chuyển cảnh mượt mà</li>
-                            <li>Hiệu ứng trending</li>
-                            <li>Chỉnh màu chuyên nghiệp</li>
-                        </ul>
-                    </article>
-                </div>
-
-                <div class="col-lg-6">
-                    <article class="academy-course-card flow-item">
-                        <div class="academy-course-head">
-                            <span class="academy-course-icon orange"><i class="fa-solid fa-arrow-trend-up"></i></span>
-                            <div>
-                                <h3>Livestream Bán Hàng</h3>
-                                <p><span class="badge-level">Thực chiến</span><span class="badge-time">3 tuần</span></p>
-                            </div>
-                        </div>
-                        <ul>
-                            <li>Kịch bản livestream</li>
-                            <li>Xử lý tình huống</li>
-                            <li>Kỹ năng bán hàng</li>
-                            <li>Tăng tỷ lệ chốt giá</li>
-                        </ul>
-                    </article>
-                </div>
-
-                <div class="col-lg-6">
-                    <article class="academy-course-card flow-item">
-                        <div class="academy-course-head">
-                            <span class="academy-course-icon red"><i class="fa-solid fa-user-astronaut"></i></span>
-                            <div>
-                                <h3>Personal Branding</h3>
-                                <p><span class="badge-level">Nâng cao</span><span class="badge-time">6 tuần</span></p>
-                            </div>
-                        </div>
-                        <ul>
-                            <li>Xây dựng định vị</li>
-                            <li>Phong cách riêng</li>
-                            <li>Storytelling</li>
-                            <li>Quản trị hình ảnh</li>
-                        </ul>
-                    </article>
-                </div>
-
-                <div class="col-lg-6">
-                    <article class="academy-course-card flow-item">
-                        <div class="academy-course-head">
-                            <span class="academy-course-icon green"><i class="fa-solid fa-lightbulb"></i></span>
-                            <div>
-                                <h3>Content Strategy</h3>
-                                <p><span class="badge-level">Chuyên sâu</span><span class="badge-time">5 tuần</span></p>
-                            </div>
-                        </div>
-                        <ul>
-                            <li>Nghiên cứu xu hướng</li>
-                            <li>Lên kế hoạch content</li>
-                            <li>A/B Testing</li>
-                            <li>Phân tích metrics</li>
-                        </ul>
-                    </article>
-                </div>
-            </div>
+    <section class="academy-block academy-soft">
+        <div class="container"><div class="academy-heading"><p>Lộ trình phát triển</p><h2>@c.RoadmapTitle</h2><span>@c.RoadmapDescription</span></div>
+            <div class="academy-roadmap">@foreach (var item in c.Roadmap.Where(x => x.IsVisible).OrderBy(x => x.DisplayOrder)) { <article><span>@item.Stage</span><h3>@item.Title</h3><p>@item.Description</p></article> }</div>
         </div>
     </section>
 
-    <section class="academy-section academy-roadmap section-flow reveal-up py-5">
-        <div class="container">
-            <h2 class="academy-section-title text-center flow-item">Lộ trình phát triển</h2>
-            <p class="academy-section-subtitle text-center flow-item">Con đường rõ ràng từ người mới đến KOC chuyên nghiệp</p>
-
-            <div class="academy-timeline flow-item mt-4">
-                <div class="academy-step step-left">
-                    <article>
-                        <p class="step-stage">Giai đoạn 1</p>
-                        <h3>Khởi đầu (0-50K followers)</h3>
-                        <ul>
-                            <li>Lộ trình về content creation</li>
-                            <li>Hiểu thuật toán nền tảng</li>
-                            <li>Tương tác cộng đồng</li>
-                        </ul>
-                    </article>
-                </div>
-
-                <div class="academy-step step-right">
-                    <article>
-                        <p class="step-stage">Giai đoạn 2</p>
-                        <h3>Tăng tốc (50-100K followers)</h3>
-                        <ul>
-                            <li>Content chuyên nghiệp</li>
-                            <li>Collaborations</li>
-                            <li>Brand partnerships</li>
-                        </ul>
-                    </article>
-                </div>
-
-                <div class="academy-step step-left">
-                    <article>
-                        <p class="step-stage">Giai đoạn 3</p>
-                        <h3>Chuyên nghiệp (100K+ followers)</h3>
-                        <ul>
-                            <li>Personal brand strategy</li>
-                            <li>Quản lý team</li>
-                            <li>Đa dạng nguồn thu nhập</li>
-                        </ul>
-                    </article>
-                </div>
-            </div>
+    <section class="academy-block">
+        <div class="container"><div class="academy-heading"><p>Năng lực cốt lõi</p><h2>@c.TrustTitle</h2><span>@c.TrustDescription</span></div>
+            <div class="academy-card-grid four">@foreach (var item in c.TrustItems.Where(x => x.IsVisible).OrderBy(x => x.DisplayOrder)) { <article><i class="@item.Icon"></i><h3>@item.Title</h3><p>@item.Description</p></article> }</div>
         </div>
     </section>
 
-    <section class="academy-section section-flow reveal-up py-5">
-        <div class="container">
-            <p class="academy-case-pill text-center flow-item"><i class="fa-solid fa-shield-check"></i> Chuẩn đầu ra học viện</p>
-            <h2 class="academy-section-title text-center flow-item">Trust Score dành cho KOC/KOL</h2>
-            <p class="academy-section-subtitle text-center flow-item">Mỗi học viên được chấm điểm minh bạch để brand lựa chọn nhanh và an toàn hơn.</p>
-            <div class="row g-3 mt-2">
-                <div class="col-md-3">
-                    <article class="academy-course-card flow-item h-100">
-                        <h3>Đúng hạn</h3>
-                        <p>Tỷ lệ giao nội dung đúng deadline theo từng campaign.</p>
-                    </article>
-                </div>
-                <div class="col-md-3">
-                    <article class="academy-course-card flow-item h-100">
-                        <h3>Chất lượng nội dung</h3>
-                        <p>Điểm duyệt từ đội ngũ QA và phản hồi từ brand.</p>
-                    </article>
-                </div>
-                <div class="col-md-3">
-                    <article class="academy-course-card flow-item h-100">
-                        <h3>Hiệu suất thực tế</h3>
-                        <p>View, engagement, conversion theo từng ngành hàng.</p>
-                    </article>
-                </div>
-                <div class="col-md-3">
-                    <article class="academy-course-card flow-item h-100">
-                        <h3>Phản hồi hợp tác</h3>
-                        <p>Tốc độ phản hồi, mức độ chuyên nghiệp và thái độ phối hợp.</p>
-                    </article>
-                </div>
-            </div>
+    <section class="academy-block academy-dark">
+        <div class="container"><div class="academy-heading"><p>Chuẩn vận hành TopStar</p><h2>@c.QualityTitle</h2><span>Mỗi hoạt động đều có quy trình, dữ liệu và lịch sử để KOC an tâm phát triển lâu dài.</span></div>
+            <div class="academy-card-grid two">@foreach (var item in c.QualityItems.Where(x => x.IsVisible).OrderBy(x => x.DisplayOrder)) { <article><i class="@item.Icon"></i><div><h3>@item.Title</h3><p>@item.Description</p></div></article> }</div>
         </div>
     </section>
 
-    <section class="academy-section section-flow reveal-up py-5">
-        <div class="container">
-            <h2 class="academy-section-title text-center flow-item">Cơ chế kỷ luật và làm sạch chất lượng</h2>
-            <div class="row g-3 mt-2">
-                <div class="col-md-6">
-                    <article class="academy-course-card flow-item h-100">
-                        <h3>Quy tắc vận hành</h3>
-                        <ul>
-                            <li>Cảnh báo khi trễ deadline hoặc vi phạm brief</li>
-                            <li>Giảm Trust Score theo mức độ vi phạm</li>
-                            <li>Tạm ngưng nhận job với tài khoản chất lượng thấp</li>
-                        </ul>
-                    </article>
-                </div>
-                <div class="col-md-6">
-                    <article class="academy-course-card flow-item h-100">
-                        <h3>Bảo vệ quyền lợi brand</h3>
-                        <ul>
-                            <li>Đề xuất KOC thay thế khi có rủi ro</li>
-                            <li>Đội vận hành hỗ trợ can thiệp nhanh</li>
-                            <li>Lưu lịch sử xử lý và đối soát đầy đủ</li>
-                        </ul>
-                    </article>
-                </div>
-            </div>
+    <section class="academy-block">
+        <div class="container"><div class="academy-heading"><p>Kết quả hướng tới</p><h2>@c.OutcomeTitle</h2><span>@c.OutcomeDescription</span></div>
+            <div class="academy-card-grid two academy-outcomes">@foreach (var item in c.Outcomes.Where(x => x.IsVisible).OrderBy(x => x.DisplayOrder)) { <article><i class="@item.Icon"></i><div><h3>@item.Title</h3><p>@item.Description</p></div></article> }</div>
         </div>
     </section>
 
-    <section class="academy-section academy-case section-flow reveal-up py-5">
-        <div class="container">
-            <p class="academy-case-pill text-center flow-item"><i class="fa-regular fa-thumbs-up"></i> Câu chuyện thành công</p>
-            <h2 class="academy-section-title text-center flow-item">Case Studies</h2>
-            <p class="academy-section-subtitle text-center flow-item">Những học viên đã bứt phá sau khi hoàn thành Học viện KOC</p>
-
-            <div class="row g-4 mt-1">
-                <div class="col-lg-6">
-                    <article class="academy-case-card flow-item">
-                        <h3>Case Study: Minh Anh</h3>
-                        <div class="academy-case-metrics">
-                            <div><small>Trước khóa học</small><b>15K followers</b></div>
-                            <div><small>Sau khóa học</small><b class="text-success">125K followers</b></div>
-                        </div>
-                        <p><i class="fa-solid fa-arrow-trend-up"></i> Tăng 320% followers sau khi hoàn thành khóa Personal Branding</p>
-                        <p><i class="fa-solid fa-sack-dollar"></i> + 40% thu nhập</p>
-                        <div class="academy-case-time">Trong 6 tháng</div>
-                    </article>
-                </div>
-
-                <div class="col-lg-6">
-                    <article class="academy-case-card flow-item">
-                        <h3>Case Study: Hoàng Nam</h3>
-                        <div class="academy-case-metrics">
-                            <div><small>Trước khóa học</small><b>8K followers</b></div>
-                            <div><small>Sau khóa học</small><b class="text-success">89K followers</b></div>
-                        </div>
-                        <p><i class="fa-solid fa-arrow-trend-up"></i> Chuyển từ part-time sang full-time KOC sau 6 tháng</p>
-                        <p><i class="fa-solid fa-sack-dollar"></i> + 600% thu nhập</p>
-                        <div class="academy-case-time">Trong gần 10 tháng</div>
-                    </article>
-                </div>
-            </div>
+    <section class="academy-block academy-soft">
+        <div class="container"><div class="academy-heading"><p>Thư viện học tập</p><h2>@c.ResourceTitle</h2><span>@c.ResourceDescription</span></div>
+            <div class="academy-resources">@foreach (var item in c.Resources.Where(x => x.IsVisible).OrderBy(x => x.DisplayOrder)) { <article><i class="@item.Icon"></i><strong>@item.Title</strong></article> }</div>
         </div>
     </section>
 
-    <section class="academy-resource section-flow reveal-up py-5">
-        <div class="container text-center">
-            <div class="academy-resource-icon flow-item"><i class="fa-solid fa-book-open"></i></div>
-            <h2 class="academy-resource-title flow-item">Thư viện tài liệu độc quyền</h2>
-            <p class="academy-resource-sub flow-item">Truy cập miễn phí vào kho tài liệu với hơn 100+ ebooks, templates, case studies chỉ dành cho thành viên</p>
-
-            <div class="row g-3 justify-content-center mt-3">
-                <div class="col-6 col-md-3"><div class="academy-resource-kpi flow-item"><b class="counter-value" data-target="100" data-suffix="+">0</b><span>eBooks & Guides</span></div></div>
-                <div class="col-6 col-md-3"><div class="academy-resource-kpi flow-item"><b class="counter-value" data-target="50" data-suffix="+">0</b><span>Templates</span></div></div>
-                <div class="col-6 col-md-3"><div class="academy-resource-kpi flow-item"><b class="counter-value" data-target="200" data-suffix="+">0</b><span>Video tutorials</span></div></div>
-            </div>
-
-            <a href="#" class="academy-resource-btn flow-item">Truy cập ngay <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
-        </div>
-    </section>
-
-    <section class="academy-final-cta section-flow reveal-up py-5">
-        <div class="container text-center flow-item">
-            <h2>Bắt đầu hành trình học tập của bạn</h2>
-            <p>Tham gia cùng hàng nghìn KOC đang xây dựng sự nghiệp chuyên nghiệp</p>
-            <a asp-page="/Public/RegisterKocStep1" class="academy-register-link">Đăng ký ngay</a>
-        </div>
-    </section>
-</div>
+    <section class="academy-final"><div class="container"><div><p class="academy-final-label">Bắt đầu cùng TopStar</p><h2>@c.FinalCtaTitle</h2><p>@c.FinalCtaDescription</p></div><a href="@c.FinalCtaUrl" class="academy-btn academy-btn-light">@c.FinalCtaText <i class="fa-solid fa-arrow-right"></i></a></div></section>
+</main>

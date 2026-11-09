@@ -127,7 +127,9 @@ public sealed class RegisterKocStep3Model(
         var verifyUrl = $"{baseUrl}?token={activationTokenResult.Data.RawToken}";
         var contentHtml = $@"
             <p>Xin chào {System.Net.WebUtility.HtmlEncode(step1.FullName)},</p>
-            <p>Vui lòng bấm vào nút bên dưới để kích hoạt tài khoản TopStar:</p>
+            <p>Nhập mã OTP dưới đây tại trang kích hoạt tài khoản:</p>
+            <p style=""font-size:28px;font-weight:700;letter-spacing:6px;text-align:center;"">{activationTokenResult.Data.RawCode}</p>
+            <p>Hoặc bấm vào nút bên dưới để kích hoạt bằng liên kết dự phòng:</p>
             <p style=""margin:20px 0;"">
                 <a href=""{verifyUrl}"" style=""display:inline-block;padding:12px 18px;background:linear-gradient(90deg,#e87b2e 0%,#f1c24b 100%);color:#fff;text-decoration:none;border-radius:10px;font-weight:700;"">
                     Kích hoạt tài khoản
@@ -135,7 +137,7 @@ public sealed class RegisterKocStep3Model(
             </p>
             <p>Nếu nút không hoạt động, bạn có thể dùng liên kết sau:</p>
             <p><a href=""{verifyUrl}"">{verifyUrl}</a></p>
-            <p>Liên kết có hiệu lực trong 24 giờ.</p>";
+            <p>OTP và liên kết có hiệu lực trong 24 giờ. Không cung cấp mã này cho bất kỳ ai.</p>";
         var htmlBody = emailTemplateRenderer.Render(new EmailTemplateModel
         {
             ProjectName = "TopStar Platform",
@@ -154,7 +156,7 @@ public sealed class RegisterKocStep3Model(
         TempData.Remove(Step2TempDataKey);
         TempData.Remove(Step3TempDataKey);
 
-        return RedirectToPage("/Public/Login", new { registered = 1 });
+        return RedirectToPage("/Public/ActivateAccount", new { email = step1.Email });
     }
 
     private void NormalizeInput()
@@ -209,9 +211,6 @@ public sealed class RegisterKocStep3Model(
 
         [Display(Name = "Chiều cao (cm)")]
         public decimal? HeightCm { get; set; }
-
-        [Display(Name = "Số đo 3 vòng (cm)")]
-        public string? Measurements { get; set; }
 
         [Display(Name = "Tình trạng hôn nhân")]
         public string? MaritalStatus { get; set; }

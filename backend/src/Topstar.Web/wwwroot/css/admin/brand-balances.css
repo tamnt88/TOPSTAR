@@ -1,0 +1,40 @@
+.balance-admin{--balance-border:#e2dbf1;--balance-soft:#f8f6fc;--balance-purple:#7034ce}
+.balance-admin,.balance-panel,.balance-filters>div{min-width:0;max-width:100%}.balance-filters .select2-container{width:100%!important;min-width:0}
+.balance-admin .balance-stats{grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.balance-stats article{min-width:0;position:relative;overflow:hidden}
+.balance-stats strong{font-size:20px!important;overflow-wrap:anywhere;line-height:1.4}
+.balance-panel{padding:22px;background:#fff;border:1px solid var(--balance-border);border-radius:16px;box-shadow:0 10px 26px #25144506}
+.balance-panel[hidden]{display:none!important}
+.balance-panel-heading h2{font-size:19px;margin:0 0 6px;font-weight:700}
+.balance-panel-heading p{color:#748097;font-size:14px;margin:0 0 20px}
+.balance-filters{display:grid;grid-template-columns:minmax(200px,1fr) 200px 140px auto;gap:12px;align-items:end;padding:16px;background:var(--balance-soft);border:1px solid var(--balance-border);border-radius:12px;margin-bottom:18px}
+.balance-refund-filters{grid-template-columns:minmax(200px,1fr) 140px auto}
+.balance-filters label{font-size:13px;font-weight:600;display:block;margin-bottom:7px}
+.balance-filters .form-control,.balance-filters .form-select,.balance-filters .btn{height:42px;min-height:42px}
+.balance-filters .select2-container .select2-selection--single{height:42px!important;min-height:42px!important}
+.balance-search-input{position:relative}.balance-search-input>i{position:absolute;top:14px;left:13px;color:#8892a4}.balance-search-input input{padding-left:36px}
+.balance-table thead th{background:#f2edf9;padding:14px 12px;font-size:13px;white-space:nowrap;border-bottom:1px solid #ded2f2}
+.balance-table tbody td{padding:16px 12px;font-size:14px;border-color:#eee8f5}
+.balance-table small{display:block;color:#7b879c;font-size:12px;margin-top:5px}
+.balance-table .balance-row-action{width:36px;height:36px;display:inline-grid;place-items:center;border-radius:10px;border:1px solid #d9c6f4;color:var(--balance-purple);background:white}
+.balance-table .balance-row-action:hover{background:#f5efff}
+.balance-status{display:inline-flex;padding:6px 10px;border-radius:20px;font-size:12px;font-weight:600;background:#eef1f5;color:#667489;white-space:nowrap}
+.balance-status.is-pending{background:#fff3cc;color:#996400}.balance-status.is-approved{background:#e7f1ff;color:#2368ac}.balance-status.is-paid{background:#e0f5ed;color:#0b8061}.balance-status.is-rejected{background:#ffebef;color:#bd344f}
+.balance-review-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}.balance-review-heading h3{font-size:19px;margin-bottom:4px}.balance-review-heading small{color:#7b879c}
+.balance-modal-title{display:flex;gap:12px;align-items:center}.balance-modal-title>span{display:grid;place-items:center;width:44px;height:44px;background:#f0e7ff;color:#7335d5;border-radius:12px}.balance-modal-title small{color:#7335d5;font-size:10px;font-weight:700;letter-spacing:1px}
+.balance-admin .modal-header{padding:20px 24px;background:linear-gradient(110deg,#fff,#faf7ff);border-color:var(--balance-border)}
+.balance-admin .modal-body{padding:24px}.balance-admin .modal-footer{padding:16px 24px;background:#fcfbfe;border-color:var(--balance-border)}
+.balance-review-amounts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:18px}.balance-review-amounts>div{padding:16px;border:1px solid var(--balance-border);border-radius:12px;background:var(--balance-soft)}.balance-review-amounts small{display:block;color:#73809a;margin-bottom:6px}.balance-review-amounts strong{font-size:18px}.balance-review-amounts .is-net{background:#eaf7f2;color:#0e8164;border-color:#cceadd}
+.balance-bank{display:flex;gap:14px;align-items:center;border:1px solid var(--balance-border);padding:18px;border-radius:12px;margin-bottom:18px}.balance-bank>span{color:#7439d3;background:#f0e7ff;width:42px;height:42px;border-radius:12px;display:grid;place-items:center;flex-shrink:0}.balance-bank small{display:block;color:#788398;margin-bottom:5px}.balance-bank p{margin:5px 0 0;font-size:13px;color:#697890}.balance-bank strong{overflow-wrap:anywhere}
+.balance-notice{padding:13px 16px;background:#fff5d8;color:#8c670e;border-radius:10px;font-size:13px}
+.balance-modal-action,.balance-form-footer{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:20px;padding-top:18px;border-top:1px solid #eee7f7}.balance-modal-action p,.balance-form-footer>span{font-size:13px;color:#7c8598;margin:0}.balance-modal-action .btn,.balance-form-footer .btn{flex-shrink:0;min-height:40px}
+.balance-payment-form{margin-top:22px}.balance-payment-form h3{font-size:17px}.balance-reject{border-top:1px solid var(--balance-border);padding-top:20px;margin-top:22px}.balance-reject>summary{color:#bd344f;font-size:14px;font-weight:600;cursor:pointer}
+.balance-payment-receipt{display:flex;gap:12px;background:#eaf8f2;color:#0a8460;padding:18px;border-radius:12px;margin-top:18px}.balance-payment-receipt p{margin:4px 0}.balance-review-id{margin:24px 0 0;color:#8b95a7;font-size:11px;overflow-wrap:anywhere}
+.balance-credit-summary{display:grid;gap:7px;padding:16px;border:1px solid var(--balance-border);border-radius:12px;background:var(--balance-soft);margin-bottom:20px}.balance-credit-summary span,.balance-credit-summary small{color:#788398}
+.balance-policy-form{max-width:950px}.balance-policy-toggle{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:20px;border:1px solid var(--balance-border);border-radius:12px;background:var(--balance-soft);margin-bottom:24px}.balance-policy-toggle small{display:block;font-size:13px;color:#788398;margin-top:5px}.balance-policy-toggle input{width:22px;height:22px;flex-shrink:0}
+.balance-approval{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid #eed69f;background:#fffbef;border-radius:12px;padding:16px;margin-bottom:15px}.balance-approval small{display:block;color:#8c7955;margin-top:5px}
+.balance-field{position:relative}.balance-field .balance-error-icon{position:absolute;right:12px;top:13px;color:#dc3545;pointer-events:none}.balance-field .form-control.is-invalid{padding-right:34px;background-image:none}.balance-field .invalid-feedback{display:block}.balance-form-error{padding:12px 15px;border-radius:10px;background:#fff0f2;color:#b82c49;margin-bottom:16px;font-size:14px}
+.balance-policy-form input[type=number]{appearance:textfield}
+@media(max-width:1000px){.balance-filters{grid-template-columns:minmax(150px,1fr) 160px 120px auto}.balance-stats strong{font-size:17px!important}}
+@media(max-width:767px){.balance-panel{padding:16px}.balance-filters,.balance-refund-filters{grid-template-columns:1fr 120px}.balance-search{grid-column:1/-1}.balance-review-amounts{gap:7px}.balance-review-amounts>div{padding:10px}.balance-review-amounts strong{font-size:15px}.balance-modal-action,.balance-form-footer,.balance-approval{align-items:stretch;flex-direction:column}.balance-admin .modal-body{padding:18px}.balance-review-heading{flex-wrap:wrap}}
+@media(max-width:767px){.balance-table{display:block;width:100%!important}.balance-table thead{display:none}.balance-table colgroup{display:none}.balance-table tbody{display:block}.balance-table tbody tr{display:block;border:1px solid var(--balance-border);border-radius:12px;padding:8px 12px;margin-bottom:12px}.balance-table tbody td{display:block;width:100%!important;white-space:normal!important;text-align:left!important;border:0;padding:9px 0;overflow-wrap:anywhere}.balance-table td::before{content:attr(data-label);display:block;color:#8993a5;font-size:11px;margin-bottom:5px}.balance-table tbody td:first-child{display:none}.balance-table td.dt-empty{display:block!important;text-align:center!important;padding:30px 0}.balance-table td.dt-empty::before{display:none}.balance-table-footer{flex-direction:column;align-items:flex-start!important}.balance-table-footer .dt-paging{max-width:100%}}

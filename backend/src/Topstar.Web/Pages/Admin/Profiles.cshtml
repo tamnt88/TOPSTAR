@@ -1,0 +1,65 @@
+@page
+@model Topstar.Web.Pages.Admin.ProfilesModel
+@{
+    ViewData["Title"] = "Duyệt hồ sơ";
+    ViewData["AdminHeaderTitle"] = "Duyệt hồ sơ";
+    var brandCount = Model.Items.Count(x => x.ProfileType.Equals("Brand", StringComparison.OrdinalIgnoreCase));
+    var kocCount = Model.Items.Count(x => x.ProfileType.Equals("KOC", StringComparison.OrdinalIgnoreCase));
+}
+<main class="admin-profile-queue">
+    <header class="admin-profile-queue-heading">
+        <div>
+            <span class="admin-page-eyebrow"><i class="fa-solid fa-user-check"></i> KIỂM DUYỆT TÀI KHOẢN</span>
+            <h1>Hồ sơ chờ duyệt</h1>
+            <p>Kiểm tra hồ sơ Brand và KOC trước khi mở quyền sử dụng tính năng.</p>
+        </div>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div class="alert alert-success admin-funding-alert"><i class="fa-solid fa-circle-check"></i> @Model.Message</div>
+    }
+
+    <section class="admin-profile-queue-stats" aria-label="Thống kê hồ sơ chờ duyệt">
+        <article><span class="is-total"><i class="fa-solid fa-inbox"></i></span><div><small>Tổng chờ duyệt</small><strong>@Model.Items.Count</strong></div></article>
+        <article><span class="is-brand"><i class="fa-solid fa-building"></i></span><div><small>Hồ sơ Brand</small><strong>@brandCount</strong></div></article>
+        <article><span class="is-koc"><i class="fa-solid fa-users"></i></span><div><small>Hồ sơ KOC</small><strong>@kocCount</strong></div></article>
+    </section>
+
+    <section class="admin-profile-queue-panel">
+        <div class="admin-profile-queue-panel-head">
+            <div><h2>Danh sách cần xử lý</h2><p>Ưu tiên hồ sơ gửi sớm và kiểm tra đầy đủ căn cứ trước khi quyết định.</p></div>
+        </div>
+        <div class="admin-profile-queue-filters">
+            <div class="admin-profile-search"><label for="profileQueueSearch">Từ khóa</label><div><i class="fa-solid fa-magnifying-glass"></i><input id="profileQueueSearch" type="search" placeholder="Tìm theo tên, email hoặc số điện thoại"></div></div>
+            <div><label for="profileQueueType">Loại hồ sơ</label><select id="profileQueueType"><option value="">Tất cả loại hồ sơ</option><option value="Brand">Brand</option><option value="KOC">KOC</option></select></div>
+            <div><label for="profileQueueLength">Hiển thị</label><select id="profileQueueLength"><option value="10">10 dòng</option><option value="20">20 dòng</option><option value="50">50 dòng</option></select></div>
+            <button type="button" id="profileQueueFilter" class="btn btn-admin-primary"><i class="fa-solid fa-filter"></i> Lọc</button>
+        </div>
+
+        <div class="table-responsive">
+            <table id="profileQueueTable" class="table admin-profile-queue-table w-100" data-list-actions="false">
+                <thead><tr><th>STT</th><th>Hồ sơ</th><th>Loại</th><th>Liên hệ</th><th>Thời gian gửi</th><th>Thao tác</th></tr></thead>
+                <tbody>
+                @foreach (var item in Model.Items)
+                {
+                    <tr>
+                        <td></td>
+                        <td><div class="admin-profile-identity"><span><i class="fa-solid @(item.ProfileType.Equals("Brand", StringComparison.OrdinalIgnoreCase) ? "fa-building" : "fa-user")"></i></span><strong>@item.DisplayName</strong></div></td>
+                        <td><span class="admin-profile-type is-@item.ProfileType.ToLowerInvariant()">@item.ProfileType</span></td>
+                        <td><strong>@item.Email</strong><small><i class="fa-solid fa-phone"></i> @(string.IsNullOrWhiteSpace(item.Phone) ? "Chưa cập nhật" : item.Phone)</small></td>
+                        <td data-order="@item.CreatedAtUtc.ToString("O")"><strong>@item.CreatedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy")</strong><small>@item.CreatedAtUtc.ToVietnamTime().ToString("HH:mm")</small></td>
+                        <td><a asp-page="/Admin/ProfileReview" asp-route-type="@item.ProfileType" asp-route-id="@item.Id" class="admin-icon-btn" title="Xem và duyệt" aria-label="Xem và duyệt hồ sơ @item.DisplayName"><i class="fa-regular fa-eye"></i></a></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+@section Scripts {
+    <script src="~/lib/datatables/js/dataTables.min.js?v=2.3.8"></script>
+    <script src="~/lib/datatables/js/dataTables.bootstrap5.min.js?v=2.3.8"></script>
+    <script src="~/js/admin/profile-queue.js?v=20260804-1"></script>
+}

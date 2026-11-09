@@ -1,0 +1,12 @@
+@model Topstar.Web.Pages.Admin.Finance.BrandTaxPolicyModel
+<form asp-page="/Admin/Finance/TaxFees" asp-page-handler="Vat" method="post" novalidate>
+<div asp-validation-summary="ModelOnly" class="text-danger"></div><input type="hidden" asp-for="Scope"/>
+<div class="tax-vat-grid">
+<div><label asp-for="VatMode" class="form-label">Thuế GTGT</label><select asp-for="VatMode" class="form-select"><option value="None">Chưa áp dụng</option><option value="Included">Giá đã gồm thuế</option><option value="Excluded">Cộng thuế vào giá</option></select><span asp-validation-for="VatMode" class="text-danger"></span></div>
+<div><label asp-for="VatRate" class="form-label">Thuế suất (%)</label><input asp-for="VatRate" class="form-control" type="number" min="0" max="100" step="0.01"/><span asp-validation-for="VatRate" class="text-danger"></span></div>
+
+<div><label asp-for="TaxBase" class="form-label">Cơ sở tính thuế</label><select asp-for="TaxBase" class="form-select"><option value="ServiceFee">Chỉ phí dịch vụ TopStar</option><option value="Total">Ngân sách KOC và phí dịch vụ</option></select><span asp-validation-for="TaxBase" class="text-danger"></span></div>
+<div><label asp-for="EffectiveAt" class="form-label">Bắt đầu áp dụng</label><input asp-for="EffectiveAt" asp-format="{0:yyyy-MM-ddTHH:mm}" type="datetime-local" step="60" class="form-control"/><span asp-validation-for="EffectiveAt" class="text-danger"></span></div>
+<div class="tax-inline-save"><button class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Lưu</button></div>
+</div></form>
+<details class="mt-4 tax-fees-history"><summary><i class="fa-solid fa-clock-rotate-left"></i> Lịch sử thuế Brand</summary><div class="table-responsive"><table class="table"><thead><tr><th>Nghiệp vụ</th><th>Cách tính</th><th>Thuế suất</th><th>Cơ sở</th><th>Hiệu lực</th></tr></thead><tbody>@foreach(var p in Model.History){<tr><td>@(p.Scope=="Package"?"Brand (cấu hình trước đây)":"Thanh toán chiến dịch")</td><td>@(p.VatMode=="None"?"Chưa áp dụng":p.VatMode=="Included"?"Đã gồm thuế":"Cộng thuế")</td><td>@p.VatRate%</td><td>@(p.Scope=="Package"?"Giá gói":p.TaxBase=="Total"?"Ngân sách và phí dịch vụ":"Phí dịch vụ")</td><td>@p.EffectiveAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm")</td></tr>}@if(Model.History.Count==0){<tr><td colspan="5" class="text-center text-muted p-4">Chưa có lịch sử cấu hình.</td></tr>}</tbody></table></div><partial name="_ListWindow" model='new Topstar.Web.Features.Common.Paging.ListWindowViewModel("brandTaxHistory",Model.Window,"Pager")'/></details>

@@ -1,0 +1,153 @@
+@page
+@model Topstar.Web.Pages.Brand.DeliverablesModel
+@using Topstar.Application.Deliverables
+@{
+    ViewData["Title"] = "Duyệt nội dung";
+    var waitingCount = Model.Items.Count(x => x.Status == SubmissionStatuses.NotSubmitted);
+    var reviewCount = Model.Items.Count(x => x.Status == SubmissionStatuses.Submitted);
+    var approvedCount = Model.Items.Count(x => x.Status == SubmissionStatuses.Approved);
+    var revisionCount = Model.Items.Count(x => x.Status == SubmissionStatuses.NeedRevision || x.Status == SubmissionStatuses.Rejected);
+    var isWorkspace = ViewContext.HttpContext.Request.Headers["X-Topstar-Workspace"] == "native";
+    string StatusText(string status) => status switch
+    {
+        SubmissionStatuses.NotSubmitted => "Chờ KOC nộp",
+        SubmissionStatuses.Submitted => "Chờ Brand duyệt",
+        SubmissionStatuses.Approved => "Đã duyệt",
+        SubmissionStatuses.NeedRevision => "Cần chỉnh sửa",
+        SubmissionStatuses.Rejected => "Đã từ chối",
+        _ => status
+    };
+    string StatusClass(string status) => status switch
+    {
+        SubmissionStatuses.Submitted => "is-published",
+        SubmissionStatuses.Approved => "is-completed",
+        SubmissionStatuses.NeedRevision => "is-warning",
+        SubmissionStatuses.Rejected => "is-danger",
+        _ => "is-muted"
+    };
+}
+
+<div class="brand-deliverable-page">
+    @if (!isWorkspace) { <header class="brand-page-heading">
+        <div>
+            <span class="brand-page-eyebrow"><i class="fa-solid fa-list-check"></i> KIỂM DUYỆT NỘI DUNG</span>
+            <h1>@(Model.Summary?.CampaignTitle ?? "Duyệt nội dung KOC")</h1>
+            <p>Theo dõi nội dung bàn giao, phản hồi rõ ràng và duyệt đúng tiến độ chiến dịch.</p>
+        </div>
+        <a asp-page="/Brand/Campaigns" class="btn btn-outline-secondary btn-sm">
+            <i class="fa-solid fa-arrow-left"></i> Quay lại chiến dịch
+        </a>
+    </header> }
+
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div class="brand-shortlist-message @(Model.MessageSuccess ? "" : "is-error")">
+            <i class="fa-solid @(Model.MessageSuccess ? "fa-circle-check" : "fa-circle-exclamation")"></i><span>@Model.Message</span>
+        </div>
+    }
+
+    <section class="brand-deliverable-stats">
+        <article><span class="is-waiting"><i class="fa-regular fa-clock"></i></span><div><small>Chờ KOC nộp</small><strong>@waitingCount</strong></div></article>
+        <article><span class="is-review"><i class="fa-solid fa-magnifying-glass"></i></span><div><small>Cần duyệt</small><strong>@reviewCount</strong></div></article>
+        <article><span class="is-approved"><i class="fa-solid fa-check"></i></span><div><small>Đã duyệt</small><strong>@approvedCount</strong></div></article>
+        <article><span class="is-revision"><i class="fa-solid fa-rotate-left"></i></span><div><small>Cần xử lý lại</small><strong>@revisionCount</strong></div></article>
+    </section>
+
+    @if (Model.Summary is not null && Model.Summary.SubmissionCount > 0)
+    {
+        var progress = Model.Summary.SubmissionCount == 0 ? 0 : (int)Math.Round(Model.Summary.ResolvedCount * 100m / Model.Summary.SubmissionCount);
+        <section class="brand-deliverable-progress">
+            <div class="brand-deliverable-progress-head">
+                <div>
+                    <h2><i class="fa-solid fa-chart-line"></i> Tiến độ nghiệm thu</h2>
+                    <p>@Model.Summary.CompletionHint</p>
+                </div>
+                <strong>@progress%</strong>
+            </div>
+            <div class="progress" role="progressbar" aria-label="Tiến độ nghiệm thu" aria-valuenow="@progress" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar" style="width:@progress%"></div>
+            </div>
+            <div class="brand-deliverable-progress-meta">
+                <span><strong>@Model.Summary.ResolvedCount/@Model.Summary.SubmissionCount</strong> đầu việc đã xử lý</span>
+                <span><strong>@Model.Summary.ApprovedCount</strong> nội dung được duyệt</span>
+                <span><strong>@Model.Summary.RejectedCount</strong> nội dung từ chối</span>
+            </div>
+        </section>
+    }
+
+    @if (Model.Items.Count == 0)
+    {
+        <section class="brand-deliverable-empty">
+            <span><i class="fa-solid fa-photo-film"></i></span>
+            <h2>Chưa có nội dung cần duyệt</h2>
+            <p>Nội dung do KOC gửi sẽ hiển thị tại đây để doanh nghiệp xem xét và phản hồi.</p>
+            <div><i class="fa-solid fa-bell"></i> Doanh nghiệp sẽ nhận được thông báo khi có nội dung mới.</div>
+        </section>
+    }
+    else
+    {
+        <section class="brand-deliverable-list-heading">
+            <div><h2><i class="fa-solid fa-layer-group"></i> Nội dung bàn giao</h2><p>Ưu tiên các nội dung đang chờ duyệt để không ảnh hưởng lịch đăng của KOC.</p></div>
+        </section>
+
+        <div class="brand-deliverable-list">
+            @foreach (var item in Model.Items)
+            {
+                <article class="brand-deliverable-item">
+                    <div class="brand-deliverable-info">
+                        <div class="brand-deliverable-title">
+                            <span><i class="fa-solid fa-clapperboard"></i></span>
+                            <div>
+                                <h3>@item.DeliverableType <small>× @item.Quantity</small></h3>
+                                <p><i class="fa-solid fa-user"></i> @item.KocName</p>
+                            </div>
+                            <span class="brand-status-pill @StatusClass(item.Status)">@StatusText(item.Status)</span>
+                        </div>
+                        <div class="brand-deliverable-meta">
+                            <span><i class="fa-regular fa-calendar"></i> Hạn nộp: @(item.DueDateUtc?.ToVietnamTime().ToString("dd/MM/yyyy HH:mm") ?? "Chưa xác định")</span>
+                            <span><i class="fa-solid fa-code-branch"></i> Phiên bản chỉnh sửa: @item.RevisionCount</span>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(item.SubmissionUrl))
+                        {
+                            <a href="@item.SubmissionUrl" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary btn-sm">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i> Xem nội dung
+                            </a>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(item.ReviewComment) && !item.CanReview)
+                        {
+                            <div class="brand-deliverable-feedback"><strong>Phản hồi gần nhất</strong><span>@item.ReviewComment</span></div>
+                        }
+                    </div>
+
+                    @if (item.CanReview)
+                    {
+                        <form method="post" asp-page-handler="Review" class="brand-deliverable-review">
+                            <input type="hidden" name="id" value="@item.SubmissionId" />
+                            <input type="hidden" name="campaignId" value="@Model.Id" />
+                            <label for="comment-@item.SubmissionId">Phản hồi cho KOC</label>
+                            <div class="brand-validation-field">
+                                <textarea id="comment-@item.SubmissionId" name="comment" maxlength="2000" rows="3" class="form-control" placeholder="Nêu rõ nội dung cần điều chỉnh nếu yêu cầu sửa hoặc từ chối"></textarea>
+                            </div>
+                            <div class="brand-deliverable-actions">
+                                <button name="decision" value="Approved" class="btn btn-success btn-sm"><i class="fa-solid fa-check"></i> Duyệt nội dung</button>
+                                <button name="decision" value="NeedRevision" class="btn btn-warning btn-sm"><i class="fa-solid fa-rotate-left"></i> Yêu cầu sửa</button>
+                                <button name="decision" value="Rejected" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-ban"></i> Từ chối</button>
+                            </div>
+                        </form>
+                    }
+                </article>
+            }
+        </div>
+
+        @if (Model.Summary?.CanComplete == true)
+        {
+            <section class="brand-shortlist-finalize">
+                <div><strong>Tất cả nội dung đã được xử lý</strong><span>Hãy kiểm tra lần cuối trước khi hoàn tất chiến dịch.</span></div>
+                <form method="post" asp-page-handler="Complete">
+                    <input type="hidden" name="id" value="@Model.Summary.CampaignId" />
+                    <button class="btn btn-brand-primary btn-sm"><i class="fa-solid fa-flag-checkered"></i> Hoàn tất chiến dịch</button>
+                </form>
+            </section>
+        }
+    }
+</div>

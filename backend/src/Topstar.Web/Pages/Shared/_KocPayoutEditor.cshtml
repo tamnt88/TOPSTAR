@@ -1,0 +1,31 @@
+@model Topstar.Web.Pages.Admin.Finance.PayoutPolicyModel
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="tax-fees-editor">
+        <h2 class="h5 mb-3">Cấu hình đang áp dụng</h2>
+        @if (Model.Policy.EffectiveAtUtc == DateTime.MinValue) { <div class="alert alert-warning">Chưa có cấu hình trong database. Hãy chạy migration SQL 58.</div> }
+        <form asp-page="/Admin/Finance/PayoutPolicy" method="post" novalidate>
+          <div class="tax-payout-grid">
+          <div><label class="form-label">Số tiền rút tối thiểu</label><div class="input-group"><input id="payoutMinimumDisplay" inputmode="numeric" data-target="payoutMinimum" value="@Model.Policy.MinimumAmount.ToString("N0", PortalFormat.Vietnamese)" required class="form-control js-money"><input id="payoutMinimum" name="minimumAmount" value="@Model.Policy.MinimumAmount.ToString("0")" type="hidden"><span class="input-group-text">₫</span></div></div>
+          <div><label class="form-label">Số yêu cầu tối đa mỗi KOC/ngày</label><input name="dailyRequestLimit" type="number" min="1" max="20" value="@Model.Policy.DailyRequestLimit" required class="form-control"></div>
+          <div><label class="form-label">Phí cố định</label><div class="input-group"><input id="payoutFixedDisplay" inputmode="numeric" data-target="payoutFixed" value="@Model.Policy.FixedFee.ToString("N0", PortalFormat.Vietnamese)" required class="form-control js-money"><input id="payoutFixed" name="fixedFee" value="@Model.Policy.FixedFee.ToString("0")" type="hidden"><span class="input-group-text">₫</span></div></div>
+          <div><label class="form-label">Phí theo tỷ lệ</label><div class="input-group"><input name="feePercent" type="number" min="0" max="20" step="0.01" value="@((Model.Policy.FeeRate*100).ToString("0.##"))" required class="form-control"><span class="input-group-text">%</span></div></div>
+          <div class="tax-inline-save"><button class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Lưu</button></div>
+          </div><input type="hidden" name="reason" value="Cập nhật chính sách rút tiền KOC."/>
+        </form>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="tax-fees-editor">
+        <h2 class="h5 mb-3">Lịch sử thay đổi</h2>
+        @if (Model.Policy.History.Count == 0) { <div class="text-muted">Chưa có lịch sử.</div> }
+        @foreach (var item in Model.Policy.History) {
+          <div class="border-start border-3 border-primary ps-3 pb-3 mb-3">
+            <div class="fw-semibold">@item.MinimumAmount.ToString("N0", PortalFormat.Vietnamese) ₫ · tối đa @item.DailyRequestLimit lần/ngày</div>
+            <div class="small">Phí @item.FixedFee.ToString("N0", PortalFormat.Vietnamese) ₫ + @((item.FeeRate * 100).ToString("0.##"))%</div>
+            <div class="small text-muted">@item.CreatedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm") · @item.Reason</div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>

@@ -1,0 +1,19 @@
+@model Topstar.Web.Pages.Admin.Settings.PackagePolicyForm
+<div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+<div class="row g-3">
+ <div class="col-12"><label asp-for="Name" class="form-label">Tên gói *</label><input asp-for="Name" class="form-control"/><span asp-validation-for="Name" class="text-danger"></span></div>
+ <div class="col-md-4"><label asp-for="ReferenceBudget" class="form-label">Ngân sách chiến dịch tham khảo *</label><input asp-for="ReferenceBudget" type="hidden"/><div class="input-group"><input id="referenceBudgetDisplay" class="form-control" inputmode="numeric" value="@(Model.ReferenceBudget?.ToString("N0",PortalFormat.Vietnamese))"/><span class="input-group-text">đ</span></div><span asp-validation-for="ReferenceBudget" class="text-danger"></span></div>
+ <div class="col-md-4"><label asp-for="SelectionQuota" class="form-label">Số KOC *</label><input asp-for="SelectionQuota" class="form-control" type="number" min="1" max="100"/><span asp-validation-for="SelectionQuota" class="text-danger"></span></div>
+ <div class="col-md-4"><label asp-for="BrandSelectionEnabled" class="form-label">Cách tuyển KOC</label><select asp-for="BrandSelectionEnabled" class="form-select"><option value="false">TopStar phân bổ KOC</option><option value="true">Brand tự chọn KOC</option></select></div>
+ <div class="col-12"><label class="form-label">Ảnh đại diện gói</label><input asp-for="ImageUrl" type="hidden"/><div class="package-image-picker"><div class="package-image-preview"><img src="@Model.ImageUrl" alt="Ảnh gói" id="packageImagePreview" hidden="@(string.IsNullOrWhiteSpace(Model.ImageUrl))"/><span><i class="fa-regular fa-image"></i></span></div><div><input type="file" id="packageImageFile" name="ImageFile" class="form-control" accept=".jpg,.jpeg,.png,.webp"/><span data-valmsg-for="ImageFile" class="text-danger"></span></div></div></div>
+ <div class="col-12"><label asp-for="Description" class="form-label">Mô tả ngắn *</label><textarea asp-for="Description" class="form-control" rows="2"></textarea><span asp-validation-for="Description" class="text-danger"></span></div>
+ <div class="col-12 package-benefits-field"><label asp-for="Benefits" class="form-label">Quyền lợi *</label><textarea asp-for="Benefits" class="form-control js-package-benefits-editor" rows="5"></textarea><span asp-validation-for="Benefits" class="text-danger"></span></div>
+ <div class="col-md-4"><label asp-for="DisplayOrder" class="form-label">Thứ tự hiển thị</label><input asp-for="DisplayOrder" class="form-control" type="number"/></div>
+ <div class="col-md-4 package-option-field"><label class="form-check form-switch"><input asp-for="IsFeatured" class="form-check-input"/><span class="form-check-label">Gói nổi bật</span></label></div>
+ <div class="col-md-4 package-option-field"><label class="form-check form-switch"><input asp-for="IsActive" class="form-check-input"/><span class="form-check-label">Hiển thị gói</span></label></div>
+</div>
+<input asp-for="SalePrice" type="hidden"/>
+<input asp-for="ValidityDays" type="hidden"/>
+<input asp-for="MinBudgetAmount" type="hidden"/>
+<input asp-for="MaxBudgetAmount" type="hidden"/>
+<input asp-for="Reason" type="hidden"/>

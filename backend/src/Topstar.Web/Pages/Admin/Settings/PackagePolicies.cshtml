@@ -1,0 +1,41 @@
+@page
+@model Topstar.Web.Pages.Admin.Settings.PackagePoliciesModel
+@{ ViewData["Title"]="Quản lý gói KOC"; ViewData["AdminHeaderTitle"]="Quản lý gói KOC"; }
+@if (TempData["Message"] is string message && !string.IsNullOrWhiteSpace(message))
+{
+    <div hidden data-ts-notification="success">@message</div>
+}
+<div class="account-crud-page">
+    <header class="account-crud-header">
+        <div><h1 class="section-title mb-1">Quản lý gói KOC</h1><p class="text-muted mb-0">Gói mẫu gồm ngân sách, số KOC và cách tuyển. Brand chọn khi tạo chiến dịch; phí và thuế tính riêng.</p></div>
+        <div class="d-flex gap-2"><a href="/goi-koc" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-arrow-up-right-from-square me-1"></i>Xem trang Brand</a><a asp-page="./PackagePolicyCreate" class="btn btn-sm btn-primary"><i class="fa-solid fa-plus me-1"></i>Thêm gói KOC</a></div>
+    </header>
+    <section class="account-crud-card package-list-card">
+        <div class="account-filter-bar">
+            <div class="input-group"><span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span><input id="packageSearch" class="form-control border-start-0" placeholder="Tìm theo tên gói" /></div>
+            <select id="packageStatus" class="form-select"><option value="">Tất cả trạng thái</option><option value="active">Đang áp dụng</option><option value="inactive">Tạm dừng</option></select>
+            <select id="packagePageSize" class="form-select"><option value="10">10 dòng</option><option value="20" selected>20 dòng</option><option value="50">50 dòng</option></select>
+            <button id="packageApplyFilter" type="button" class="btn btn-outline-primary"><i class="fa-solid fa-filter me-1"></i>Lọc</button>
+            <button id="packageResetFilter" type="button" class="btn btn-light" title="Đặt lại"><i class="fa-solid fa-rotate-left"></i></button>
+        </div>
+        <div class="account-table-wrap">
+            <table id="packagePolicyDataTable" class="table account-crud-table package-policy-table mb-0" data-ajax-url="@Url.Page("./PackagePolicies","Data")" data-list-actions="false">
+                <thead><tr><th>STT</th><th>Gói KOC</th><th>Ngân sách tham khảo</th><th>Thông tin gói</th><th>Tuyển chọn KOC</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+            </table>
+        </div>
+    </section>
+</div>
+<div class="modal fade" id="packageDeleteModal" tabindex="-1" aria-labelledby="packageDeleteTitle" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+        <form id="packageDeleteForm" novalidate>@Html.AntiForgeryToken()
+            <div class="modal-header"><h2 class="modal-title fs-5" id="packageDeleteTitle"><i class="fa-solid fa-trash-can me-2"></i>Xóa gói KOC</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div>
+            <div class="modal-body"><input type="hidden" id="packageDeleteId" /><p id="packageDeleteDescription" class="text-muted"></p><label for="packageDeleteReason" class="form-label fw-semibold">Lý do và căn cứ xóa</label><textarea id="packageDeleteReason" class="form-control" rows="4" required minlength="10" maxlength="1000" placeholder="Nhập tối thiểu 10 ký tự"></textarea><div class="invalid-feedback">Vui lòng nhập lý do từ 10 đến 1.000 ký tự.</div><div class="form-text">Đây là xóa mềm. Lịch sử và dữ liệu chiến dịch cũ vẫn được giữ nguyên.</div></div>
+            <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal"><i class="fa-solid fa-xmark me-1"></i>Hủy</button><button class="btn btn-danger"><i class="fa-solid fa-trash-can me-1"></i>Xác nhận xóa</button></div>
+        </form>
+    </div></div>
+</div>
+@section Scripts {
+    <script src="~/lib/datatables/js/dataTables.min.js" asp-append-version="true"></script>
+    <script src="~/lib/datatables/js/dataTables.bootstrap5.min.js" asp-append-version="true"></script>
+    <script src="~/js/admin/package-policy-datatable.js" asp-append-version="true"></script>
+}

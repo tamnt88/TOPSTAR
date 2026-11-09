@@ -1,0 +1,206 @@
+@page
+@model Topstar.Web.Pages.Koc.DisputeDetailModel
+@using Topstar.Application.Disputes
+@{
+    Layout = "_KocLayout";
+    ViewData["Title"] = "Chi tiết tranh chấp";
+    var detail = Model.Detail!;
+    var item = detail.Case;
+    var statusLabel = PortalFormat.Status(item.Status);
+    var statusClass = item.Status switch
+    {
+        DisputeStatuses.Open => "is-open",
+        DisputeStatuses.InReview => "is-review",
+        DisputeStatuses.Resolved => "is-resolved",
+        DisputeStatuses.Rejected => "is-rejected",
+        _ => "is-cancelled"
+    };
+    var categoryLabel = item.Category switch
+    {
+        "Booking" => "Lịch booking",
+        "Shipment" => "Giao nhận sản phẩm",
+        "Deliverable" => "Nội dung bàn giao",
+        "Payment" => "Thanh toán",
+        "Review" => "Đánh giá",
+        _ => "Vấn đề khác"
+    };
+}
+
+<div class="koc-dispute-detail-page">
+    <header class="koc-dispute-detail-hero">
+        <div class="koc-dispute-detail-title">
+            <a asp-page="/Koc/Disputes" class="koc-dispute-back">
+                <i class="fa-solid fa-arrow-left"></i> Quay lại danh sách
+            </a>
+            <div class="koc-dispute-detail-meta">
+                <span><i class="fa-solid fa-bullhorn"></i> @item.CampaignTitle</span>
+                <span><i class="fa-solid fa-tag"></i> @categoryLabel</span>
+                <span><i class="fa-regular fa-clock"></i> @item.CreatedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm")</span>
+            </div>
+            <h1>@item.Subject</h1>
+            <p><i class="fa-solid fa-building"></i> @item.BrandName <i class="fa-solid fa-arrow-right-arrow-left"></i> @item.KocName</p>
+        </div>
+        <div class="koc-dispute-detail-state">
+            <span class="koc-dispute-status @statusClass">
+                <i class="fa-solid fa-circle"></i> @statusLabel
+            </span>
+            <small>Mã yêu cầu</small>
+            <strong title="@item.Id">@item.Id.ToString()[..8].ToUpperInvariant()</strong>
+        </div>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div class="koc-inline-notice @(Model.MessageSuccess ? "is-success" : "is-danger")">
+            <i class="fa-solid @(Model.MessageSuccess ? "fa-circle-check" : "fa-circle-exclamation")"></i>
+            <div><strong>@(Model.MessageSuccess ? "Thành công" : "Không thành công")</strong><span>@Model.Message</span></div>
+        </div>
+    }
+
+    <div class="koc-dispute-detail-grid">
+        <main class="koc-dispute-detail-main">
+            <section class="koc-dispute-detail-card koc-dispute-summary">
+                <div class="koc-dispute-section-title">
+                    <span><i class="fa-solid fa-file-lines"></i></span>
+                    <div><h2>Nội dung yêu cầu</h2><p>Thông tin KOC cung cấp khi mở tranh chấp.</p></div>
+                </div>
+                <div class="koc-dispute-description">@item.Description</div>
+                @if (!string.IsNullOrWhiteSpace(item.ResolutionNote))
+                {
+                    <div class="koc-dispute-resolution">
+                        <i class="fa-solid fa-gavel"></i>
+                        <div><strong>Kết luận xử lý</strong><p>@item.ResolutionNote</p></div>
+                    </div>
+                }
+            </section>
+
+            <section class="koc-dispute-detail-card">
+                <div class="koc-dispute-section-title">
+                    <span><i class="fa-solid fa-comments"></i></span>
+                    <div><h2>Trao đổi & bằng chứng</h2><p>@detail.Messages.Count phản hồi trong yêu cầu này.</p></div>
+                </div>
+                @if (detail.Messages.Count == 0)
+                {
+                    <div class="koc-dispute-conversation-empty">
+                        <span><i class="fa-regular fa-comments"></i></span>
+                        <div><strong>Chưa có phản hồi bổ sung</strong><p>Bộ phận hỗ trợ sẽ trao đổi tại đây khi tiếp nhận yêu cầu.</p></div>
+                    </div>
+                }
+                else
+                {
+                    <div class="koc-dispute-conversation">
+                        @foreach (var message in detail.Messages)
+                        {
+                            var ownMessage = message.AuthorRole.Equals("KOC", StringComparison.OrdinalIgnoreCase);
+                            <article class="koc-dispute-message @(ownMessage ? "is-own" : "")">
+                                <span class="koc-dispute-message-avatar"><i class="fa-solid @(ownMessage ? "fa-user" : "fa-headset")"></i></span>
+                                <div>
+                                    <header>
+                                        <strong>@message.AuthorName</strong>
+                                        <span>@(ownMessage ? "KOC" : message.AuthorRole)</span>
+                                        <time><i class="fa-regular fa-clock"></i> @message.CreatedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm")</time>
+                                    </header>
+                                    <p>@message.Body</p>
+                                    @if (!string.IsNullOrWhiteSpace(message.EvidenceUrl))
+                                    {
+                                        <a href="@message.EvidenceUrl" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary">
+                                            <i class="fa-solid fa-paperclip"></i> Mở bằng chứng
+                                        </a>
+                                    }
+                                </div>
+                            </article>
+                        }
+                    </div>
+                }
+            </section>
+
+            @if (detail.CanReply)
+            {
+                <section class="koc-dispute-detail-card">
+                    <div class="koc-dispute-section-title">
+                        <span><i class="fa-solid fa-reply"></i></span>
+                        <div><h2>Thêm phản hồi</h2><p>Bổ sung thông tin và bằng chứng để yêu cầu được xử lý nhanh hơn.</p></div>
+                    </div>
+                    <form id="kocDisputeReplyForm" method="post" asp-page-handler="Message" enctype="multipart/form-data" novalidate>
+                        <div class="koc-dispute-form-field">
+                            <label for="disputeReplyBody"><i class="fa-regular fa-message"></i> Nội dung phản hồi <em>*</em></label>
+                            <textarea id="disputeReplyBody" name="body" rows="5" maxlength="2000"
+                                      placeholder="Mô tả thông tin xác minh, phản hồi hoặc nội dung cần bổ sung"></textarea>
+                            <span class="koc-field-error" data-error-for="body"></span>
+                        </div>
+                        <div class="koc-dispute-form-field">
+                            <label for="disputeEvidenceUrl"><i class="fa-solid fa-link"></i> Link bằng chứng</label>
+                            <input id="disputeEvidenceUrl" name="evidenceUrl" type="url" maxlength="1000"
+                                   placeholder="https://... (không bắt buộc)">
+                            <span class="koc-field-help">Dùng liên kết có quyền truy cập để bộ phận hỗ trợ có thể kiểm tra.</span>
+                            <span class="koc-field-error" data-error-for="evidenceUrl"></span>
+                        </div>
+                        <div class="koc-dispute-form-field">
+                            <label for="disputeEvidenceFile"><i class="fa-solid fa-paperclip"></i> Hoặc tải tệp bằng chứng</label>
+                            <input id="disputeEvidenceFile" name="evidenceFile" type="file" class="form-control" accept=".jpg,.jpeg,.png,.webp,.pdf">
+                            <span class="koc-field-help">JPG, PNG, WebP hoặc PDF; tối đa 5 MB. Chỉ chọn tệp hoặc nhập liên kết.</span>
+                            <span class="koc-field-error" data-error-for="evidenceFile"></span>
+                        </div>
+                        <div class="koc-dispute-form-actions">
+                            <span><i class="fa-solid fa-shield-halved"></i> Phản hồi được lưu vào lịch sử và không thể chỉnh sửa trực tiếp.</span>
+                            <button class="btn btn-primary btn-sm" type="submit"><i class="fa-solid fa-paper-plane"></i> Gửi phản hồi</button>
+                        </div>
+                    </form>
+                </section>
+            }
+            else
+            {
+                <div class="koc-inline-notice is-neutral">
+                    <i class="fa-solid fa-lock"></i>
+                    <div><strong>Yêu cầu đã đóng</strong><span>Nội dung trao đổi được giữ ở chế độ chỉ đọc.</span></div>
+                </div>
+            }
+        </main>
+
+        <aside class="koc-dispute-detail-aside">
+            <section class="koc-dispute-detail-card">
+                <div class="koc-dispute-section-title is-compact">
+                    <span><i class="fa-solid fa-chart-line"></i></span>
+                    <div><h2>Tổng quan xử lý</h2></div>
+                </div>
+                <dl class="koc-dispute-facts">
+                    <div><dt>Độ ưu tiên</dt><dd>@item.Priority</dd></div>
+                    <div><dt>Người mở</dt><dd>@item.OpenedBy</dd></div>
+                    <div><dt>Trạng thái chiến dịch</dt><dd>@PortalFormat.Status(item.CampaignStatus)</dd></div>
+                    <div><dt>Khoản tạm giữ</dt><dd>@detail.OnHoldAmount.ToString("N0", PortalFormat.Vietnamese) đ</dd></div>
+                </dl>
+            </section>
+
+            <section class="koc-dispute-detail-card">
+                <div class="koc-dispute-section-title is-compact">
+                    <span><i class="fa-solid fa-timeline"></i></span>
+                    <div><h2>Lịch sử trạng thái</h2><p>@item.History.Count sự kiện</p></div>
+                </div>
+                <div class="koc-dispute-status-timeline">
+                    @foreach (var history in item.History.OrderByDescending(x => x.CreatedAtUtc))
+                    {
+                        var historyLabel = history.ToStatus switch
+                        {
+                            DisputeStatuses.Open => "Mới mở",
+                            DisputeStatuses.InReview => "Đang xử lý",
+                            DisputeStatuses.Resolved => "Đã giải quyết",
+                            DisputeStatuses.Rejected => "Đã từ chối",
+                            DisputeStatuses.Cancelled => "Đã hủy",
+                            _ => history.ToStatus
+                        };
+                        <article>
+                            <i></i>
+                            <strong>@historyLabel</strong>
+                            <time>@history.CreatedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy HH:mm")</time>
+                            @if (!string.IsNullOrWhiteSpace(history.Note)) { <p>@history.Note</p> }
+                        </article>
+                    }
+                </div>
+            </section>
+        </aside>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/koc/dispute-detail.js" asp-append-version="true"></script>
+}

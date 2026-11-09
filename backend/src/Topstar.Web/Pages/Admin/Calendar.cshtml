@@ -1,0 +1,4 @@
+@page
+@model Topstar.Web.Pages.Admin.CalendarModel
+@{ViewData["Title"]="Lịch vận hành";ViewData["AdminHeaderTitle"]="Lịch vận hành";}
+<div ><div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-2 mb-4"><div><h1 class="section-title mb-1">Lịch booking toàn hệ thống</h1><p class="text-muted mb-0">Đối chiếu lịch Brand–KOC theo giờ Việt Nam; sự cố và lịch quá hạn xử lý tại Operations.</p></div><a asp-page="/Admin/Operations" class="btn btn-outline-primary">Mở bàn vận hành</a></div><partial name="_ScheduleCalendar" model="Model.Calendar" /></div>

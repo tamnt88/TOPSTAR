@@ -1,0 +1,28 @@
+@page
+@model Topstar.Web.Pages.Admin.Finance.IndexModel
+@{
+    ViewData["Title"] = "Quản trị tài chính";
+    ViewData["AdminHeaderTitle"] = "Quản trị tài chính";
+}
+<main class="admin-module-hub">
+    <header class="admin-management-heading">
+        <div><span class="admin-page-eyebrow"><i class="fa-solid fa-wallet"></i> TÀI CHÍNH</span><h1>Quản trị tài chính</h1><p>Theo dõi dòng tiền theo đúng vòng đời từ ký quỹ đến đối soát và chi trả.</p></div>
+    </header>
+    <h2 class="h5 mb-3">Xử lý tài chính</h2>
+    <div class="admin-module-grid">
+        <a asp-page="/Admin/Finance/CampaignFunding"><i class="fa-solid fa-shield-halved"></i><span><strong>Thanh toán chiến dịch</strong><small>Thanh toán, chứng từ và hoàn tiền</small></span><i class="fa-solid fa-chevron-right"></i></a>
+        <a asp-page="/Admin/Finance/BrandBalances"><i class="fa-solid fa-wallet"></i><span><strong>Số dư Brand</strong><small>Duyệt hoàn vào số dư, nhận tiền và chính sách</small></span><i class="fa-solid fa-chevron-right"></i></a>
+        <a asp-page="/Admin/Finance/Settlements"><i class="fa-solid fa-money-bill-transfer"></i><span><strong>Đối soát và chi trả</strong><small>Thu nhập KOC và yêu cầu rút tiền</small></span><i class="fa-solid fa-chevron-right"></i></a>
+        <a asp-page="/Admin/Finance/KocIncomeTax"><i class="fa-solid fa-file-invoice"></i><span><strong>Đối soát thuế KOC</strong><small>Theo dõi khoản khấu trừ và chứng từ nộp thuế</small></span><i class="fa-solid fa-chevron-right"></i></a>
+    </div>
+    <h2 class="h5 mt-4 mb-3">Cấu hình</h2>
+    <div class="admin-module-grid">
+        <a asp-page="/Admin/Finance/TaxFees"><i class="fa-solid fa-calculator"></i><span><strong>Thuế và phí</strong><small>Cấu hình Brand và KOC tại một nơi</small></span><i class="fa-solid fa-chevron-right"></i></a>
+        <a asp-page="/Admin/Finance/CampaignCreation"><i class="fa-solid fa-sliders"></i><span><strong>Nhu cầu chiến dịch</strong><small>Ngưỡng ngân sách, số KOC và quyền tự chọn</small></span><i class="fa-solid fa-chevron-right"></i></a>
+        <a asp-page="/Admin/Settings/PackagePolicies"><i class="fa-solid fa-boxes-stacked"></i><span><strong>Gói chiến dịch</strong><small>Ngân sách tham khảo, số KOC và quyền lựa chọn</small></span><i class="fa-solid fa-chevron-right"></i></a>
+        <a asp-page="/Admin/Settings/PaymentMethods"><i class="fa-regular fa-credit-card"></i><span><strong>Phương thức thanh toán</strong><small>Chuyển khoản và cổng thanh toán</small></span><i class="fa-solid fa-chevron-right"></i></a>
+    </div>
+    <details class="mt-4"><summary>Lịch sử</summary><div class="admin-module-grid mt-3">
+        <a asp-page="/Admin/Finance/Billing"><i class="fa-solid fa-box-open"></i><span><strong>Đơn gói trước đây</strong><small>Đơn hàng, thanh toán và quyền sử dụng gói</small></span><i class="fa-solid fa-chevron-right"></i></a>
+    </div></details>
+</main>

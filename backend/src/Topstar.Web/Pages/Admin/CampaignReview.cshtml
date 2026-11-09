@@ -1,0 +1,341 @@
+@page
+@model Topstar.Web.Pages.Admin.CampaignReviewModel
+@using Topstar.Application.Billing
+@using Topstar.Application.Campaigns
+@using Topstar.Application.Matching
+@{
+    var c = Model.Campaign!;
+    var matching = Model.Matching;
+    var funding = Model.Funding;
+    var latestBrandEvidence = Model.FundingEvidences.FirstOrDefault(x => x.EvidenceType == CampaignFundingEvidenceTypes.BrandPayment);
+    var latestBrandEvidenceAccepted = latestBrandEvidence is not null
+        && Model.LatestEvidenceReviews.GetValueOrDefault(latestBrandEvidence.Id)?.Status == CampaignFundingEvidenceReviewStatuses.Accepted;
+    var latestReconciliationEvidence = Model.FundingEvidences.FirstOrDefault(x => x.EvidenceType == CampaignFundingEvidenceTypes.Reconciliation);
+    var hasReconciliationEvidence = latestReconciliationEvidence is not null;
+    var isPending = c.Status == CampaignStatuses.Submitted;
+    var canManageMatching = c.Status == CampaignStatuses.Published;
+    var statusLabel = c.Status switch { CampaignStatuses.Draft => "Bản nháp", CampaignStatuses.Submitted => "Chờ duyệt", CampaignStatuses.NeedEdit => "Cần cập nhật", CampaignStatuses.Published => "Đang tuyển KOC", CampaignStatuses.InProgress => "Đang thực hiện", CampaignStatuses.Completed => "Đã hoàn thành", CampaignStatuses.Rejected => "Bị từ chối", CampaignStatuses.Cancelled => "Đã hủy", _ => c.Status };
+    var confirmedCount = matching?.Applications.Count(x => x.Status == "Confirmed") ?? 0;
+    var shortlistCount = matching?.Applications.Count(x => x.Status == "Shortlisted") ?? 0;
+    var assignedCount = confirmedCount + shortlistCount;
+    var appliedApplications = matching?.Applications.Where(x => x.Status == "Applied").ToArray() ?? [];
+    var assignedApplications = matching?.Applications.Where(x => x.Status is "Shortlisted" or "Confirmed").ToArray() ?? [];
+    var remainingToAssign = Math.Max(0, c.DesiredKocCount - assignedCount);
+    var shipmentIssues = Model.Operations.ShipmentIssues;
+    var scheduleIssues = Model.Operations.ScheduleAttention;
+    var submissionIssues = Model.Operations.SubmissionEscalations.Concat(Model.Operations.BrandReviewEscalations).ToList();
+    var disputeIssues = Model.Operations.DisputeEscalations;
+    var stageLabel = statusLabel;
+    var stageDescription = "Quản lý hồ sơ, KOC, tài chính và vận hành ngay trên màn hình này.";
+    var nextTab = "overview";
+    var nextActionLabel = "Xem tổng quan";
+    if (isPending)
+    {
+        stageLabel = "Chờ duyệt hồ sơ";
+        stageDescription = "Kiểm tra hồ sơ và ra quyết định trước khi mở tuyển KOC.";
+        nextTab = "approval";
+        nextActionLabel = "Duyệt hồ sơ";
+    }
+    else if (c.Status == CampaignStatuses.Published && assignedCount >= c.DesiredKocCount && confirmedCount < c.DesiredKocCount)
+    {
+        stageLabel = "Chờ Brand xác nhận KOC";
+        stageDescription = $"Đã gửi đủ {assignedCount} KOC; Brand đã xác nhận {confirmedCount}/{c.DesiredKocCount}.";
+        nextTab = "matching";
+        nextActionLabel = "Xem danh sách KOC";
+    }
+    else if (c.Status == CampaignStatuses.Published && confirmedCount < c.DesiredKocCount)
+    {
+        stageLabel = "Đang tuyển KOC";
+        stageDescription = $"Cần chốt thêm {c.DesiredKocCount - confirmedCount} KOC để chuyển sang bước ký quỹ.";
+        nextTab = "matching";
+        nextActionLabel = "Tuyển chọn KOC";
+    }
+    else if (c.Status == CampaignStatuses.Published && confirmedCount >= c.DesiredKocCount)
+    {
+        nextTab = "finance";
+        if (funding is null || funding.Status == CampaignFundingStatuses.Draft)
+        {
+            stageLabel = "Cần lập yêu cầu ký quỹ";
+            stageDescription = "Danh sách KOC đã đủ; hãy kiểm tra phân bổ thù lao và lập yêu cầu thanh toán.";
+            nextActionLabel = "Xử lý ký quỹ";
+        }
+        else if (funding.Status == CampaignFundingStatuses.Pending)
+        {
+            stageLabel = "Chờ đối soát ký quỹ";
+            stageDescription = "Yêu cầu thanh toán đã được tạo và đang chờ xác minh giao dịch.";
+            nextActionLabel = "Xem thanh toán";
+        }
+        else
+        {
+            stageLabel = "Đã bảo đảm ngân sách";
+            stageDescription = "Ngân sách đã được bảo đảm; chiến dịch sẵn sàng chuyển sang thực hiện.";
+            nextActionLabel = "Xem tài chính";
+        }
+    }
+    else if (c.Status == CampaignStatuses.InProgress)
+    {
+        stageLabel = "Đang thực hiện";
+        stageDescription = "Theo dõi lịch làm việc, giao nhận, nội dung và các vấn đề cần xử lý.";
+        nextTab = "operations";
+        nextActionLabel = "Điều hành chiến dịch";
+    }
+    else if (c.Status == CampaignStatuses.Completed)
+    {
+        stageLabel = funding?.Status == CampaignFundingStatuses.Released ? "Đã nghiệm thu và giải ngân" : "Chờ hoàn tất tài chính";
+        stageDescription = funding?.Status == CampaignFundingStatuses.Released ? "Chiến dịch và nghĩa vụ tài chính đã hoàn tất." : "Chiến dịch đã hoàn thành; kiểm tra nghiệm thu, giải ngân hoặc hoàn tiền.";
+        nextTab = funding?.Status == CampaignFundingStatuses.Released ? "history" : "finance";
+        nextActionLabel = funding?.Status == CampaignFundingStatuses.Released ? "Xem lịch sử" : "Hoàn tất tài chính";
+    }
+    ViewData["Title"] = "Điều hành chiến dịch";
+    ViewData["AdminHeaderTitle"] = ViewData["Title"];
+    ViewData["AdminActivePath"] = "/Admin/Campaigns";
+}
+
+<div class="campaign-admin-detail" data-command-center data-active-tab="@Model.Tab" data-can-manage-matching="@canManageMatching.ToString().ToLowerInvariant()">
+    <header class="campaign-detail-header">
+        <div><span class="campaign-detail-eyebrow"><i class="fa-solid fa-bullhorn"></i> TRUNG TÂM ĐIỀU HÀNH</span><h1>@c.Title</h1><p>@c.BrandName · @c.PackageCode</p></div>
+        <a asp-page="/Admin/Campaigns" class="btn campaign-detail-back"><i class="fa-solid fa-arrow-left"></i> Danh sách chiến dịch</a>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div hidden data-admin-flash data-message="@Model.Message" data-type="@(Model.MessageSuccess ? "success" : "error")"></div>
+    }
+
+    <section class="campaign-stage-banner">
+        <span class="campaign-stage-icon"><i class="fa-solid fa-route"></i></span>
+        <div><small>Giai đoạn hiện tại</small><strong>@stageLabel</strong><p>@stageDescription</p></div>
+        <div class="campaign-stage-side"><div class="campaign-stage-dates"><small>Thời gian dự kiến</small><strong>@(c.StartDate?.ToString("dd/MM/yyyy") ?? "Chưa đặt") – @(c.EndDate?.ToString("dd/MM/yyyy") ?? "Chưa đặt")</strong></div><button type="button" class="btn campaign-stage-action" data-open-tab="@nextTab"><i class="fa-solid fa-arrow-right"></i> @nextActionLabel</button></div>
+    </section>
+
+    <div class="campaign-command-stats">
+        <article><i class="fa-solid fa-wallet"></i><div><small>Ngân sách</small><strong>@c.BudgetAmount.ToString("N0", PortalFormat.Vietnamese) ₫</strong></div></article>
+        <article><i class="fa-solid fa-users"></i><div><small>KOC cần / đã chốt</small><strong>@c.DesiredKocCount / @confirmedCount</strong></div></article>
+        <article><i class="fa-solid fa-shield-halved"></i><div><small>Trạng thái quỹ</small><strong>@FundingLabel(funding?.Status)</strong></div></article>
+        <article><i class="fa-solid fa-triangle-exclamation"></i><div><small>Việc cần xử lý</small><strong>@(shipmentIssues.Count + scheduleIssues.Count + submissionIssues.Count + disputeIssues.Count)</strong></div></article>
+    </div>
+
+    <nav class="ts-tabs campaign-command-tabs" role="tablist" aria-label="Nhiệm vụ quản trị chiến dịch">
+        <button type="button" data-tab="overview"><i class="fa-solid fa-chart-pie"></i> Tổng quan</button>
+        <button type="button" data-tab="approval"><i class="fa-solid fa-clipboard-check"></i> Duyệt hồ sơ @if(isPending){<b>1</b>}</button>
+        <button type="button" data-tab="matching"><i class="fa-solid fa-users-gear"></i> Tuyển chọn <b>@confirmedCount/@c.DesiredKocCount</b></button>
+        <button type="button" data-tab="finance"><i class="fa-solid fa-money-check-dollar"></i> Ký quỹ</button>
+        <button type="button" data-tab="operations"><i class="fa-solid fa-gears"></i> Vận hành <b>@(shipmentIssues.Count + scheduleIssues.Count + submissionIssues.Count)</b></button>
+        <button type="button" data-tab="history"><i class="fa-solid fa-clock-rotate-left"></i> Lịch sử</button>
+    </nav>
+
+    <section class="campaign-tab-panel" data-panel="overview">
+        <div class="campaign-panel-heading"><div><i class="fa-solid fa-circle-info"></i><span><strong>Hồ sơ chiến dịch</strong><small>Toàn bộ cấu hình Brand đã khai báo.</small></span></div></div>
+        @if (!string.IsNullOrWhiteSpace(c.AvatarUrl) || !string.IsNullOrWhiteSpace(c.BannerUrl))
+        {
+            <div class="campaign-review-media">
+                @if (!string.IsNullOrWhiteSpace(c.AvatarUrl))
+                {
+                    <figure class="campaign-review-poster">
+                        <figcaption><i class="fa-regular fa-image"></i> Poster chiến dịch</figcaption>
+                        <a href="@c.AvatarUrl" target="_blank" rel="noopener noreferrer" aria-label="Mở poster chiến dịch đầy đủ">
+                            <img src="@c.AvatarUrl" alt="Poster chiến dịch @c.Title" loading="lazy" />
+                            <span><i class="fa-solid fa-expand"></i> Xem ảnh đầy đủ</span>
+                        </a>
+                    </figure>
+                }
+                @if (!string.IsNullOrWhiteSpace(c.BannerUrl))
+                {
+                    <figure class="campaign-review-banner">
+                        <figcaption><i class="fa-solid fa-image"></i> Banner chiến dịch</figcaption>
+                        <a href="@c.BannerUrl" target="_blank" rel="noopener noreferrer" aria-label="Mở banner chiến dịch đầy đủ">
+                            <img src="@c.BannerUrl" alt="Banner chiến dịch @c.Title" loading="lazy" />
+                            <span><i class="fa-solid fa-expand"></i> Xem ảnh đầy đủ</span>
+                        </a>
+                    </figure>
+                }
+            </div>
+        }
+        <div class="campaign-info-grid">
+            <div><small>Brand</small><strong>@c.BrandName</strong></div>
+            <div><small>Booking</small><strong>@(c.RequiresBooking ? "Có" : "Không")</strong></div><div><small>Giao sản phẩm</small><strong>@(c.RequiresShipment ? "Có" : "Không")</strong></div>
+            <div><small>Phân bổ thù lao</small><strong>@(c.AllocationMode == CampaignAllocationModes.Equal ? "Chia đều" : "Theo từng KOC")</strong></div><div><small>Hồ sơ ứng tuyển hiệu lực</small><strong>@c.ApplicationCount</strong></div>
+        </div>
+        <div class="campaign-subsection">
+            <h3><i class="fa-solid fa-align-left"></i> Mô tả và định hướng nội dung</h3>
+            <div class="campaign-objective-content">
+                @if (string.IsNullOrWhiteSpace(c.Objective))
+                {
+                    <p class="text-muted mb-0">Chưa cung cấp.</p>
+                }
+                else
+                {
+                    @Html.Raw(new Ganss.Xss.HtmlSanitizer().Sanitize(c.Objective))
+                }
+            </div>
+        </div>
+        @if (c.Execution is not null)
+        {
+            <div class="campaign-subsection"><h3><i class="fa-solid fa-clapperboard"></i> Yêu cầu thực hiện</h3><div class="campaign-info-grid compact"><div><small>Hình thức</small><strong>@ExecutionLabel(c.Execution.Mode)</strong></div><div><small>Địa điểm</small><strong>@(c.Execution.VenueName ?? "Không áp dụng")</strong></div><div><small>Lịch thực hiện</small><strong>@(c.Execution.Schedule ?? "Chưa cung cấp")</strong></div><div><small>Liên hệ</small><strong>@(c.Execution.ContactName ?? "Chưa cung cấp") @(c.Execution.ContactPhone)</strong></div></div></div>
+        }
+        <div class="campaign-subsection"><h3><i class="fa-solid fa-list-check"></i> Nội dung bàn giao</h3><div class="campaign-deliverables">@foreach(var item in c.Deliverables){<article><strong>@item.Quantity × @item.DeliverableType</strong><small>Hạn nộp: @(item.DueDateUtc?.AddHours(7).ToString("dd/MM/yyyy HH:mm") ?? "Chưa đặt")</small></article>}</div></div>
+        @if (c.Targeting is not null)
+        {
+            <div class="campaign-subsection"><h3><i class="fa-solid fa-bullseye"></i> KOC mục tiêu</h3><div class="campaign-info-grid compact"><div><small>Giới tính</small><strong>@(c.Targeting.Gender == "Any" ? "Không giới hạn" : c.Targeting.Gender)</strong></div><div><small>Người theo dõi</small><strong>@(c.Targeting.MinimumFollowers?.ToString("N0", PortalFormat.Vietnamese) ?? "0") – @(c.Targeting.MaximumFollowers?.ToString("N0", PortalFormat.Vietnamese) ?? "Không giới hạn")</strong></div><div><small>Tỉnh/thành</small><strong>@(c.Targeting.Provinces.Count == 0 ? "Toàn quốc" : string.Join(", ", c.Targeting.Provinces.Select(x => x.Name)))</strong></div><div><small>Nhóm nội dung</small><strong>@(c.Targeting.Categories.Count == 0 ? "Không giới hạn" : string.Join(", ", c.Targeting.Categories.Select(x => x.Name)))</strong></div></div></div>
+        }
+    </section>
+
+    <section class="campaign-tab-panel" data-panel="approval">
+        <div class="campaign-panel-heading"><div><i class="fa-solid fa-clipboard-check"></i><span><strong>Duyệt hồ sơ</strong><small>Ra quyết định và lưu phản hồi theo từng khu vực.</small></span></div><span class="campaign-status-tag">@statusLabel</span></div>
+        @if (isPending)
+        {
+            <form method="post" class="js-command-form" novalidate>
+                <input asp-for="Id" type="hidden"/><input asp-for="Tab" type="hidden" value="approval"/>
+                <div asp-validation-summary="ModelOnly" class="campaign-form-summary"></div>
+                <div class="campaign-review-grid">@for(var i=0;i<Model.Input.Feedback.Count;i++){<div class="campaign-review-item"><input asp-for="Input.Feedback[i].FieldCode" type="hidden"/><input asp-for="Input.Feedback[i].Label" type="hidden"/><label><input asp-for="Input.Feedback[i].Selected"/> @Model.Input.Feedback[i].Label</label><textarea asp-for="Input.Feedback[i].Message" maxlength="500" rows="2" placeholder="Nêu rõ nội dung cần sửa"></textarea></div>}</div>
+                <div class="admin-validation-field"><label>Ghi chú duyệt</label><textarea asp-for="Input.ReviewNote" maxlength="1000" rows="3" placeholder="Ghi chú quyết định (nếu có)"></textarea><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Ghi chú không được vượt quá 1.000 ký tự.</div></div>
+                <div class="campaign-form-actions"><button name="Input.Decision" value="@CampaignStatuses.Published" class="btn is-approve"><i class="fa-solid fa-check"></i> Duyệt</button><button name="Input.Decision" value="@CampaignStatuses.NeedEdit" class="btn is-revise"><i class="fa-solid fa-pen"></i> Yêu cầu sửa</button><button name="Input.Decision" value="@CampaignStatuses.Rejected" class="btn is-reject"><i class="fa-solid fa-ban"></i> Từ chối</button></div>
+            </form>
+        }
+        else { <div class="campaign-empty"><i class="fa-solid fa-circle-check"></i><strong>Không có hồ sơ chờ duyệt</strong><span>Chiến dịch đang ở trạng thái @statusLabel.ToLowerInvariant().</span></div> }
+    </section>
+
+    <section class="campaign-tab-panel" data-panel="matching">
+        <div class="campaign-panel-heading"><div><i class="fa-solid fa-users-gear"></i><span><strong>Tuyển chọn KOC</strong><small>Quản lý KOC đã phân công và bổ sung người còn thiếu.</small></span></div><span class="campaign-status-tag">Đã phân công @assignedCount/@c.DesiredKocCount</span></div>
+        @if (matching is null) { <div class="campaign-empty">Chưa có dữ liệu tuyển chọn.</div> }
+        else
+        {
+            @if (!canManageMatching)
+            {
+                <div class="campaign-context-notice"><i class="fa-solid fa-circle-info"></i><span>Danh sách tuyển chọn chỉ được thay đổi khi chiến dịch đang ở giai đoạn tuyển KOC.</span></div>
+            }
+            @if (assignedApplications.Length > 0)
+            {
+                <div class="campaign-matching-section-title"><div><i class="fa-solid fa-user-check"></i><span><strong>KOC đã phân công</strong><small>Danh sách đã gửi sang Brand chờ xác nhận.</small></span></div><b>@assignedApplications.Length KOC</b></div>
+                <div class="campaign-list-toolbar">
+                    <div class="campaign-search-box"><i class="fa-solid fa-magnifying-glass"></i><input id="assignedKocSearch" placeholder="Tìm KOC đã phân công"/></div>
+                    <select id="assignedKocStatus"><option value="">Tất cả trạng thái</option><option value="Đã gửi Brand">Đã gửi Brand</option><option value="Đã xác nhận">Đã xác nhận</option></select>
+                </div>
+                <div class="campaign-table-wrap"><table id="assignedKocTable" class="campaign-command-table campaign-koc-table"><thead><tr><th>KOC</th><th>Người theo dõi</th><th>Điểm hồ sơ</th><th>Phù hợp</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>
+                @foreach(var item in assignedApplications){<tr><td><div class="campaign-koc-cell"><a class="campaign-koc-avatar" asp-page="/Admin/KocProfilePreview" asp-route-Id="@item.KocProfileId" target="_blank">@if(!string.IsNullOrWhiteSpace(item.AvatarUrl)){<img src="@item.AvatarUrl" alt="Ảnh @item.KocName"/>}else{<i class="fa-solid fa-user"></i>}</a><div><a class="campaign-koc-name" asp-page="/Admin/KocProfilePreview" asp-route-Id="@item.KocProfileId" target="_blank">@item.KocName <i class="fa-solid fa-arrow-up-right-from-square"></i></a><small>Xem hồ sơ KOC</small></div></div></td><td data-order="@item.Followers">@item.Followers.ToString("N0", PortalFormat.Vietnamese)</td><td data-order="@item.Score">@(item.Score > 0 ? item.Score.ToString("N1", PortalFormat.Vietnamese) : "Chưa chấm")</td><td data-order="@item.TargetingMatchScore">@item.TargetingMatchScore.ToString("N0", PortalFormat.Vietnamese)%</td><td><span class="campaign-status-tag">@ApplicationLabel(item.Status)</span></td><td>@if(item.Status == ApplicationStatuses.Shortlisted && canManageMatching){<form method="post" asp-page-handler="RemoveAssigned" class="js-remove-assigned-form" data-koc-name="@item.KocName"><input type="hidden" name="Id" value="@c.Id"/><input type="hidden" name="applicationId" value="@item.ApplicationId"/><button type="submit" class="campaign-remove-koc" title="Gỡ KOC khỏi danh sách"><i class="fa-solid fa-trash-can"></i><span>Gỡ</span></button></form>}else{<span class="campaign-action-locked" title="KOC đã được Brand xác nhận"><i class="fa-solid fa-lock"></i></span>}</td></tr>}
+                </tbody></table></div>
+            }
+            @if (appliedApplications.Length > 0)
+            {
+            <div class="campaign-matching-section-title campaign-matching-applications"><div><i class="fa-solid fa-inbox"></i><span><strong>Hồ sơ KOC ứng tuyển mới</strong><small>Chọn hồ sơ muốn đưa vào danh sách gửi Brand.</small></span></div><b>@appliedApplications.Length hồ sơ</b></div>
+            <form method="post" asp-page-handler="Shortlist" class="js-matching-form" novalidate>
+                <input type="hidden" name="Id" value="@c.Id"/><input type="hidden" name="Tab" value="matching"/>
+                <div class="campaign-table-wrap"><table class="campaign-command-table"><thead><tr><th>Chọn</th><th>KOC</th><th>Người theo dõi</th><th>Điểm hồ sơ</th><th>Phù hợp</th><th>Trạng thái</th></tr></thead><tbody>@foreach(var item in appliedApplications){<tr><td><input type="checkbox" name="SelectedApplicationIds" value="@item.ApplicationId"/></td><td><div class="campaign-koc-cell"><a class="campaign-koc-avatar" asp-page="/Admin/KocProfilePreview" asp-route-Id="@item.KocProfileId" target="_blank">@if(!string.IsNullOrWhiteSpace(item.AvatarUrl)){<img src="@item.AvatarUrl" alt="Ảnh @item.KocName"/>}else{<i class="fa-solid fa-user"></i>}</a><div><a class="campaign-koc-name" asp-page="/Admin/KocProfilePreview" asp-route-Id="@item.KocProfileId" target="_blank">@item.KocName <i class="fa-solid fa-arrow-up-right-from-square"></i></a><small>@item.PitchNote</small></div></div></td><td>@item.Followers.ToString("N0", PortalFormat.Vietnamese)</td><td>@(item.Score > 0 ? item.Score.ToString("N1", PortalFormat.Vietnamese) : "Chưa chấm")</td><td>@item.TargetingMatchScore.ToString("N0", PortalFormat.Vietnamese)%</td><td><span class="campaign-status-tag">@ApplicationLabel(item.Status)</span></td></tr>}</tbody></table></div>
+                <div class="campaign-inline-action"><div class="admin-validation-field"><label>Ghi chú tuyển chọn</label><input name="MatchingNote" maxlength="500" placeholder="Thông tin cần lưu cùng lần gửi danh sách"/></div><button class="btn is-primary"><i class="fa-solid fa-paper-plane"></i> Gửi danh sách</button></div>
+            </form>
+            }
+            @if (!matching.BrandSelectionEnabled && remainingToAssign > 0)
+            {
+                <details class="campaign-direct-assign" open><summary><span><i class="fa-solid fa-user-plus"></i><strong>Chọn thêm KOC</strong><small>Có thể chọn từng đợt, tối đa @remainingToAssign KOC trong lần này.</small></span><b>Còn thiếu @remainingToAssign</b></summary>
+                    @if (matching.DirectCandidates.Count > 0)
+                    {
+                        <form method="post" asp-page-handler="AssignDirect" class="js-matching-form" novalidate><input type="hidden" name="Id" value="@c.Id"/><input type="hidden" name="Tab" value="matching"/>
+                            <div class="campaign-list-toolbar"><div class="campaign-search-box"><i class="fa-solid fa-magnifying-glass"></i><input id="candidateKocSearch" placeholder="Tìm theo tên KOC"/></div><select id="candidateKocFit"><option value="">Tất cả mức phù hợp</option><option value="75">Từ 75%</option><option value="50">Từ 50%</option></select></div>
+                            <div class="campaign-table-wrap"><table id="candidateKocTable" class="campaign-command-table campaign-koc-table"><thead><tr><th>Chọn</th><th>KOC</th><th>Người theo dõi</th><th>Điểm hồ sơ</th><th>Phù hợp</th><th>Tiêu chí chưa khớp</th></tr></thead><tbody>@foreach(var candidate in matching.DirectCandidates){<tr><td><input type="checkbox" name="SelectedKocProfileIds" value="@candidate.KocProfileId"/></td><td><div class="campaign-koc-cell"><a class="campaign-koc-avatar" asp-page="/Admin/KocProfilePreview" asp-route-Id="@candidate.KocProfileId" target="_blank">@if(!string.IsNullOrWhiteSpace(candidate.AvatarUrl)){<img src="@candidate.AvatarUrl" alt="Ảnh @candidate.KocName"/>}else{<i class="fa-solid fa-user"></i>}</a><div><a class="campaign-koc-name" asp-page="/Admin/KocProfilePreview" asp-route-Id="@candidate.KocProfileId" target="_blank">@candidate.KocName <i class="fa-solid fa-arrow-up-right-from-square"></i></a><small>Xem hồ sơ KOC</small></div></div></td><td data-order="@candidate.Followers">@candidate.Followers.ToString("N0", PortalFormat.Vietnamese)</td><td data-order="@candidate.Score">@(candidate.Score > 0 ? candidate.Score.ToString("N1", PortalFormat.Vietnamese) : "Chưa chấm")</td><td data-order="@candidate.TargetingMatchScore" data-fit="@candidate.TargetingMatchScore">@candidate.TargetingMatchScore.ToString("N0", PortalFormat.Vietnamese)%</td><td>@(candidate.UnmatchedCriteria.Count == 0 ? "Đã khớp" : string.Join(", ", candidate.UnmatchedCriteria))</td></tr>}</tbody></table></div>
+                            <div class="campaign-inline-action campaign-assign-action"><input name="MatchingNote" maxlength="500" placeholder="Ghi chú phân công (không bắt buộc)"/><button class="btn is-primary"><i class="fa-solid fa-user-check"></i> Xác nhận phân công</button></div>
+                        </form>
+                    }
+                    else
+                    {
+                        <div class="campaign-empty campaign-direct-empty"><i class="fa-solid fa-users-slash"></i><strong>Chưa có KOC đủ điều kiện phân công</strong><span>KOC phải có hồ sơ đã duyệt và đang được phép hiển thị.</span><a href="/admin/accounts/koc" class="btn btn-sm btn-outline-primary">Mở danh sách KOC</a></div>
+                    }
+                </details>
+            }
+        }
+    </section>
+
+    <section class="campaign-tab-panel" data-panel="finance">
+        <div class="campaign-panel-heading"><div><i class="fa-solid fa-money-check-dollar"></i><span><strong>Ký quỹ và đối soát</strong><small>Kiểm tra snapshot, phân bổ KOC và xác nhận tiền nhận.</small></span></div><span class="campaign-status-tag">@FundingLabel(funding?.Status)</span></div>
+        @if (funding is null) { <div class="campaign-empty"><i class="fa-solid fa-wallet"></i><strong>Chưa phát sinh yêu cầu ký quỹ</strong><span>Brand cần chốt KOC và tạo yêu cầu thanh toán.</span></div> }
+        else
+        {
+            <div class="campaign-finance-grid"><div><small>Mã yêu cầu</small><strong>@(funding.OrderNumber ?? "Bản nháp")</strong></div><div><small>Ngân sách KOC</small><strong>@funding.CampaignBudget.ToString("N0", PortalFormat.Vietnamese) ₫</strong></div><div><small>Phí nền tảng</small><strong>@funding.PlatformFeeSnapshot.ToString("N0", PortalFormat.Vietnamese) ₫</strong></div><div class="is-total"><small>Tổng thanh toán</small><strong>@funding.TotalPayableSnapshot.ToString("N0", PortalFormat.Vietnamese) ₫</strong></div></div>
+            <div class="campaign-subsection"><h3>Phân bổ KOC (@funding.Allocations.Count)</h3><div class="campaign-allocation-list">@foreach(var allocation in funding.Allocations){<div><span>@allocation.KocName</span><strong>@allocation.Amount.ToString("N0", PortalFormat.Vietnamese) ₫</strong><small>@FundingAllocationLabel(allocation.Status)</small></div>}</div></div>
+            @if (funding.PaymentMethod == CampaignPaymentMethods.BankTransfer && funding.Id.HasValue)
+            {
+                var brandEvidences = Model.FundingEvidences.Where(x => x.EvidenceType == CampaignFundingEvidenceTypes.BrandPayment).ToList();
+                var reconciliationEvidences = Model.FundingEvidences.Where(x => x.EvidenceType == CampaignFundingEvidenceTypes.Reconciliation).ToList();
+                <div class="campaign-subsection"><h3><i class="fa-solid fa-file-shield"></i> Chứng từ và đối soát</h3>
+                    @if (brandEvidences.Count == 0) { <div class="campaign-context-notice"><i class="fa-solid fa-circle-info"></i><span>Brand chưa gửi chứng từ chuyển khoản.</span></div> }
+                    else
+                    {
+                        <div class="campaign-evidence-list">@foreach (var evidence in brandEvidences) { var review = Model.LatestEvidenceReviews.GetValueOrDefault(evidence.Id); <article><a href="@evidence.FileUrl" target="_blank" rel="noopener"><img src="@evidence.FileUrl" alt="Chứng từ Brand"/></a><div><strong>Chứng từ Brand</strong><small>@evidence.CreatedAtUtc.AddHours(7).ToString("dd/MM/yyyy HH:mm")</small><span>@evidence.Note</span><b>@EvidenceReviewLabel(review?.Status)</b></div>@if (funding.Status == CampaignFundingStatuses.Pending && evidence.Id == latestBrandEvidence?.Id) { <form method="post" asp-page-handler="ReviewEvidence" class="js-command-form campaign-evidence-review" novalidate><input type="hidden" name="Id" value="@c.Id"/><input type="hidden" name="fundingId" value="@funding.Id"/><input type="hidden" name="evidenceId" value="@evidence.Id"/><select name="reviewStatus" required><option value="@CampaignFundingEvidenceReviewStatuses.Accepted">Chấp nhận</option><option value="@CampaignFundingEvidenceReviewStatuses.SupplementRequired">Yêu cầu bổ sung</option><option value="@CampaignFundingEvidenceReviewStatuses.Rejected">Từ chối</option></select><div class="admin-validation-field"><input name="reviewReason" required minlength="10" maxlength="500" placeholder="Phản hồi từ 10 đến 500 ký tự"/><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Vui lòng nhập phản hồi từ 10 đến 500 ký tự.</div></div><button class="btn is-primary"><i class="fa-solid fa-paper-plane"></i> Gửi</button></form> } else if (evidence.Id != latestBrandEvidence?.Id) { <span class="campaign-evidence-archived">Phiên bản cũ — chỉ xem lịch sử</span> }</article> }</div>
+                    }
+                    @if (funding.Status == CampaignFundingStatuses.Pending)
+                    {
+                        <form method="post" enctype="multipart/form-data" asp-page-handler="ReconciliationEvidence" class="js-command-form campaign-reconciliation-form" novalidate><input type="hidden" name="Id" value="@c.Id"/><input type="hidden" name="fundingId" value="@funding.Id"/><div class="admin-validation-field"><label>Ảnh đối soát <span>*</span></label><input type="file" name="evidenceFile" accept="image/jpeg,image/png,image/webp" required/><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Vui lòng chọn ảnh JPG, PNG hoặc WEBP không quá 5 MB.</div></div><div class="admin-validation-field"><label>Mã giao dịch <span>*</span></label><input name="reference" required minlength="3" maxlength="200"/><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Vui lòng nhập mã giao dịch từ 3 đến 200 ký tự.</div></div><div class="admin-validation-field"><label>Số tiền thực nhận <span>*</span></label><input type="number" name="amount" required min="1" step="1" value="@funding.TotalPayableSnapshot"/><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Vui lòng nhập số tiền thực nhận lớn hơn 0.</div></div><div class="admin-validation-field"><label>Ghi chú <span>*</span></label><input name="note" required minlength="10" maxlength="500"/><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Vui lòng nhập ghi chú từ 10 đến 500 ký tự.</div></div><button class="btn is-primary"><i class="fa-solid fa-upload"></i> Lưu đối soát</button></form>
+                    }
+                    @if (reconciliationEvidences.Count > 0) { <div class="campaign-proof"><i class="fa-solid fa-circle-check"></i><span>Đã lưu @reconciliationEvidences.Count chứng từ đối soát Topstar.</span></div> }
+                </div>
+            }
+            @if (funding.Status == CampaignFundingStatuses.Pending && funding.PaymentMethod == CampaignPaymentMethods.BankTransfer && funding.Id.HasValue)
+            {
+                var requiresManualConfirmation = !latestBrandEvidenceAccepted || !hasReconciliationEvidence;
+                @if (requiresManualConfirmation)
+                {
+                    <div class="campaign-context-notice campaign-finance-next"><i class="fa-solid fa-triangle-exclamation"></i><span><strong>Xác nhận thủ công.</strong> Admin cần kiểm tra sao kê ngân hàng và ghi rõ căn cứ xác nhận.</span></div>
+                }
+                <form method="post" asp-page-handler="ConfirmPaid" class="campaign-inline-action js-command-form" novalidate><input type="hidden" name="Id" value="@c.Id"/><input type="hidden" name="Tab" value="finance"/><input type="hidden" name="fundingId" value="@funding.Id"/><div class="admin-validation-field"><label>Mã giao dịch ngân hàng <span>*</span></label><input name="reference" required minlength="3" maxlength="200" value="@latestReconciliationEvidence?.Reference" placeholder="Nhập mã giao dịch đã đối soát"/><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Vui lòng nhập mã giao dịch từ 3 đến 200 ký tự.</div></div>@if(requiresManualConfirmation){<div class="admin-validation-field"><label>Lý do xác nhận thủ công <span>*</span></label><input name="manualReason" required minlength="10" maxlength="500" placeholder="Đã kiểm tra sao kê và xác nhận nhận đủ tiền"/><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Nhập lý do từ 10 đến 500 ký tự.</div></div>}<button class="btn is-primary"><i class="fa-solid fa-check"></i> Xác nhận đủ tiền</button></form>
+            }
+            @if(!string.IsNullOrWhiteSpace(funding.PaymentProofUrl)){<div class="campaign-proof"><a href="@funding.PaymentProofUrl" target="_blank" rel="noopener"><i class="fa-solid fa-image"></i> Xem chứng từ Brand đã gửi</a><span>@funding.PaymentProofNote</span></div>}
+        }
+    </section>
+
+    <section class="campaign-tab-panel" data-panel="operations">
+        <div class="campaign-panel-heading"><div><i class="fa-solid fa-gears"></i><span><strong>Vận hành chiến dịch</strong><small>Chỉ hiển thị các đầu việc thuộc chiến dịch này.</small></span></div></div>
+        <div class="campaign-operation-cards"><article><strong>@scheduleIssues.Count</strong><span>Lịch cần xử lý</span></article><article><strong>@shipmentIssues.Count</strong><span>Giao nhận có sự cố</span></article><article><strong>@submissionIssues.Count</strong><span>Nội dung quá hạn</span></article><article><strong>@disputeIssues.Count</strong><span>Tranh chấp</span></article></div>
+        @if(scheduleIssues.Count+shipmentIssues.Count+submissionIssues.Count+disputeIssues.Count==0){<div class="campaign-empty"><i class="fa-solid fa-circle-check"></i><strong>Không có việc tồn đọng</strong><span>Chiến dịch chưa phát sinh cảnh báo vận hành.</span></div>}
+        else
+        {
+            <div class="campaign-issue-list">
+                @foreach(var x in scheduleIssues){<article><i class="fa-solid fa-calendar-xmark"></i><div><strong>Lịch với @x.KocName</strong><span>@x.AttentionReason</span><details><summary>Xử lý lịch</summary><form method="post" asp-page-handler="CancelSchedule" class="campaign-issue-form js-command-form" novalidate><input type="hidden" name="Id" value="@c.Id"/><input type="hidden" name="scheduleId" value="@x.ScheduleId"/><div class="admin-validation-field"><textarea name="reason" required minlength="10" maxlength="500" placeholder="Nhập lý do hủy lịch từ 10 đến 500 ký tự"></textarea><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Vui lòng nhập lý do hủy lịch từ 10 đến 500 ký tự.</div></div><button class="btn is-reject"><i class="fa-solid fa-calendar-xmark"></i> Xác nhận hủy</button></form></details></div></article>}
+                @foreach(var x in shipmentIssues){<article><i class="fa-solid fa-truck"></i><div><strong>Giao nhận với @x.KocName</strong><span>@x.IssueNote</span><details><summary>Xử lý giao nhận</summary><form method="post" asp-page-handler="ResolveShipment" class="campaign-issue-form js-command-form" novalidate><input type="hidden" name="Id" value="@c.Id"/><input type="hidden" name="shipmentId" value="@x.ShipmentId"/><select name="decision"><option value="Resolved">Đã xử lý</option><option value="Returned">Hoàn trả</option><option value="Lost">Thất lạc</option></select><div class="admin-validation-field"><textarea name="note" required minlength="10" maxlength="500" placeholder="Nhập kết quả xử lý từ 10 đến 500 ký tự"></textarea><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Vui lòng nhập kết quả xử lý từ 10 đến 500 ký tự.</div></div><button class="btn is-primary"><i class="fa-solid fa-check"></i> Lưu</button></form></details></div></article>}
+                @foreach(var x in submissionIssues){<article><i class="fa-solid fa-file-circle-exclamation"></i><div><strong>@x.DeliverableType · @x.KocName</strong><span>@x.Severity · @x.SubmissionStatus</span><details><summary>Tiếp nhận cảnh báo</summary><form method="post" asp-page-handler="AcknowledgeEscalation" class="campaign-issue-form js-command-form" novalidate><input type="hidden" name="Id" value="@c.Id"/><input type="hidden" name="escalationId" value="@x.EscalationId"/><div class="admin-validation-field"><textarea name="note" required minlength="10" maxlength="500" placeholder="Nhập hướng xử lý từ 10 đến 500 ký tự"></textarea><i class="fa-solid fa-circle-exclamation admin-field-error-icon"></i><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i> Vui lòng nhập hướng xử lý từ 10 đến 500 ký tự.</div></div><button class="btn is-primary"><i class="fa-solid fa-check"></i> Tiếp nhận</button></form></details></div></article>}
+                @foreach(var x in disputeIssues){<article><i class="fa-solid fa-scale-balanced"></i><div><strong>@x.Subject</strong><span>@x.Severity · @x.DisputeStatus</span></div></article>}
+            </div>
+        }
+    </section>
+
+    <section class="campaign-tab-panel" data-panel="history">
+        <div class="campaign-panel-heading"><div><i class="fa-solid fa-clock-rotate-left"></i><span><strong>Lịch sử và snapshot</strong><small>Dữ liệu quyết định đã lưu theo vòng đời chiến dịch.</small></span></div></div>
+        <div class="campaign-history-list">
+            @foreach(var item in c.History){<article><i class="fa-solid fa-clock-rotate-left"></i><div><strong>@(string.IsNullOrWhiteSpace(item.FromStatus) ? "Khởi tạo" : item.FromStatus) → @item.ToStatus</strong><span>@(string.IsNullOrWhiteSpace(item.Note) ? "Không có ghi chú." : item.Note) · @item.CreatedAtUtc.AddHours(7).ToString("dd/MM/yyyy HH:mm")</span></div></article>}
+            <article><i class="fa-solid fa-file-shield"></i><div><strong>Trạng thái hiện tại: @statusLabel</strong><span>@(c.ReviewNote ?? "Chưa có ghi chú duyệt.")</span></div></article>
+            @foreach(var feedback in c.ReviewFeedbackItems){<article><i class="fa-solid fa-comment-dots"></i><div><strong>@feedback.FieldCode</strong><span>@feedback.Message</span></div></article>}
+            @if(funding is not null){<article><i class="fa-solid fa-coins"></i><div><strong>Snapshot quỹ phiên bản @funding.VersionNo</strong><span>@FundingLabel(funding.Status) · @funding.TotalPayableSnapshot.ToString("N0", PortalFormat.Vietnamese) ₫</span></div></article>}
+        </div>
+    </section>
+</div>
+
+<div class="modal fade admin-action-modal" id="removeAssignedKocModal" tabindex="-1" aria-labelledby="removeAssignedKocTitle" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="admin-modal-heading">
+                    <span><i class="fa-solid fa-user-minus"></i></span>
+                    <div><h2 id="removeAssignedKocTitle">Gỡ KOC đã phân công</h2><small>Điều chỉnh danh sách gửi Brand</small></div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn sắp gỡ <strong data-remove-koc-name></strong> khỏi danh sách gửi Brand. KOC này sẽ quay lại danh sách có thể lựa chọn.</p>
+                <div class="campaign-context-notice"><i class="fa-solid fa-circle-info"></i><span>Thao tác chỉ áp dụng khi Brand chưa xác nhận KOC.</span></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Hủy</button>
+                <button type="button" class="btn btn-danger" data-confirm-remove-koc><i class="fa-solid fa-trash-can"></i> Xác nhận gỡ</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    static string FundingLabel(string? value) => value switch { CampaignFundingStatuses.Draft => "Bản nháp", CampaignFundingStatuses.Pending => "Chờ thanh toán", CampaignFundingStatuses.Paid => "Đã ký quỹ", CampaignFundingStatuses.PartiallyReleased => "Đang giải ngân", CampaignFundingStatuses.Released => "Đã giải ngân", CampaignFundingStatuses.Cancelled => "Đã hủy", CampaignFundingStatuses.Refunded => "Đã hoàn tiền", _ => "Chưa phát sinh" };
+    static string FundingAllocationLabel(string value) => value switch { "Pending" => "Chờ nghiệm thu", "Accepted" => "Đã nghiệm thu", "Released" => "Đã giải ngân", "Refunded" => "Đã hoàn tiền", _ => value };
+    static string ApplicationLabel(string value) => value switch { "Applied" => "Đã ứng tuyển", "Shortlisted" => "Đã gửi Brand", "Confirmed" => "Đã xác nhận", "Rejected" => "Đã từ chối", "Withdrawn" => "Đã rút", _ => value };
+    static string EvidenceReviewLabel(string? value) => value switch { CampaignFundingEvidenceReviewStatuses.Accepted => "Đã chấp nhận", CampaignFundingEvidenceReviewStatuses.SupplementRequired => "Cần bổ sung", CampaignFundingEvidenceReviewStatuses.Rejected => "Đã từ chối", _ => "Chờ kiểm tra" };
+    static string ExecutionLabel(string value) => value switch { "RemoteProductReview" => "Review sản phẩm từ xa", "FoodReviewOnsite" => "Review món ăn tại quán", "StoreReviewOnsite" => "Review cửa hàng", "ServiceReviewOnsite" => "Trải nghiệm dịch vụ", "EventOnsite" => "Tham dự sự kiện", "LivestreamOnline" => "Livestream trực tuyến", _ => value };
+}
+
+@section Styles { <link rel="stylesheet" href="~/css/admin/campaign-review.css" asp-append-version="true"/> }
+@section Scripts { <script src="~/lib/datatables/js/dataTables.min.js?v=2.3.8"></script><script src="~/lib/datatables/js/dataTables.bootstrap5.min.js?v=2.3.8"></script><script src="~/js/admin/campaign-review.js" asp-append-version="true"></script> }

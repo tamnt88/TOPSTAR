@@ -1,0 +1,23 @@
+@page
+@model Topstar.Web.Pages.Admin.Settings.KocCategoryDeleteModel
+@{ ViewData["Title"] = "Xóa lĩnh vực nội dung"; ViewData["AdminHeaderTitle"] = "Xóa lĩnh vực nội dung"; ViewData["AdminActivePath"] = "/Admin/Settings/KocCategories"; }
+@section Styles { <link rel="stylesheet" href="~/css/admin/koc-categories.css" asp-append-version="true" /> }
+<div class="category-editor-page category-delete-page">
+    <nav class="category-breadcrumb"><a asp-page="KocCategories">Lĩnh vực nội dung KOC</a><i class="fa-solid fa-chevron-right"></i><span>Xóa</span></nav>
+    <header><span class="category-eyebrow is-danger"><i class="fa-solid fa-trash-can"></i> XÓA DANH MỤC</span><h1>Xác nhận xóa lĩnh vực</h1><p>Kiểm tra mức sử dụng trước khi xác nhận. Thao tác xóa được ghi audit.</p></header>
+    <form method="post" novalidate class="category-editor-card">
+        <input asp-for="Id" type="hidden" />
+        <div asp-validation-summary="ModelOnly" class="category-form-summary" role="alert"></div>
+        <div class="category-delete-summary">
+            <div><span>Lĩnh vực</span><strong>@Model.Item.Name</strong></div>
+            <div><span>Mã danh mục</span><code>@Model.Item.Code</code></div>
+            <div><span>Lượt sử dụng</span><strong>@Model.Item.UsageCount.ToString("N0", PortalFormat.Vietnamese)</strong></div>
+        </div>
+        @if (Model.Item.UsageCount > 0)
+        {
+            <div class="category-delete-warning"><i class="fa-solid fa-shield-halved"></i><div><strong>Không thể xóa danh mục này</strong><p>Danh mục đã được dùng trong hồ sơ KOC hoặc chiến dịch. Quay lại danh sách và dùng chức năng tạm ẩn.</p></div></div>
+        }
+        <footer><a asp-page="KocCategories" class="btn btn-light">Quay lại</a>@if (Model.Item.UsageCount == 0) { <button class="btn btn-danger"><i class="fa-solid fa-trash-can"></i> Xóa danh mục</button> }</footer>
+    </form>
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

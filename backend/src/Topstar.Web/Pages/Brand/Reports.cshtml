@@ -1,16 +1,62 @@
-﻿@page
+@page
 @model Topstar.Web.Pages.Brand.ReportsModel
-@{ ViewData["Title"] = "Brand Reports"; }
-<div class="page-wrap card-list">
-  <h1 class="section-title mb-0">Bao cao & Danh gia</h1>
-  <div class="metric-row">
-    <div class="metric-chip"><div class="kpi-title">ROI</div><div class="fw-bold">285%</div></div>
-    <div class="metric-chip"><div class="kpi-title">Engagement Rate</div><div class="fw-bold text-success">8.2%</div></div>
-    <div class="metric-chip"><div class="kpi-title">Conversion Rate</div><div class="fw-bold text-primary">5.5%</div></div>
-    <div class="metric-chip"><div class="kpi-title">CPM</div><div class="fw-bold text-danger">19K</div></div>
-  </div>
-  <div class="card-x">
-    <div class="list-row"><div><b>Bao Tram</b><div class="kpi-title">On-time delivery 100% • Performance 8.9% ER</div></div><div>4.0 ?</div></div>
-    <div class="list-row"><div><b>Quang Huy</b><div class="kpi-title">On-time delivery 100% • Performance 7.8% ER</div></div><div>4.0 ?</div></div>
-  </div>
+@{
+    ViewData["Title"] = "Báo cáo hiệu quả";
+    var r = Model.Report;
+    var isWorkspace = ViewContext.HttpContext.Request.Headers["X-Topstar-Workspace"] == "native";
+}
+
+<div class="brand-report-page">
+    <header class="brand-page-heading">
+        @if (!isWorkspace) { <div><span class="brand-page-eyebrow"><i class="fa-solid fa-chart-column"></i> HIỆU QUẢ CHIẾN DỊCH</span><h1>Báo cáo tổng quan</h1><p>Theo dõi độ phủ, tương tác và hiệu quả tài chính từ dữ liệu đã đồng bộ.</p></div> }
+        <form method="post" asp-page-handler="SyncCampaign" class="brand-report-sync js-brand-report-sync @(isWorkspace ? "is-current-campaign" : null)" novalidate>
+            @if (isWorkspace)
+            {
+                <input asp-for="CampaignId" type="hidden" />
+                <span class="brand-report-sync-note">Cập nhật số liệu mới nhất từ các nội dung đã liên kết.</span>
+            }
+            else
+            {
+                <div><label for="CampaignId">Chiến dịch cần cập nhật</label><div class="brand-report-select"><select asp-for="CampaignId" asp-items="Model.CampaignOptions" class="form-select" data-searchable-select data-placeholder="Tìm và chọn chiến dịch"><option value="">Chọn chiến dịch</option></select><i class="fa-solid fa-circle-exclamation"></i></div><div class="invalid-feedback"><i class="fa-solid fa-circle-exclamation"></i><span>Vui lòng chọn chiến dịch.</span></div></div>
+            }
+            <button class="btn btn-brand-primary btn-sm"><i class="fa-solid fa-arrows-rotate"></i> Đồng bộ số liệu</button>
+        </form>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(Model.SyncMessage)) { <div class="brand-shortlist-message"><i class="fa-solid fa-circle-info"></i><span>@Model.SyncMessage</span></div> }
+
+    <section class="brand-report-kpis">
+        <article><span class="is-campaign"><i class="fa-solid fa-flag-checkered"></i></span><div><small>@(isWorkspace ? "Trạng thái chiến dịch" : "Chiến dịch hoàn thành")</small><strong>@(isWorkspace ? (r.CompletedCampaigns > 0 ? "Đã hoàn thành" : "Chưa hoàn thành") : $"{r.CompletedCampaigns}/{r.CampaignCount}")</strong><em>@(isWorkspace ? "Theo tiến độ nghiệm thu" : "Trên tổng số chiến dịch")</em></div></article>
+        <article><span class="is-reach"><i class="fa-solid fa-eye"></i></span><div><small>Lượt hiển thị</small><strong>@r.Impressions.ToString("N0", PortalFormat.Vietnamese)</strong><em>@r.Views.ToString("N0", PortalFormat.Vietnamese) lượt xem nội dung</em></div></article>
+        <article><span class="is-engagement"><i class="fa-solid fa-heart"></i></span><div><small>Tỷ lệ tương tác</small><strong>@r.EngagementRate.ToString("N2", PortalFormat.Vietnamese)%</strong><em>@r.Engagements.ToString("N0", PortalFormat.Vietnamese) lượt tương tác</em></div></article>
+        <article><span class="is-roi"><i class="fa-solid fa-arrow-trend-up"></i></span><div><small>Hiệu quả đầu tư</small><strong>@(r.Roi.HasValue ? $"{r.Roi:N2}%" : "—")</strong><em>@(r.Roi.HasValue ? "Tính trên chi phí ghi nhận" : "Chưa đủ dữ liệu")</em></div></article>
+    </section>
+
+    <section class="brand-report-finance">
+        <header><div><h2><i class="fa-solid fa-wallet"></i> Tổng quan tài chính</h2><p>So sánh ngân sách, chi phí triển khai và giá trị ghi nhận.</p></div></header>
+        <div>
+            <article><small>Ngân sách chiến dịch</small><strong>@r.TotalBudget.ToString("N0", PortalFormat.Vietnamese) đ</strong><span><i class="fa-solid fa-coins"></i></span></article>
+            <article><small>Chi phí đã ghi nhận</small><strong>@r.SpendAmount.ToString("N0", PortalFormat.Vietnamese) đ</strong><span><i class="fa-solid fa-receipt"></i></span></article>
+            <article><small>Giá trị mang lại</small><strong>@r.RevenueAmount.ToString("N0", PortalFormat.Vietnamese) đ</strong><span><i class="fa-solid fa-sack-dollar"></i></span></article>
+        </div>
+    </section>
+
+    <section class="brand-report-performance">
+        <header><div><h2><i class="fa-solid fa-ranking-star"></i> Hiệu quả theo KOC</h2><p>So sánh kết quả nội dung của từng KOC đã tham gia chiến dịch.</p></div><span>@r.KocPerformance.Count KOC</span></header>
+        @if (r.KocPerformance.Count == 0)
+        {
+            <div class="brand-report-empty"><span><i class="fa-solid fa-chart-line"></i></span><div><strong>Chưa có dữ liệu hiệu quả theo KOC</strong><p>@(isWorkspace ? "Số liệu sẽ hiển thị sau khi nội dung được duyệt, liên kết và đồng bộ." : "Chọn chiến dịch và đồng bộ số liệu để bắt đầu theo dõi.")</p></div></div>
+        }
+        else
+        {
+            <div class="brand-campaign-table-wrap brand-report-dt-shell"><table id="brandReportKocTable" class="table brand-data-table brand-report-table"><thead><tr><th>STT</th><th>KOC</th><th>Lượt hiển thị</th><th>Lượt xem</th><th>Tương tác</th><th>Tỷ lệ tương tác</th><th>Nội dung đã duyệt</th></tr></thead><tbody>@foreach(var item in r.KocPerformance.Select((value,index)=>new{value,index})){<tr><td class="text-center">@(item.index+1)</td><td><div class="brand-report-koc"><span><i class="fa-solid fa-user"></i></span><strong>@item.value.KocName</strong></div></td><td data-order="@item.value.Impressions">@item.value.Impressions.ToString("N0", PortalFormat.Vietnamese)</td><td data-order="@item.value.Views">@item.value.Views.ToString("N0", PortalFormat.Vietnamese)</td><td data-order="@item.value.Engagements">@item.value.Engagements.ToString("N0", PortalFormat.Vietnamese)</td><td data-order="@item.value.EngagementRate"><strong class="brand-report-rate">@item.value.EngagementRate.ToString("N2", PortalFormat.Vietnamese)%</strong></td><td class="text-center" data-order="@item.value.ApprovedSubmissions"><span class="brand-count-pill"><i class="fa-solid fa-check"></i>@item.value.ApprovedSubmissions</span></td></tr>}</tbody></table></div>
+        }
+    </section>
 </div>
+
+@section Styles { <link rel="stylesheet" href="~/lib/datatables/css/dataTables.bootstrap5.min.css?v=2.3.8"> }
+@section Scripts {
+    <script src="~/lib/datatables/js/dataTables.min.js?v=2.3.8"></script>
+    <script src="~/lib/datatables/js/dataTables.bootstrap5.min.js?v=2.3.8"></script>
+    <script src="~/js/brand/brand-reports.js" asp-append-version="true"></script>
+}

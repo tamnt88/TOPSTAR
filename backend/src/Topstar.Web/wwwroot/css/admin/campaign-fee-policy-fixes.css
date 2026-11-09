@@ -1,0 +1,38 @@
+.fee-policy-activation > label:first-child {
+    display: block;
+    margin-bottom: 7px;
+    font-weight: 700;
+}
+
+.fee-policy-activation .fee-policy-toggle {
+    min-height: 54px;
+    padding: 8px 12px;
+    overflow: hidden;
+}
+
+.fee-policy-activation .fee-policy-toggle > span {
+    flex: 0 0 42px;
+}
+
+.fee-policy-activation .fee-policy-toggle > div {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+}
+
+.fee-policy-activation .fee-policy-toggle strong {
+    line-height: 1.2;
+}
+
+.fee-policy-activation .fee-policy-toggle small {
+    margin: 0;
+    line-height: 1.3;
+}
+
+@media (max-width: 575px) {
+    .fee-policy-activation {
+        grid-column: 1;
+    }
+}

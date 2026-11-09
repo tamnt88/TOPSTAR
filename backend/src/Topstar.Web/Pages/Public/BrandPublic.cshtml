@@ -1,205 +1,120 @@
-﻿@page "/danh-cho-brand"
+@page "/danh-cho-brand"
+@model Topstar.Web.Pages.Public.BrandPublicModel
 @{
-    ViewData["Title"] = "Dành cho Brand";
-    ViewData["Description"] = "Nền tảng kết nối Brand với hàng ngàn KOC, triển khai chiến dịch nhanh chóng và theo dõi hiệu quả realtime.";
-    ViewData["Keywords"] = "brand, KOC, chiến dịch KOC, marketing, TopStar";
+    ViewData["Title"] = "Giải pháp KOC dành cho Brand";
+    ViewData["Description"] = "TopStar giúp Brand tuyển chọn KOC, ký quỹ, vận hành, duyệt nội dung và đo lường chiến dịch trên một nền tảng.";
+    ViewData["Keywords"] = "KOC cho Brand, chiến dịch KOC, influencer marketing, TopStar";
 }
 
-<div class="brand-page">
-    <section class="brand-hero section-flow reveal-up py-5">
-        <div class="container">
-            <div class="brand-hero-content text-center mt-3 flow-item">
-                <p class="brand-eyebrow"><i class="fa-solid fa-shield-heart"></i> Đáng tin cậy bởi 500+ thương hiệu</p>
-                <h1>Kết nối với hàng ngàn KOC<br><span>trong vài phút</span></h1>
-                <p class="mx-auto">Nền tảng quản lý chiến dịch KOC Marketing toàn diện. Từ chọn gói, tạo chiến dịch đến theo dõi hiệu quả - tất cả trong một hệ thống.</p>
-                <div class="d-flex justify-content-center gap-2 flex-wrap mt-4">
-                    <a asp-page="/Public/BrandPackages" class="brand-btn-primary">Mua gói KOC ngay <i class="fa-solid fa-arrow-right"></i></a>
-                    <a asp-page="/Public/RegisterKocStep1" class="brand-btn-secondary">Đăng ký miễn phí</a>
+@section Styles {
+    <link rel="stylesheet" href="~/css/public/brand-landing.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/public/brand-landing-journey-fix.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/public/landing-polish.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/public/brand-partners-swiper.css" asp-append-version="true" />
+}
+
+<main class="brand-landing">
+    <section class="brand-landing__hero">
+        <div class="brand-landing__container brand-landing__hero-grid">
+            <div class="brand-landing__hero-copy">
+                <p class="brand-landing__eyebrow"><i class="fa-solid fa-sparkles"></i> VẬN HÀNH CHIẾN DỊCH KOC TẬP TRUNG</p>
+                <h1>Từ brief đến báo cáo,<br /><span>mọi việc ở một nơi.</span></h1>
+                <p class="brand-landing__lead">TopStar giúp doanh nghiệp chọn đúng KOC, kiểm soát ngân sách và theo dõi từng đầu việc mà không phải quản lý bằng nhiều bảng tính rời rạc.</p>
+                <div class="brand-landing__actions">
+                    <a href="/goi-koc" class="brand-landing__button brand-landing__button--primary">Xem gói dịch vụ <i class="fa-solid fa-arrow-right"></i></a>
+                    <a href="/dang-ky?tab=brand" class="brand-landing__button brand-landing__button--outline">Tạo tài khoản Brand</a>
+                </div>
+                <ul class="brand-landing__assurances">
+                    <li><i class="fa-solid fa-circle-check"></i> Chi phí minh bạch</li>
+                    <li><i class="fa-solid fa-circle-check"></i> Quy trình có audit</li>
+                    <li><i class="fa-solid fa-circle-check"></i> Theo dõi theo thời gian thực</li>
+                </ul>
+            </div>
+            <div class="brand-landing__visual" aria-label="Trung tâm điều hành chiến dịch TopStar">
+                <div class="brand-landing__visual-head"><span><i class="fa-solid fa-chart-pie"></i> Trung tâm điều hành</span><strong>Đang vận hành</strong></div>
+                <div class="brand-landing__visual-kpis">
+                    <article><small>Tiến độ</small><b>78%</b><span class="is-purple"></span></article>
+                    <article><small>KOC đã chốt</small><b>12/12</b><span class="is-green"></span></article>
+                    <article><small>Nội dung đã duyệt</small><b>28</b><span class="is-gold"></span></article>
+                </div>
+                <div class="brand-landing__visual-flow">
+                    <span class="done"><i class="fa-solid fa-check"></i> Chốt KOC</span><i class="fa-solid fa-chevron-right"></i>
+                    <span class="done"><i class="fa-solid fa-check"></i> Ký quỹ</span><i class="fa-solid fa-chevron-right"></i>
+                    <span class="active"><i class="fa-solid fa-play"></i> Thực hiện</span>
+                </div>
+                <div class="brand-landing__visual-list">
+                    <div><i class="fa-solid fa-user"></i><span><b>KOC Beauty 01</b><small>Video TikTok · Chờ duyệt</small></span><em>Hôm nay</em></div>
+                    <div><i class="fa-solid fa-user"></i><span><b>KOC Lifestyle 08</b><small>Reels Instagram · Đã duyệt</small></span><em>Đúng hạn</em></div>
+                    <div><i class="fa-solid fa-user"></i><span><b>KOC Review 12</b><small>Bài đăng Facebook · Đang thực hiện</small></span><em>2 ngày</em></div>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="brand-section section-flow reveal-up py-5">
-        <div class="container">
-            <h2 class="brand-section-title text-center flow-item">Tại sao chọn chúng tôi?</h2>
-            <p class="brand-section-sub text-center flow-item">Giải pháp KOC Marketing toàn diện cho doanh nghiệp</p>
-            <div class="row g-4 mt-2">
-                <div class="col-md-6 col-xl-3">
-                    <article class="brand-feature-card flow-item">
-                        <span class="feature-icon"><i class="fa-solid fa-users"></i></span>
-                        <h3>Hàng ngàn KOC chất lượng</h3>
-                        <p>Tiếp cận mạng lưới KOC đa dạng với đầy đủ phân khúc và ngành hàng.</p>
-                    </article>
+    <section class="brand-landing__trust">
+        <div class="brand-landing__container">
+            <p>Quy trình phù hợp cho đội Marketing, Agency và doanh nghiệp đa ngành</p>
+            @if (Model.Partners.Count > 0)
+            {
+                <div class="brand-partners__shell">
+                    <div class="swiper brand-partners-swiper" data-partner-count="@Model.Partners.Count">
+                        <div class="swiper-wrapper">
+                            @foreach (var partner in Model.Partners)
+                            {
+                                <div class="swiper-slide"><a href="@partner.Url" aria-label="@partner.Name"><img src="@partner.LogoUrl" alt="@partner.Name" loading="lazy" /></a></div>
+                            }
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-6 col-xl-3">
-                    <article class="brand-feature-card flow-item">
-                        <span class="feature-icon"><i class="fa-solid fa-bolt"></i></span>
-                        <h3>Triển khai nhanh chóng</h3>
-                        <p>Từ mua gói đến launching chiến dịch chỉ trong vài phút.</p>
-                    </article>
-                </div>
-                <div class="col-md-6 col-xl-3">
-                    <article class="brand-feature-card flow-item">
-                        <span class="feature-icon"><i class="fa-solid fa-bullseye"></i></span>
-                        <h3>Targeting chính xác</h3>
-                        <p>AI gợi ý KOC phù hợp với mục tiêu và ngành hàng của Brand.</p>
-                    </article>
-                </div>
-                <div class="col-md-6 col-xl-3">
-                    <article class="brand-feature-card flow-item">
-                        <span class="feature-icon"><i class="fa-solid fa-chart-line"></i></span>
-                        <h3>Báo cáo chi tiết</h3>
-                        <p>Theo dõi hiệu quả realtime với dashboard chuyên nghiệp.</p>
-                    </article>
-                </div>
+            }
+        </div>
+    </section>
+
+    <section class="brand-landing__section">
+        <div class="brand-landing__container">
+            <header class="brand-landing__section-head"><p>GIẢI QUYẾT ĐÚNG ĐIỂM NGHẼN</p><h2>Không chỉ tìm KOC.<br />TopStar quản lý trọn vòng đời chiến dịch.</h2></header>
+            <div class="brand-landing__benefits">
+                <article><span><i class="fa-solid fa-users-viewfinder"></i></span><h3>Tuyển chọn có căn cứ</h3><p>Đối chiếu hồ sơ, tệp người theo dõi, ngành nội dung và mức độ phù hợp trước khi chốt cộng tác.</p></article>
+                <article><span><i class="fa-solid fa-wallet"></i></span><h3>Ngân sách có kiểm soát</h3><p>Chốt thù lao từng KOC hoặc chia đều, ký quỹ và đối soát theo snapshot không bị sửa ngược.</p></article>
+                <article><span><i class="fa-solid fa-list-check"></i></span><h3>Vận hành không thất lạc</h3><p>Booking, giao nhận, nội dung bàn giao, lịch sử trao đổi và phát sinh đều gắn với chiến dịch.</p></article>
+                <article><span><i class="fa-solid fa-chart-line"></i></span><h3>Hiệu quả đo được</h3><p>Theo dõi lượt hiển thị, tương tác, chi phí và hiệu quả từng KOC trên cùng một báo cáo.</p></article>
             </div>
         </div>
     </section>
 
-    <section class="brand-section brand-process section-flow reveal-up py-5">
-        <div class="container">
-            <h2 class="brand-section-title text-center flow-item">Quy trình làm việc đơn giản</h2>
-            <p class="brand-section-sub text-center flow-item">4 bước để hoàn thành chiến dịch KOC Marketing</p>
-            <div class="row g-4 mt-3 align-items-start">
-                <div class="col-md-6 col-xl-3">
-                    <article class="brand-step-card flow-item">
-                        <span class="step-no blue">1</span>
-                        <h3>Chọn gói KOC</h3>
-                        <p>Xem và chọn gói phù hợp với ngân sách và mục tiêu của bạn.</p>
-                    </article>
-                </div>
-                <div class="col-md-6 col-xl-3">
-                    <article class="brand-step-card flow-item">
-                        <span class="step-no purple">2</span>
-                        <h3>Tạo chiến dịch</h3>
-                        <p>Khai báo mục tiêu, timeline và yêu cầu nội dung.</p>
-                    </article>
-                </div>
-                <div class="col-md-6 col-xl-3">
-                    <article class="brand-step-card flow-item">
-                        <span class="step-no green">3</span>
-                        <h3>Phân bổ KOC</h3>
-                        <p>Hệ thống tự động gán hoặc Brand tự chọn KOC từ danh sách đề xuất.</p>
-                    </article>
-                </div>
-                <div class="col-md-6 col-xl-3">
-                    <article class="brand-step-card flow-item">
-                        <span class="step-no red">4</span>
-                        <h3>Theo dõi & hoàn thành</h3>
-                        <p>Tracking tiến độ, duyệt nội dung và nhận báo cáo hiệu quả.</p>
-                    </article>
-                </div>
+    <section class="brand-landing__section brand-landing__section--soft">
+        <div class="brand-landing__container brand-landing__process">
+            <header class="brand-landing__section-head brand-landing__section-head--center"><p>QUY TRÌNH RÕ RÀNG</p><h2>Bốn giai đoạn, một hành trình liền mạch.</h2><span>Brand luôn biết việc nào đã xong, việc nào đang chờ và ai cần xử lý tiếp theo.</span></header>
+            <ol class="brand-landing__steps" aria-label="Quy trình triển khai chiến dịch KOC">
+                <li><b>01</b><div><h3>Chọn gói và tạo brief</h3><p>Chọn quyền tuyển KOC phù hợp, khai báo mục tiêu, ngân sách và đầu việc bàn giao.</p></div></li>
+                <li><b>02</b><div><h3>Chốt KOC và ký quỹ</h3><p>Duyệt danh sách cộng tác, phân bổ thù lao và hoàn tất bảo đảm ngân sách chiến dịch.</p></div></li>
+                <li><b>03</b><div><h3>Thực hiện và nghiệm thu</h3><p>Theo dõi booking, giao nhận, duyệt nội dung và xử lý phát sinh ngay trong workspace.</p></div></li>
+                <li><b>04</b><div><h3>Giải ngân và báo cáo</h3><p>Đối soát kết quả, giải ngân theo nghiệm thu và xem hiệu quả theo từng KOC.</p></div></li>
+            </ol>
+        </div>
+    </section>
+
+    <section class="brand-landing__section brand-landing__section--governance">
+        <div class="brand-landing__container brand-landing__governance-layout">
+            <header class="brand-landing__section-head">
+                <p>MINH BẠCH TỪ ĐẦU ĐẾN CUỐI</p>
+                <h2>Kiểm soát rõ từng quyết định, từng khoản chi.</h2>
+                <span>Brand theo dõi được trạng thái, căn cứ xử lý và lịch sử của toàn bộ chiến dịch ngay tại một nơi.</span>
+                <strong><i class="fa-solid fa-shield-halved"></i> Dữ liệu được lưu xuyên suốt để đối soát khi cần</strong>
+            </header>
+            <div class="brand-landing__governance">
+                <article><span><i class="fa-solid fa-file-shield"></i></span><div><small>01 · KIỂM SOÁT HỒ SƠ</small><h3>Chỉ cộng tác với hồ sơ đủ điều kiện</h3><p>KOC chỉ tham gia tuyển chọn và cộng tác sau khi hoàn tất các bước xác minh cần thiết.</p></div></article>
+                <article><span><i class="fa-solid fa-money-check-dollar"></i></span><div><small>02 · KIỂM SOÁT THANH TOÁN</small><h3>Thanh toán linh hoạt, đối soát rõ ràng</h3><p>Brand có thể chuyển khoản hoặc thanh toán trực tuyến; mỗi yêu cầu đều có mã theo dõi và chứng từ đi kèm.</p></div></article>
+                <article><span><i class="fa-solid fa-clock-rotate-left"></i></span><div><small>03 · KIỂM SOÁT LỊCH SỬ</small><h3>Mọi thay đổi đều được ghi nhận</h3><p>Trạng thái, lý do, người thực hiện và thời gian được lưu xuyên suốt quá trình vận hành.</p></div></article>
             </div>
         </div>
     </section>
 
-    <section class="brand-section section-flow reveal-up py-5">
-        <div class="container">
-            <h2 class="brand-section-title text-center flow-item">ROI dự kiến trước khi chạy chiến dịch</h2>
-            <p class="brand-section-sub text-center flow-item">Ước tính nhanh theo ngân sách và mục tiêu để ra quyết định chính xác.</p>
-            <div class="row g-3 mt-2">
-                <div class="col-md-3">
-                    <article class="brand-feature-card flow-item h-100">
-                        <h3>Ngân sách mẫu</h3>
-                        <p>120.000.000 đ</p>
-                    </article>
-                </div>
-                <div class="col-md-3">
-                    <article class="brand-feature-card flow-item h-100">
-                        <h3>Reach dự kiến</h3>
-                        <p>1.8M - 2.4M</p>
-                    </article>
-                </div>
-                <div class="col-md-3">
-                    <article class="brand-feature-card flow-item h-100">
-                        <h3>Engagement dự kiến</h3>
-                        <p>72.000 - 110.000</p>
-                    </article>
-                </div>
-                <div class="col-md-3">
-                    <article class="brand-feature-card flow-item h-100">
-                        <h3>CPA mục tiêu</h3>
-                        <p>Từ 28.000 đ</p>
-                    </article>
-                </div>
-            </div>
-        </div>
+    <section class="brand-landing__cta">
+        <div class="brand-landing__container"><div><p>BẮT ĐẦU CÙNG TOPSTAR</p><h2>Sẵn sàng vận hành chiến dịch KOC bài bản?</h2><span>Chọn gói phù hợp hoặc tạo tài khoản Brand để hoàn thiện hồ sơ doanh nghiệp.</span></div><div class="brand-landing__actions"><a href="/goi-koc" class="brand-landing__button brand-landing__button--light">Xem gói dịch vụ</a><a href="/dang-ky?tab=brand" class="brand-landing__button brand-landing__button--ghost">Đăng ký Brand</a></div></div>
     </section>
+</main>
 
-    <section class="brand-section section-flow reveal-up py-5">
-        <div class="container">
-            <h2 class="brand-section-title text-center flow-item">SLA cam kết dịch vụ</h2>
-            <div class="row g-3 mt-2">
-                <div class="col-md-4">
-                    <article class="brand-feature-card flow-item h-100">
-                        <h3>Phản hồi vận hành</h3>
-                        <p>Trong vòng 30 phút ở giờ làm việc.</p>
-                    </article>
-                </div>
-                <div class="col-md-4">
-                    <article class="brand-feature-card flow-item h-100">
-                        <h3>Thay thế KOC rủi ro</h3>
-                        <p>Trong vòng 24 giờ với pool tương đương.</p>
-                    </article>
-                </div>
-                <div class="col-md-4">
-                    <article class="brand-feature-card flow-item h-100">
-                        <h3>Báo cáo tổng hợp</h3>
-                        <p>Tự động theo ngày/tuần/tháng + xuất file.</p>
-                    </article>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="brand-section section-flow reveal-up py-5">
-        <div class="container">
-            <h2 class="brand-section-title text-center flow-item">TopStar khác gì cách thuê rời rạc?</h2>
-            <div class="table-responsive flow-item mt-3">
-                <table class="table table-bordered bg-white">
-                    <thead>
-                    <tr>
-                        <th>Tiêu chí</th>
-                        <th>TopStar Platform</th>
-                        <th>Thuê rời rạc</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr>
-                        <td>Tốc độ triển khai</td>
-                        <td>Chuẩn hóa quy trình, lên chiến dịch trong ngày</td>
-                        <td>Phụ thuộc từng cá nhân, khó đồng bộ</td>
-                    </tr>
-                    <tr>
-                        <td>Kiểm soát chất lượng</td>
-                        <td>Trust Score + kiểm duyệt nhiều lớp</td>
-                        <td>Khó đo lường và kiểm tra nhất quán</td>
-                    </tr>
-                    <tr>
-                        <td>Đo lường hiệu quả</td>
-                        <td>Dashboard realtime, chỉ số đầy đủ</td>
-                        <td>Rời rạc, báo cáo thủ công</td>
-                    </tr>
-                    <tr>
-                        <td>Rủi ro vận hành</td>
-                        <td>Có SLA và cơ chế thay thế KOC</td>
-                        <td>Không có đầu mối chịu trách nhiệm chung</td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </section>
-
-    <section class="brand-cta section-flow reveal-up py-5">
-        <div class="container text-center text-white">
-            <h2 class="flow-item">Sẵn sàng bắt đầu?</h2>
-            <p class="flow-item">Tạo chiến dịch KOC Marketing đầu tiên của bạn ngay hôm nay</p>
-            <div class="d-flex justify-content-center gap-2 flex-wrap flow-item">
-                <a asp-page="/Public/BrandPackages" class="brand-btn-white">Xem các gói KOC</a>
-                <a asp-page="/Public/RegisterKocStep1" class="brand-btn-transparent">Đăng ký ngay</a>
-            </div>
-        </div>
-    </section>
-</div>
+@section Scripts {
+    <script src="~/js/public/brand-landing.js" asp-append-version="true"></script>
+}

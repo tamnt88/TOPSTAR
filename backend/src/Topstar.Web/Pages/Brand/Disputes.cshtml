@@ -1,0 +1,44 @@
+@page
+@model Topstar.Web.Pages.Brand.DisputesModel
+@using Topstar.Application.Disputes
+@{
+    Layout = "_BrandLayout";
+    ViewData["Title"] = "Tranh chấp và hỗ trợ";
+    var activeCount = Model.Window.Counts.Where(x => DisputeTransitions.IsActive(x.Key)).Sum(x => x.Value);
+    var resolvedCount = Model.Window.Counts.GetValueOrDefault(DisputeStatuses.Resolved);
+    var isWorkspace = ViewContext.HttpContext.Request.Headers["X-Topstar-Workspace"] == "native";
+    string StatusText(string status) => status switch { DisputeStatuses.Open => "Chờ tiếp nhận", DisputeStatuses.InReview => "Đang xử lý", DisputeStatuses.Resolved => "Đã giải quyết", DisputeStatuses.Rejected => "Không chấp nhận", DisputeStatuses.Cancelled => "Đã hủy", _ => status };
+    string CategoryText(string category) => category switch { "Booking" => "Lịch làm việc", "Shipment" => "Giao nhận", "Deliverable" => "Nội dung bàn giao", "Payment" => "Thanh toán", "Review" => "Đánh giá", _ => "Vấn đề khác" };
+}
+<div class="brand-dispute-page">
+    @if (!isWorkspace)
+    {
+        <header class="brand-page-heading"><div><span class="brand-page-eyebrow"><i class="fa-solid fa-headset"></i> TRUNG TÂM HỖ TRỢ</span><h1>Tranh chấp và hỗ trợ</h1><p>Gửi yêu cầu kèm thông tin rõ ràng và theo dõi quá trình xử lý minh bạch.</p></div>@if(Model.Portal.Candidates.Count > 0){<button class="btn btn-brand-primary btn-sm" data-bs-toggle="modal" data-bs-target="#brandDisputeModal"><i class="fa-solid fa-circle-plus"></i> Tạo yêu cầu mới</button>}</header>
+    }
+    @if(!string.IsNullOrWhiteSpace(Model.Message)){<div class="brand-shortlist-message @(Model.MessageSuccess?"":"is-error")"><i class="fa-solid @(Model.MessageSuccess?"fa-circle-check":"fa-circle-exclamation")"></i><span>@Model.Message</span></div>}
+    <section class="brand-dispute-stats"><article><span class="is-all"><i class="fa-solid fa-folder-open"></i></span><div><small>Tổng yêu cầu</small><strong>@Model.Window.Total</strong></div></article><article><span class="is-active"><i class="fa-regular fa-clock"></i></span><div><small>Đang xử lý</small><strong>@activeCount</strong></div></article><article><span class="is-done"><i class="fa-solid fa-check"></i></span><div><small>Đã giải quyết</small><strong>@resolvedCount</strong></div></article></section>
+    <section class="brand-dispute-guide"><i class="fa-solid fa-circle-info"></i><div><strong>Khi nào nên tạo yêu cầu?</strong><p>Khi có vấn đề về lịch làm việc, giao nhận, nội dung bàn giao, thanh toán hoặc đánh giá mà hai bên chưa thể thống nhất.</p></div></section>
+@if(Model.Portal.Cases.Count==0){<section class="brand-dispute-empty"><span><i class="fa-regular fa-circle-check"></i></span><h2>Chưa có yêu cầu hỗ trợ</h2><p>@(Model.Portal.Candidates.Count > 0 ? "Nếu phát sinh vấn đề trong chiến dịch, hãy gửi đầy đủ thông tin để Topstar tiếp nhận và xử lý." : "Yêu cầu hỗ trợ có thể được tạo sau khi chiến dịch có KOC chính thức.")</p>@if(Model.Portal.Candidates.Count>0){<button class="btn btn-brand-primary btn-sm" data-bs-toggle="modal" data-bs-target="#brandDisputeModal"><i class="fa-solid fa-circle-plus"></i> Tạo yêu cầu hỗ trợ</button>}</section>}
+    else
+    {
+        <section class="brand-dispute-list-head"><div><h2><i class="fa-solid fa-folder-tree"></i> Hồ sơ hỗ trợ</h2><p>Theo dõi trạng thái và trao đổi trong từng yêu cầu.</p></div><div class="brand-dispute-list-actions"><span>@Model.Portal.Cases.Count hồ sơ</span>@if(Model.Portal.Candidates.Count > 0){<button class="btn btn-brand-primary btn-sm" data-bs-toggle="modal" data-bs-target="#brandDisputeModal"><i class="fa-solid fa-circle-plus"></i> Tạo yêu cầu</button>}</div></section>
+        <partial name="_ListWindow" model='new Topstar.Web.Features.Common.Paging.ListWindowViewModel("brandDisputeTable", Model.Window)' />
+        <div class="brand-dispute-table-shell table-responsive"><table id="brandDisputeTable" class="table brand-data-table align-middle w-100"><thead><tr><th>STT</th><th>Yêu cầu hỗ trợ</th><th>Chiến dịch và KOC</th><th>Ngày gửi</th><th>Trạng thái</th><th class="text-end">Thao tác</th></tr></thead><tbody>
+        @{ var rowNumber = 0; }
+        @foreach(var item in Model.Portal.Cases)
+        {
+            rowNumber++;
+            var statusClass=DisputeTransitions.IsActive(item.Status)?"is-warning":item.Status==DisputeStatuses.Resolved?"is-completed":"is-muted";
+            <tr><td class="text-center">@rowNumber</td><td><div class="brand-dispute-table-title"><span><i class="fa-solid fa-scale-balanced"></i></span><div><small>@CategoryText(item.Category)</small><strong>@item.Subject</strong><p>@item.Description</p></div></div></td><td><strong>@item.CampaignTitle</strong><small><i class="fa-solid fa-user"></i> @item.KocName</small></td><td data-order="@item.CreatedAtUtc.Ticks"><strong>@item.CreatedAtUtc.ToVietnamTime().ToString("dd/MM/yyyy")</strong><small>@item.CreatedAtUtc.ToVietnamTime().ToString("HH:mm")</small></td><td><span class="brand-status-pill @statusClass">@StatusText(item.Status)</span></td><td class="text-end"><a asp-page="/Brand/DisputeDetail" asp-route-id="@item.Id" class="btn btn-brand-primary btn-sm text-nowrap"><i class="fa-solid fa-comments"></i> Xem hồ sơ</a></td></tr>
+        }
+        </tbody></table></div>
+    }
+</div>
+
+<div class="modal fade" id="brandDisputeModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true"><div class="modal-dialog modal-dialog-centered modal-lg"><div class="modal-content brand-action-modal"><form method="post" asp-page-handler="Open" class="js-brand-dispute-form" novalidate><div class="modal-header"><div class="brand-modal-title"><span><i class="fa-solid fa-scale-balanced"></i></span><div><h2>Tạo yêu cầu hỗ trợ</h2><p>Cung cấp thông tin để Topstar kiểm tra và xử lý.</p></div></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button></div><div class="modal-body"><div class="row g-3"><div class="col-md-7"><label class="form-label">@(isWorkspace ? "KOC cần hỗ trợ" : "Chiến dịch và KOC") <span class="text-danger">*</span></label><select name="participationId" class="form-select"><option value="">@(isWorkspace ? "Chọn KOC" : "Chọn chiến dịch và KOC")</option>@foreach(var item in Model.Portal.Candidates){<option value="@item.ParticipationId">@(isWorkspace ? item.CounterpartyName : $"{item.CampaignTitle} · {item.CounterpartyName}")</option>}</select><div class="invalid-feedback" data-error-for="participationId"></div></div><div class="col-md-5"><label class="form-label">Nhóm vấn đề <span class="text-danger">*</span></label><select name="category" class="form-select"><option value="">Chọn nhóm vấn đề</option>@foreach(var category in DisputeCategories.All){<option value="@category">@CategoryText(category)</option>}</select><div class="invalid-feedback" data-error-for="category"></div></div><div class="col-12"><label class="form-label">Tiêu đề yêu cầu <span class="text-danger">*</span></label><input name="subject" maxlength="200" class="form-control" placeholder="Tóm tắt vấn đề cần Topstar hỗ trợ"/><div class="invalid-feedback" data-error-for="subject"></div></div><div class="col-12"><label class="form-label">Mô tả và kết quả mong muốn <span class="text-danger">*</span></label><textarea name="description" maxlength="2000" rows="5" class="form-control" placeholder="Mô tả diễn biến, thông tin liên quan và kết quả doanh nghiệp mong muốn"></textarea><div class="invalid-feedback" data-error-for="description"></div></div></div></div><div class="modal-footer"><button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Đóng</button><button class="btn btn-danger btn-sm"><i class="fa-solid fa-paper-plane"></i> Gửi yêu cầu</button></div></form></div></div></div>
+@section Styles { <link rel="stylesheet" href="~/lib/datatables/css/dataTables.bootstrap5.min.css?v=2.3.8"> }
+@section Scripts{
+    <script src="~/lib/datatables/js/dataTables.min.js?v=2.3.8"></script>
+    <script src="~/lib/datatables/js/dataTables.bootstrap5.min.js?v=2.3.8"></script>
+    <script src="~/js/brand/brand-disputes.js" asp-append-version="true"></script>
+}

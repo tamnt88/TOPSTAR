@@ -1,0 +1,36 @@
+@page
+@model Topstar.Web.Pages.Admin.Settings.SocialLoginModel
+@{
+    ViewData["Title"] = "Đăng nhập mạng xã hội";
+    ViewData["AdminActivePath"] = "/Admin/Settings/SocialLogin";
+}
+
+<main class="admin-social-settings admin-page-wrap">
+    <header class="account-crud-header">
+        <div><h1>Đăng nhập mạng xã hội</h1><p>Bật, tắt và cấu hình đăng nhập hoặc đăng ký bằng Google và Facebook.</p></div>
+    </header>
+    @if (TempData["AdminMessageSuccess"] is string success) { <div class="alert alert-success">@success</div> }
+    @if (TempData["AdminMessageError"] is string error) { <div class="alert alert-danger">@error</div> }
+    <div class="alert alert-warning d-flex gap-2 align-items-start"><i class="fa-solid fa-triangle-exclamation mt-1"></i><span>Công tắc bật/tắt có hiệu lực ngay. Thay đổi Redirect URI, ID hoặc Secret cần khởi động lại dịch vụ.</span></div>
+
+    <div class="admin-social-grid">
+        <form method="post" asp-page-handler="Google" class="admin-social-card">
+            <header><span><i class="fa-brands fa-google"></i></span><div><h2>Google</h2><p>Đăng nhập tài khoản Google.</p></div></header>
+            <input asp-for="Google.Provider" type="hidden" />
+            <label class="form-label" asp-for="Google.RedirectUri">Authorized redirect URI</label><div class="input-group"><input asp-for="Google.RedirectUri" class="form-control" autocomplete="off" /><button type="button" class="btn btn-outline-secondary" title="Sao chép URL" onclick="navigator.clipboard.writeText(this.previousElementSibling.value)"><i class="fa-regular fa-copy"></i></button></div><small class="form-text">Phải trùng chính xác URL trong Google Cloud Console → OAuth Client.</small>
+            <label class="form-label" asp-for="Google.ClientId">Client ID</label><input asp-for="Google.ClientId" class="form-control" autocomplete="off" />
+            <label class="form-label mt-3" asp-for="Google.ClientSecret">Client Secret</label><input asp-for="Google.ClientSecret" type="text" class="form-control" autocomplete="off" />
+            <div class="admin-social-switches"><label><input asp-for="Google.LoginEnabled" /> Cho phép đăng nhập</label><label><input asp-for="Google.RegistrationEnabled" /> Cho phép đăng ký</label><label><input asp-for="Google.BrandEnabled" /> Áp dụng Brand</label><label><input asp-for="Google.KocEnabled" /> Áp dụng KOC</label></div>
+            <footer><button class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i>Lưu Google</button></footer>
+        </form>
+        <form method="post" asp-page-handler="Facebook" class="admin-social-card">
+            <header><span><i class="fa-brands fa-facebook-f"></i></span><div><h2>Facebook</h2><p>Đăng nhập tài khoản Facebook.</p></div></header>
+            <input asp-for="Facebook.Provider" type="hidden" />
+            <label class="form-label" asp-for="Facebook.RedirectUri">Valid OAuth Redirect URI</label><div class="input-group"><input asp-for="Facebook.RedirectUri" class="form-control" autocomplete="off" /><button type="button" class="btn btn-outline-secondary" title="Sao chép URL" onclick="navigator.clipboard.writeText(this.previousElementSibling.value)"><i class="fa-regular fa-copy"></i></button></div><small class="form-text">Phải trùng chính xác URL trong Facebook Login → Settings.</small>
+            <label class="form-label" asp-for="Facebook.ClientId">App ID</label><input asp-for="Facebook.ClientId" class="form-control" autocomplete="off" />
+            <label class="form-label mt-3" asp-for="Facebook.ClientSecret">App Secret</label><input asp-for="Facebook.ClientSecret" type="text" class="form-control" autocomplete="off" />
+            <div class="admin-social-switches"><label><input asp-for="Facebook.LoginEnabled" /> Cho phép đăng nhập</label><label><input asp-for="Facebook.RegistrationEnabled" /> Cho phép đăng ký</label><label><input asp-for="Facebook.BrandEnabled" /> Áp dụng Brand</label><label><input asp-for="Facebook.KocEnabled" /> Áp dụng KOC</label></div>
+            <footer><button class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i>Lưu Facebook</button></footer>
+        </form>
+    </div>
+</main>
