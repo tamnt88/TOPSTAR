@@ -60,7 +60,7 @@ public static class InfrastructureDependencyInjection
     public static IServiceCollection AddTopstarInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("TopstarDb")
-            ?? "Server=(localdb)\MSSQLLocalDB;Database=TopstarDb;Trusted_Connection=True;TrustServerCertificate=True";
+            ?? @"Server=(localdb)\MSSQLLocalDB;Database=TopstarDb;Trusted_Connection=True;TrustServerCertificate=True";
 
         services.AddDbContext<TopstarDbContext>(options => options.UseSqlServer(connectionString));
         services.AddDataProtection();
